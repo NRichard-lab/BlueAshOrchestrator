@@ -290,6 +290,15 @@ daemon) or checks for one. **Settings → About → App updates** checks on dema
 restarts into a pending update and shows what is running. Dev builds
 (`npx expo run:*`) never take updates — they load from Metro.
 
+**The Expo project is configured per build, not committed.** `app.json` carries no
+update URL, EAS project id or owner. `app.config.js` reads `AO_EXPO_PROJECT_ID` (the
+BlueAsh-owned EAS project UUID) and optionally `AO_EXPO_OWNER`, and only then emits
+`https://u.expo.dev/<id>`. With no `AO_EXPO_PROJECT_ID`, over-the-air updates are
+disabled (fail closed); the upstream project id and owners are rejected. Store
+identifiers can be overridden with `AO_IOS_BUNDLE_ID` / `AO_ANDROID_PACKAGE`; the
+committed defaults are placeholders until a BlueAsh store listing exists (see
+`docs/update-server.md`, checkpoint C11).
+
 - **Runtime version** is a
   [fingerprint](https://docs.expo.dev/eas-update/runtime-versions/#fingerprint-runtime-version-policy)
   of the native inputs (dependencies, config plugins, patches; see `fingerprint.config.js`).
