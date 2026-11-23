@@ -10,16 +10,14 @@
   브랜치, 리뷰, CI 실패를 관리 가능한 상태로 유지하면서 여러 코딩 에이전트를 함께 실행하세요.
 </p>
 
-[![GitHub stars](https://img.shields.io/github/stars/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/stargazers)
-[![GitHub release](https://img.shields.io/github/v/release/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/OrchestratorInc/agent-orchestrator/total?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NRichard-lab/BlueAshOrchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/NRichard-lab/BlueAshOrchestrator/stargazers)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0B1A33?style=flat)](../LICENSE)
 [![X](https://img.shields.io/badge/@useOrchestrator-0B1A33?style=flat&logo=x&logoColor=white)](https://x.com/useOrchestrator)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/UZv7JjxbwG)
 
 <br />
 
-[**Orchestrator.inc 받기**](https://orchestrator.inc) &nbsp;&bull;&nbsp; [문서](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [릴리스](https://github.com/OrchestratorInc/agent-orchestrator/releases) &nbsp;&bull;&nbsp; [기여하기](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
+[**Download**](../docs/update-server.md) &nbsp;&bull;&nbsp; [문서](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [기여하기](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
 
 [English](../README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -151,16 +149,16 @@
 
 ## 설치
 
-[orchestrator.inc/download](https://orchestrator.inc/download/) 또는 [GitHub Releases](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest)에서 다운로드하세요. 앱은 자동으로 업데이트됩니다.
+Download the installer for your platform from your BlueAsh update server's download page (`<update-origin>/download/`; see [docs/update-server.md](../docs/update-server.md)). The app updates itself from the same server.
 
 | 플랫폼 | 다운로드 |
 | :-- | :-- |
-| **macOS** (Apple silicon) | [`Orchestrator-darwin-arm64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-arm64.dmg) |
-| **macOS** (Intel) | [`Orchestrator-darwin-x64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-x64.dmg) |
-| **Windows** | [`agent-orchestrator-win32-x64.exe`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-win32-x64.exe) |
-| **Linux** (AppImage) | [`agent-orchestrator-linux-x64.AppImage`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.AppImage) |
-| **Linux** (Debian/Ubuntu) | [`agent-orchestrator-linux-x64.deb`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.deb) |
-| **Linux** (Fedora/RHEL) | [`agent-orchestrator-linux-x64.rpm`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.rpm) |
+| **macOS** (Apple silicon) | `Orchestrator-darwin-arm64.dmg` |
+| **macOS** (Intel) | `Orchestrator-darwin-x64.dmg` |
+| **Windows** | `agent-orchestrator-win32-x64.exe` |
+| **Linux** (AppImage) | `agent-orchestrator-linux-x64.AppImage` |
+| **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
+| **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
 Orchestrator.inc를 열고 관리할 저장소를 지정하세요. 데스크톱 앱이 데몬을 실행하므로 CLI는 필요하지 않습니다. 에이전트 CLI 설정 및 문제 해결은 [설치 가이드](https://docs.orchestrator.inc/installation)를 참고하세요.
 
@@ -178,11 +176,11 @@ Orchestrator.inc를 열고 관리할 저장소를 지정하세요. 데스크톱 
 
 ## 기여하기
 
-사전 요구 사항, 로컬 설정, 테스트 명령은 [개발 가이드](../docs/development.md)부터 확인하세요. 풀 리퀘스트를 열기 전에 [CONTRIBUTING.md](../CONTRIBUTING.md)를 읽고, 버그와 기능 요청에는 [GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues)를 사용하세요.
+사전 요구 사항, 로컬 설정, 테스트 명령은 [개발 가이드](../docs/development.md)부터 확인하세요. 풀 리퀘스트를 열기 전에 [CONTRIBUTING.md](../CONTRIBUTING.md)를 읽고, 버그와 기능 요청에는 [GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues)를 사용하세요.
 
 ### 버그 신고
 
-본인의 GitHub 계정으로 [버그 신고를 여세요](https://github.com/OrchestratorInc/agent-orchestrator/issues/new?template=bug_report.yml). 무엇을 했고 어떤 문제가 발생했는지 몇 문장이면 충분합니다. 버전, 운영체제, 재현 단계가 있다면 도움이 됩니다.
+본인의 GitHub 계정으로 [버그 신고를 여세요](https://github.com/NRichard-lab/BlueAshOrchestrator/issues/new?template=bug_report.yml). 무엇을 했고 어떤 문제가 발생했는지 몇 문장이면 충분합니다. 버전, 운영체제, 재현 단계가 있다면 도움이 됩니다.
 
 로컬 코딩 에이전트는 [bug-triage skill](../.agents/skills/bug-triage/SKILL.md)로 증거 수집을 도울 수 있습니다. 에이전트의 로그와 메모는 첨부 파일로 제공하고, 직접 제출하기 전에 초안을 검토하세요. 봇에게 대신 이슈를 등록하게 하지 마세요.
 
@@ -190,14 +188,14 @@ Orchestrator.inc를 열고 관리할 저장소를 지정하세요. 데스크톱 
 
 ## 커뮤니티
 
-도움 및 기여자 논의를 위해 [Discord](https://discord.com/invite/UZv7JjxbwG)에 참여하고, 업데이트를 보려면 [@useOrchestrator](https://x.com/useOrchestrator)를 팔로우하세요. [GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues)에서 대화를 시작할 수도 있습니다.
+도움 및 기여자 논의를 위해 [Discord](https://discord.com/invite/UZv7JjxbwG)에 참여하고, 업데이트를 보려면 [@useOrchestrator](https://x.com/useOrchestrator)를 팔로우하세요. [GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues)에서 대화를 시작할 수도 있습니다.
 
 ## Star 기록
 
-<a href="https://www.star-history.com/#OrchestratorInc/agent-orchestrator&Date">
+<a href="https://www.star-history.com/#NRichard-lab/BlueAshOrchestrator&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date&theme=dark" />
-    <img src="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date" alt="OrchestratorInc/agent-orchestrator의 Star 기록 차트" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date&theme=dark" />
+    <img src="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date" alt="NRichard-lab/BlueAshOrchestrator의 Star 기록 차트" width="100%" />
   </picture>
 </a>
 

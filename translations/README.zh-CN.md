@@ -10,16 +10,14 @@
   运行一整支编程智能体队伍，同时让分支、评审和 CI 失败始终可控。
 </p>
 
-[![GitHub stars](https://img.shields.io/github/stars/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/stargazers)
-[![GitHub release](https://img.shields.io/github/v/release/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/OrchestratorInc/agent-orchestrator/total?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NRichard-lab/BlueAshOrchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/NRichard-lab/BlueAshOrchestrator/stargazers)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0B1A33?style=flat)](../LICENSE)
 [![X](https://img.shields.io/badge/@useOrchestrator-0B1A33?style=flat&logo=x&logoColor=white)](https://x.com/useOrchestrator)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/UZv7JjxbwG)
 
 <br />
 
-[**获取 Orchestrator.inc**](https://orchestrator.inc) &nbsp;&bull;&nbsp; [文档](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [版本](https://github.com/OrchestratorInc/agent-orchestrator/releases) &nbsp;&bull;&nbsp; [参与贡献](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
+[**Download**](../docs/update-server.md) &nbsp;&bull;&nbsp; [文档](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [参与贡献](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
 
 [English](../README.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -151,16 +149,16 @@
 
 ## 安装
 
-从 [orchestrator.inc/download](https://orchestrator.inc/download/) 或 [GitHub Releases](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest) 下载。应用会自动更新。
+Download the installer for your platform from your BlueAsh update server's download page (`<update-origin>/download/`; see [docs/update-server.md](../docs/update-server.md)). The app updates itself from the same server.
 
 | 平台 | 下载 |
 | :-- | :-- |
-| **macOS**（Apple 芯片） | [`Orchestrator-darwin-arm64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-arm64.dmg) |
-| **macOS**（Intel） | [`Orchestrator-darwin-x64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-x64.dmg) |
-| **Windows** | [`agent-orchestrator-win32-x64.exe`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-win32-x64.exe) |
-| **Linux**（AppImage） | [`agent-orchestrator-linux-x64.AppImage`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.AppImage) |
-| **Linux**（Debian/Ubuntu） | [`agent-orchestrator-linux-x64.deb`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.deb) |
-| **Linux**（Fedora/RHEL） | [`agent-orchestrator-linux-x64.rpm`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.rpm) |
+| **macOS**（Apple 芯片） | `Orchestrator-darwin-arm64.dmg` |
+| **macOS**（Intel） | `Orchestrator-darwin-x64.dmg` |
+| **Windows** | `agent-orchestrator-win32-x64.exe` |
+| **Linux**（AppImage） | `agent-orchestrator-linux-x64.AppImage` |
+| **Linux**（Debian/Ubuntu） | `agent-orchestrator-linux-x64.deb` |
+| **Linux**（Fedora/RHEL） | `agent-orchestrator-linux-x64.rpm` |
 
 打开 Orchestrator.inc，并选择你希望它管理的仓库。桌面应用会为你运行守护进程，因此无需使用 CLI。有关智能体 CLI 的设置和故障排除，请参阅[安装指南](https://docs.orchestrator.inc/installation)。
 
@@ -178,11 +176,11 @@
 
 ## 参与贡献
 
-请先阅读[开发指南](../docs/development.md)，了解先决条件、本地设置和测试命令。提交拉取请求前请阅读 [CONTRIBUTING.md](../CONTRIBUTING.md)，并通过 [GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues) 报告 bug 和提出功能请求。
+请先阅读[开发指南](../docs/development.md)，了解先决条件、本地设置和测试命令。提交拉取请求前请阅读 [CONTRIBUTING.md](../CONTRIBUTING.md)，并通过 [GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues) 报告 bug 和提出功能请求。
 
 ### 报告 bug
 
-请使用你自己的 GitHub 账号[提交 bug 报告](https://github.com/OrchestratorInc/agent-orchestrator/issues/new?template=bug_report.yml)。用几句话说明你做了什么、出了什么问题即可；如果有版本、操作系统和复现步骤，也会很有帮助。
+请使用你自己的 GitHub 账号[提交 bug 报告](https://github.com/NRichard-lab/BlueAshOrchestrator/issues/new?template=bug_report.yml)。用几句话说明你做了什么、出了什么问题即可；如果有版本、操作系统和复现步骤，也会很有帮助。
 
 本地编程智能体可以借助 [bug-triage skill](../.agents/skills/bug-triage/SKILL.md) 帮你收集证据；请把它的日志和笔记放在附件中，并在自行提交前检查草稿。请不要让机器人代你提交 issue。
 
@@ -190,14 +188,14 @@
 
 ## 社区
 
-加入 [Discord](https://discord.com/invite/UZv7JjxbwG) 获取帮助并参与贡献者讨论，关注 [@useOrchestrator](https://x.com/useOrchestrator) 了解最新动态，或在 [GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues) 中发起讨论。
+加入 [Discord](https://discord.com/invite/UZv7JjxbwG) 获取帮助并参与贡献者讨论，关注 [@useOrchestrator](https://x.com/useOrchestrator) 了解最新动态，或在 [GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues) 中发起讨论。
 
 ## Star 历史
 
-<a href="https://www.star-history.com/#OrchestratorInc/agent-orchestrator&Date">
+<a href="https://www.star-history.com/#NRichard-lab/BlueAshOrchestrator&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date&theme=dark" />
-    <img src="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date" alt="OrchestratorInc/agent-orchestrator 的 Star 历史图表" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date&theme=dark" />
+    <img src="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date" alt="NRichard-lab/BlueAshOrchestrator 的 Star 历史图表" width="100%" />
   </picture>
 </a>
 

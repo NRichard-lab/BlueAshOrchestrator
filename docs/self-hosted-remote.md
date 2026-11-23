@@ -18,7 +18,7 @@ Cloudflare tunnel.
 2. Install AO:
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/main/scripts/bootstrap-self-hosted.sh | bash
+   curl -fsSL https://<update-origin>/selfhost/bootstrap-self-hosted.sh | AO_UPDATE_ORIGIN=https://<update-origin> bash
    ```
 
    This installs the prerequisites, the latest stable AO, a user service that
@@ -65,14 +65,16 @@ pairing code.
 **Nightly** (the newest published nightly; experimental):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/main/scripts/bootstrap-self-hosted.sh | bash -s -- --nightly
+curl -fsSL https://<update-origin>/selfhost/bootstrap-self-hosted.sh | AO_UPDATE_ORIGIN=https://<update-origin> bash -s -- --nightly
 ```
 
-**An unreleased branch** (builds from that branch): replace both
-`codex/your-pr-branch` with the branch name published on GitHub.
+**An unreleased branch** (builds from that branch): replace
+`codex/your-pr-branch` with a branch published to the BlueAsh repository. To build
+from another repository, also set `AO_SOURCE_REPO_URL=https://...` (it must not
+be the upstream Orchestrator project).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/codex/your-pr-branch/scripts/bootstrap-self-hosted.sh | bash -s -- --source-ref codex/your-pr-branch
+curl -fsSL https://<update-origin>/selfhost/bootstrap-self-hosted.sh | AO_UPDATE_ORIGIN=https://<update-origin> bash -s -- --source-ref codex/your-pr-branch
 ```
 
 **A trusted LAN/VPN** instead of the tunnel: append `--lan` to the script
@@ -89,7 +91,7 @@ in the background and read its output:
 1. Install:
 
    ```bash
-   ssh USER@HOST 'set -o pipefail; curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/main/scripts/bootstrap-self-hosted.sh | bash'
+   ssh USER@HOST 'set -o pipefail; curl -fsSL https://<update-origin>/selfhost/bootstrap-self-hosted.sh | AO_UPDATE_ORIGIN=https://<update-origin> bash'
    ```
 
    For nightly, end it with `bash -s -- --nightly`.

@@ -10,16 +10,14 @@
   ブランチ、レビュー、CI の失敗を管理しやすく保ちながら、複数のコーディングエージェントを一斉に動かせます。
 </p>
 
-[![GitHub stars](https://img.shields.io/github/stars/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/stargazers)
-[![GitHub release](https://img.shields.io/github/v/release/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/OrchestratorInc/agent-orchestrator/total?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NRichard-lab/BlueAshOrchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/NRichard-lab/BlueAshOrchestrator/stargazers)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0B1A33?style=flat)](../LICENSE)
 [![X](https://img.shields.io/badge/@useOrchestrator-0B1A33?style=flat&logo=x&logoColor=white)](https://x.com/useOrchestrator)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/UZv7JjxbwG)
 
 <br />
 
-[**Orchestrator.inc を入手**](https://orchestrator.inc) &nbsp;&bull;&nbsp; [ドキュメント](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [リリース](https://github.com/OrchestratorInc/agent-orchestrator/releases) &nbsp;&bull;&nbsp; [コントリビューション](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
+[**Download**](../docs/update-server.md) &nbsp;&bull;&nbsp; [ドキュメント](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [コントリビューション](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
 
 [English](../README.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -151,16 +149,16 @@
 
 ## インストール
 
-[orchestrator.inc/download](https://orchestrator.inc/download/) または [GitHub Releases](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest) からダウンロードしてください。アプリは自動で更新されます。
+Download the installer for your platform from your BlueAsh update server's download page (`<update-origin>/download/`; see [docs/update-server.md](../docs/update-server.md)). The app updates itself from the same server.
 
 | プラットフォーム | ダウンロード |
 | :-- | :-- |
-| **macOS** (Apple silicon) | [`Orchestrator-darwin-arm64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-arm64.dmg) |
-| **macOS** (Intel) | [`Orchestrator-darwin-x64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-x64.dmg) |
-| **Windows** | [`agent-orchestrator-win32-x64.exe`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-win32-x64.exe) |
-| **Linux** (AppImage) | [`agent-orchestrator-linux-x64.AppImage`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.AppImage) |
-| **Linux** (Debian/Ubuntu) | [`agent-orchestrator-linux-x64.deb`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.deb) |
-| **Linux** (Fedora/RHEL) | [`agent-orchestrator-linux-x64.rpm`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.rpm) |
+| **macOS** (Apple silicon) | `Orchestrator-darwin-arm64.dmg` |
+| **macOS** (Intel) | `Orchestrator-darwin-x64.dmg` |
+| **Windows** | `agent-orchestrator-win32-x64.exe` |
+| **Linux** (AppImage) | `agent-orchestrator-linux-x64.AppImage` |
+| **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
+| **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
 Orchestrator.inc を開き、管理させたいリポジトリを指定します。デスクトップアプリがデーモンを実行するため、CLI は不要です。エージェント CLI のセットアップとトラブルシューティングは[インストールガイド](https://docs.orchestrator.inc/installation)を参照してください。
 
@@ -178,11 +176,11 @@ Orchestrator.inc を開き、管理させたいリポジトリを指定します
 
 ## コントリビューション
 
-前提条件、ローカル環境のセットアップ、テストコマンドについては、まず[開発ガイド](../docs/development.md)を確認してください。プルリクエストを作成する前に [CONTRIBUTING.md](../CONTRIBUTING.md) を読み、バグや機能リクエストには [GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues) を利用してください。
+前提条件、ローカル環境のセットアップ、テストコマンドについては、まず[開発ガイド](../docs/development.md)を確認してください。プルリクエストを作成する前に [CONTRIBUTING.md](../CONTRIBUTING.md) を読み、バグや機能リクエストには [GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues) を利用してください。
 
 ### バグを報告する
 
-自分の GitHub アカウントから[バグ報告を作成](https://github.com/OrchestratorInc/agent-orchestrator/issues/new?template=bug_report.yml)してください。何をして何が起きたのかを数文書けば十分です。バージョン、OS、再現手順があればさらに役立ちます。
+自分の GitHub アカウントから[バグ報告を作成](https://github.com/NRichard-lab/BlueAshOrchestrator/issues/new?template=bug_report.yml)してください。何をして何が起きたのかを数文書けば十分です。バージョン、OS、再現手順があればさらに役立ちます。
 
 ローカルのコーディングエージェントに [bug-triage skill](../.agents/skills/bug-triage/SKILL.md) を使って証拠集めを手伝ってもらえます。エージェントのログやメモは添付ファイルにまとめ、自分で送信する前に下書きを確認してください。ボットに代理で Issue を登録させないでください。
 
@@ -190,14 +188,14 @@ Orchestrator.inc を開き、管理させたいリポジトリを指定します
 
 ## コミュニティ
 
-サポートやコントリビューター同士の議論には [Discord](https://discord.com/invite/UZv7JjxbwG) に参加し、最新情報は [@useOrchestrator](https://x.com/useOrchestrator) をフォローしてください。[GitHub Issues](https://github.com/OrchestratorInc/agent-orchestrator/issues) から会話を始めることもできます。
+サポートやコントリビューター同士の議論には [Discord](https://discord.com/invite/UZv7JjxbwG) に参加し、最新情報は [@useOrchestrator](https://x.com/useOrchestrator) をフォローしてください。[GitHub Issues](https://github.com/NRichard-lab/BlueAshOrchestrator/issues) から会話を始めることもできます。
 
 ## Star 履歴
 
-<a href="https://www.star-history.com/#OrchestratorInc/agent-orchestrator&Date">
+<a href="https://www.star-history.com/#NRichard-lab/BlueAshOrchestrator&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date&theme=dark" />
-    <img src="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date" alt="OrchestratorInc/agent-orchestrator の Star 履歴チャート" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date&theme=dark" />
+    <img src="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date" alt="NRichard-lab/BlueAshOrchestrator の Star 履歴チャート" width="100%" />
   </picture>
 </a>
 

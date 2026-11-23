@@ -1,5 +1,11 @@
 # Desktop release architecture
 
+> **BlueAsh builds:** the update plane is the BlueAsh update server, not GitHub
+> Releases or the upstream conductor described below. Clients read
+> `{AO_UPDATE_ORIGIN}/desktop/...`; see [`docs/update-server.md`](../../docs/update-server.md)
+> for the endpoint tree, staging/verification tools and publish ordering. The
+> upstream conductor text below is retained as history of the inherited process.
+
 Canonical desktop releases are conducted from the private
 `Untrivial-ai/ao-releases` repository. That conductor is the only system allowed
 to publish stable, nightly, or preview releases. The public

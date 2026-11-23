@@ -10,16 +10,14 @@
   Execute uma frota de agentes de programação mantendo branches, revisões e falhas de CI sob controle.
 </p>
 
-[![GitHub stars](https://img.shields.io/github/stars/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/stargazers)
-[![GitHub release](https://img.shields.io/github/v/release/OrchestratorInc/agent-orchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/OrchestratorInc/agent-orchestrator/total?style=flat&logo=github&color=1A9BF0)](https://github.com/OrchestratorInc/agent-orchestrator/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NRichard-lab/BlueAshOrchestrator?style=flat&logo=github&color=1A9BF0)](https://github.com/NRichard-lab/BlueAshOrchestrator/stargazers)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0B1A33?style=flat)](../LICENSE)
 [![X](https://img.shields.io/badge/@useOrchestrator-0B1A33?style=flat&logo=x&logoColor=white)](https://x.com/useOrchestrator)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/UZv7JjxbwG)
 
 <br />
 
-[**Baixar o Orchestrator.inc**](https://orchestrator.inc) &nbsp;&bull;&nbsp; [Documentação](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [Versões](https://github.com/OrchestratorInc/agent-orchestrator/releases) &nbsp;&bull;&nbsp; [Como contribuir](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
+[**Download**](../docs/update-server.md) &nbsp;&bull;&nbsp; [Documentação](https://docs.orchestrator.inc) &nbsp;&bull;&nbsp; [Como contribuir](../CONTRIBUTING.md) &nbsp;&bull;&nbsp; [Discord](https://discord.com/invite/UZv7JjxbwG)
 
 [English](../README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Português (Brasil)**
 
@@ -151,16 +149,16 @@ Veja o [guia do Cloud](https://docs.orchestrator.inc/guides/cloud) para a config
 
 ## Instalação
 
-Baixe em [orchestrator.inc/download](https://orchestrator.inc/download/) ou nas [Releases do GitHub](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest). O aplicativo se atualiza sozinho.
+Download the installer for your platform from your BlueAsh update server's download page (`<update-origin>/download/`; see [docs/update-server.md](../docs/update-server.md)). The app updates itself from the same server.
 
 | Plataforma | Download |
 | :-- | :-- |
-| **macOS** (Apple silicon) | [`Orchestrator-darwin-arm64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-arm64.dmg) |
-| **macOS** (Intel) | [`Orchestrator-darwin-x64.dmg`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/Orchestrator-darwin-x64.dmg) |
-| **Windows** | [`agent-orchestrator-win32-x64.exe`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-win32-x64.exe) |
-| **Linux** (AppImage) | [`agent-orchestrator-linux-x64.AppImage`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.AppImage) |
-| **Linux** (Debian/Ubuntu) | [`agent-orchestrator-linux-x64.deb`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.deb) |
-| **Linux** (Fedora/RHEL) | [`agent-orchestrator-linux-x64.rpm`](https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download/agent-orchestrator-linux-x64.rpm) |
+| **macOS** (Apple silicon) | `Orchestrator-darwin-arm64.dmg` |
+| **macOS** (Intel) | `Orchestrator-darwin-x64.dmg` |
+| **Windows** | `agent-orchestrator-win32-x64.exe` |
+| **Linux** (AppImage) | `agent-orchestrator-linux-x64.AppImage` |
+| **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
+| **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
 Abra o Orchestrator.inc e indique o repositório que você quer que ele gerencie. O aplicativo desktop executa o daemon para você, então não é preciso usar a CLI. Consulte o [guia de instalação](https://docs.orchestrator.inc/installation) para configurar as CLIs dos agentes e resolver problemas.
 
@@ -178,11 +176,11 @@ Abra o Orchestrator.inc e indique o repositório que você quer que ele gerencie
 
 ## Como contribuir
 
-Comece pelo [guia de desenvolvimento](../docs/development.md) para ver pré-requisitos, configuração local e comandos de teste. Leia [CONTRIBUTING.md](../CONTRIBUTING.md) antes de abrir um pull request e use as [Issues do GitHub](https://github.com/OrchestratorInc/agent-orchestrator/issues) para bugs e solicitações de recursos.
+Comece pelo [guia de desenvolvimento](../docs/development.md) para ver pré-requisitos, configuração local e comandos de teste. Leia [CONTRIBUTING.md](../CONTRIBUTING.md) antes de abrir um pull request e use as [Issues do GitHub](https://github.com/NRichard-lab/BlueAshOrchestrator/issues) para bugs e solicitações de recursos.
 
 ### Relatar um bug
 
-[Abra um relatório de bug](https://github.com/OrchestratorInc/agent-orchestrator/issues/new?template=bug_report.yml) usando sua própria conta do GitHub. Algumas frases sobre o que você fez e o que deu errado são suficientes; versão, sistema operacional e etapas para reproduzir ajudam, se você tiver.
+[Abra um relatório de bug](https://github.com/NRichard-lab/BlueAshOrchestrator/issues/new?template=bug_report.yml) usando sua própria conta do GitHub. Algumas frases sobre o que você fez e o que deu errado são suficientes; versão, sistema operacional e etapas para reproduzir ajudam, se você tiver.
 
 Um agente de programação local pode ajudar a reunir evidências com a [skill de triagem de bugs](../.agents/skills/bug-triage/SKILL.md); mantenha os logs e as notas dele em anexos e revise o rascunho antes de enviá-lo você mesmo. Não peça a um bot para abrir issues em seu nome.
 
@@ -190,14 +188,14 @@ Para obter ajuda ao descrever um problema, participe do [canal de triagem de bug
 
 ## Comunidade
 
-Participe do [Discord](https://discord.com/invite/UZv7JjxbwG) para receber ajuda e conversar com outros colaboradores, siga [@useOrchestrator](https://x.com/useOrchestrator) para acompanhar as novidades ou inicie uma conversa nas [Issues do GitHub](https://github.com/OrchestratorInc/agent-orchestrator/issues).
+Participe do [Discord](https://discord.com/invite/UZv7JjxbwG) para receber ajuda e conversar com outros colaboradores, siga [@useOrchestrator](https://x.com/useOrchestrator) para acompanhar as novidades ou inicie uma conversa nas [Issues do GitHub](https://github.com/NRichard-lab/BlueAshOrchestrator/issues).
 
 ## Histórico de estrelas
 
-<a href="https://www.star-history.com/#OrchestratorInc/agent-orchestrator&Date">
+<a href="https://www.star-history.com/#NRichard-lab/BlueAshOrchestrator&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date&theme=dark" />
-    <img src="https://api.star-history.com/svg?repos=OrchestratorInc/agent-orchestrator&type=Date" alt="Gráfico do histórico de estrelas de OrchestratorInc/agent-orchestrator" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date&theme=dark" />
+    <img src="https://api.star-history.com/svg?repos=NRichard-lab/BlueAshOrchestrator&type=Date" alt="Gráfico do histórico de estrelas de NRichard-lab/BlueAshOrchestrator" width="100%" />
   </picture>
 </a>
 

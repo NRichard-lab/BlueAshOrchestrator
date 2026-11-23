@@ -244,7 +244,11 @@ export function PlatformSupport({
 }
 
 export function InstallDownloads() {
-  const release = "https://github.com/OrchestratorInc/agent-orchestrator/releases/latest/download";
+  // Downloads come from the BlueAsh update server named at build time. With no
+  // origin configured the asset names are shown without links; there is no
+  // default host and no upstream fallback (docs/update-server.md).
+  const origin = process.env.NEXT_PUBLIC_AO_UPDATE_ORIGIN?.replace(/\/+$/, "");
+  const release = origin?.startsWith("https://") ? `${origin}/download` : undefined;
   const downloads = [
     { platform: "macOS Apple silicon", assets: [["Disk image", "Orchestrator-darwin-arm64.dmg"], ["Zip", "agent-orchestrator-darwin-arm64.zip"]] },
     { platform: "macOS Intel", assets: [["Disk image", "Orchestrator-darwin-x64.dmg"], ["Zip", "agent-orchestrator-darwin-x64.zip"]] },
@@ -268,7 +272,7 @@ export function InstallDownloads() {
                   {assets.map(([label, asset], index) => (
                     <span key={asset}>
                       {index > 0 && <span aria-hidden="true"> · </span>}
-                      <a href={`${release}/${asset}`}>{label}</a>
+                      {release ? <a href={`${release}/${asset}`}>{label}</a> : <span title={asset}>{label}</span>}
                     </span>
                   ))}
                 </div>
