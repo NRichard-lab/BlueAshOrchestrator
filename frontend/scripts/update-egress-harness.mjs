@@ -366,8 +366,17 @@ export async function run({ app, scenario, out, waitMs }) {
 		}
 		if (scenario === "control") {
 			// Node path: a client using the same env-proxy mechanism as Electron's main process.
-			const node = spawnSync(process.execPath, ["-e", "for (const u of ['https://api.github.com/repos/Untrivial-ai/agent-orchestrator/releases','https://raw.githubusercontent.com/Untrivial-ai/agent-orchestrator/main/desktop-version-floor.json']) fetch(u).then(r=>console.log(u,r.status),e=>console.log(u,'blocked',String(e.cause?.message||e.message)))"], { env, encoding: "utf8" });
-			result.nodeControl = node.stdout.trim().split("\n");
+			// Async on purpose: the proxy lives in THIS process, so a blocking spawnSync would
+			// stop it from answering and leave the client waiting out its header timeout.
+			const script = "for (const u of ['https://api.github.com/repos/Untrivial-ai/agent-orchestrator/releases','https://raw.githubusercontent.com/Untrivial-ai/agent-orchestrator/main/desktop-version-floor.json']) fetch(u, { signal: AbortSignal.timeout(8000) }).then(r=>console.log(u,r.status),e=>console.log(u,'blocked',String(e.cause?.message||e.message)))";
+			const node = await new Promise((resolve) => {
+				const c = spawn(process.execPath, ["-e", script], { env, stdio: ["ignore", "pipe", "ignore"] });
+				let out = "";
+				c.stdout.on("data", (d) => { out += d; });
+				c.on("close", () => resolve(out));
+				setTimeout(() => c.kill(), 20000).unref();
+			});
+			result.nodeControl = node.trim().split("\n");
 		}
 		await sleep(3000);
 	} finally {
