@@ -16,14 +16,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { BUNDLED_TMUX_VERSION } from "./scripts/tmux-version.mjs";
 import { checkMacDmgLayout } from "./scripts/build-mac-dmg.mjs";
+import { parseReleaseRepo, resolveAppUpdateYml } from "./makers/update-feed";
 
-// Default GitHub release target (production). Releases land on Untrivial-ai
-// (the org the repo was transferred to in July 2026; AgentWrapper and aoagents
-// are prior homes). Builds cut by CI must NOT rely on this fallback: the
-// workflows set AO_RELEASE_REPO to the repo they run in, and build-artifacts.yml
-// asserts the baked app-update.yml matches it, so a future org/repo rename
-// fails the build instead of stranding the fleet on a redirect (#3523).
-const DEFAULT_RELEASE_REPO = "Untrivial-ai/agent-orchestrator";
+// The update plane is a BlueAsh-owned HTTPS origin (AO_UPDATE_ORIGIN, validated by
+// parseUpdateOrigin). There is deliberately NO default origin and no upstream
+// fallback: packaging without a valid origin fails, unless
+// AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN=1 is set for a local build, which bakes an
+// app-update.yml with no feed so the packaged app has updates disabled.
+// AO_RELEASE_REPO is now only the optional GitHub *publisher* target (see
+// `publishers` below); it never selects where clients update from.
 
 // The packaged binary name (no extension). Single source of truth: the packager
 // names the exe/ELF from this, and the NSIS + deb makers must point their
@@ -159,16 +160,21 @@ export function macSignOptionsForFile(filePath: string): { entitlements?: string
 	return machoHasX86_64Slice(filePath) ? { entitlements: ACP_RUNTIME_NODE_ENTITLEMENTS } : {};
 }
 
-// parseReleaseRepo turns an "owner/repo" string (from AO_RELEASE_REPO) into the
-// publisher-github { owner, name } shape, falling back to the production default
-// when unset or malformed.
-function parseReleaseRepo(value: string | undefined): { owner: string; name: string } {
-	const [owner, name] = (value || DEFAULT_RELEASE_REPO).split("/");
-	if (!owner || !name) {
-		const [defOwner, defName] = DEFAULT_RELEASE_REPO.split("/");
-		return { owner: defOwner, name: defName };
-	}
-	return { owner, name };
+function githubPublishers(): ForgeConfig["publishers"] {
+	const repository = parseReleaseRepo(process.env.AO_RELEASE_REPO);
+	if (!repository) return [];
+	return [
+		{
+			name: "@electron-forge/publisher-github",
+			config: {
+				repository,
+				prerelease: process.env.AO_RELEASE_PRERELEASE === "true",
+				draft: false,
+				// Compose the body from merged PRs so release notes are not empty.
+				generateReleaseNotes: true,
+			},
+		},
+	];
 }
 
 const config: ForgeConfig = {
@@ -249,12 +255,12 @@ const config: ForgeConfig = {
 	hooks: {
 		// electron-forge does not generate app-update.yml (electron-builder does);
 		// electron-updater reads it from the app's Resources dir at runtime to know
-		// which GitHub repo to pull from, else it throws ENOENT during download.
+		// which update server to pull from, else it throws ENOENT during download.
 		// Generate it in prePackage (BEFORE osxSign) and ship it via extraResource
 		// above, so it is copied into the bundle and SIGNED as part of the seal.
 		// Writing it after signing (a postPackage hook) adds an unsealed resource
-		// and macOS reports the app as "damaged". owner/repo are baked from
-		// AO_RELEASE_REPO at build time.
+		// and macOS reports the app as "damaged". The generic-provider url is baked
+		// from AO_UPDATE_ORIGIN at build time.
 		prePackage: async (_forgeConfig, platform, arch) => {
 			await prepareNativeDependencies(platform as NodeJS.Platform, arch);
 			if (platform === "darwin") {
@@ -268,15 +274,7 @@ const config: ForgeConfig = {
 				if (dictationBuild.error) throw dictationBuild.error;
 				if (dictationBuild.status !== 0) throw new Error("macOS dictation helper build failed");
 			}
-			const { owner, name } = parseReleaseRepo(process.env.AO_RELEASE_REPO);
-			const yml = [
-				"provider: github",
-				`owner: ${owner}`,
-				`repo: ${name}`,
-				"updaterCacheDirName: agent-orchestrator-updater",
-				"",
-			].join("\n");
-			writeFileSync("app-update.yml", yml);
+			writeFileSync("app-update.yml", resolveAppUpdateYml(process.env));
 		},
 		packageAfterPrune: async (_forgeConfig, buildPath) => {
 			const nativeModule = path.join(
@@ -442,7 +440,7 @@ const config: ForgeConfig = {
 					bin: EXECUTABLE_NAME,
 					icon: "assets/icon.png",
 					maintainer: appPackage.author,
-					homepage: "https://github.com/aoagents/agent-orchestrator",
+					homepage: "https://github.com/NRichard-lab/BlueAshOrchestrator",
 					mimeType: [AUTH_PROTOCOL_MIME_TYPE],
 				},
 			},
@@ -454,35 +452,16 @@ const config: ForgeConfig = {
 					icon: "assets/icon.png",
 					// rpmbuild rejects a spec with an empty License field.
 					license: "MIT",
-					homepage: "https://github.com/aoagents/agent-orchestrator",
+					homepage: "https://github.com/NRichard-lab/BlueAshOrchestrator",
 					mimeType: [AUTH_PROTOCOL_MIME_TYPE],
 				},
 			},
 		},
 	],
-	publishers: [
-		{
-			name: "@electron-forge/publisher-github",
-			// Release target is build-time overridable so a fork run publishes to the
-			// fork without a source edit. AO_RELEASE_REPO is "owner/repo"; it defaults
-			// to the production target. The dev/test loop sets
-			// AO_RELEASE_REPO=harshitsinghbhandari/agent-orchestrator (spec §1.1, §8).
-			// Note: aoagents/agent-orchestrator and AgentWrapper/agent-orchestrator
-			// are prior homes and intentionally NOT the default; releases land on
-			// Untrivial-ai.
-			config: {
-				repository: parseReleaseRepo(process.env.AO_RELEASE_REPO),
-				prerelease: process.env.AO_RELEASE_PRERELEASE === "true",
-				draft: false,
-				// Ask GitHub to compose the body from the PRs merged since the last
-				// release. Without it the publisher creates the release with an empty
-				// body, and the app's new "what's new" section has nothing to show:
-				// electron-updater reads release notes from the release body, so an
-				// empty body means users get told nothing about what changed.
-				generateReleaseNotes: true,
-			},
-		},
-	],
+	// The BlueAsh update server is published by scripts/stage-update-tree.mjs plus
+	// the (external) publish step in docs/update-server.md. GitHub Releases are an
+	// optional mirror, enabled only by an explicit non-upstream AO_RELEASE_REPO.
+	publishers: githubPublishers(),
 	plugins: [
 		new AutoUnpackNativesPlugin({}),
 		new VitePlugin({

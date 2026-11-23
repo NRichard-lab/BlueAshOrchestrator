@@ -1,39 +1,12 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { app } from "electron";
 import type { UpdateSettings } from "./update-settings";
+import { featureIndexUrl, readBakedUpdateOrigin } from "./update-origin";
 
-const GITHUB_API = "https://api.github.com";
-
-// Default when the baked app-update.yml cannot be read (dev, or a malformed
-// bundle). Matches forge.config.ts DEFAULT_RELEASE_REPO.
-const DEFAULT_REPO = { owner: "Untrivial-ai", repo: "agent-orchestrator" } as const;
-
-// Resolve the GitHub repo the app updates from by reading the same bundled
-// app-update.yml that electron-updater uses. Both are baked from AO_RELEASE_REPO
-// at build time, so this keeps the feature list and the updater on the SAME repo
-// (a fork build lists that fork's feature releases, not Untrivial-ai's). The
-// list and the updater must never diverge, or the picker would offer builds
-// the updater cannot install.
-let cachedRepo: { owner: string; repo: string } | undefined;
-function resolveRepo(): { owner: string; repo: string } {
-	if (cachedRepo) return cachedRepo;
-	cachedRepo = { ...DEFAULT_REPO };
-	try {
-		if (app.isPackaged) {
-			const yml = readFileSync(path.join(process.resourcesPath, "app-update.yml"), "utf8");
-			const owner = /^owner:\s*(.+)$/m.exec(yml)?.[1]?.trim();
-			const repo = /^repo:\s*(.+)$/m.exec(yml)?.[1]?.trim();
-			if (owner && repo) cachedRepo = { owner, repo };
-		}
-	} catch {
-		// Keep the default on any read/parse failure.
-	}
-	return cachedRepo;
-}
-
-// Marker embedded in feature-build release bodies by the CI workflow.
-const FEATURE_BUILD_MARKER = "<!-- ao-feature-build:";
+// Feature builds are listed from the BlueAsh update server's feature index
+// ({origin}/desktop/feature/index.json). The origin is the one baked into
+// app-update.yml, so the picker and the updater always talk to the same server.
+// With no valid baked origin (dev, or a legacy/invalid bundle) the picker is
+// empty; there is no default origin and no fallback host.
 
 // Feature builds older than this are dropped from the list, matching the
 // cleanup workflow's 7-day expiry sweep so the app and CI agree on liveness.
@@ -69,130 +42,58 @@ export function getActiveFeatureBuild(): { pr: number } | null {
 	return parseFeatureBuild(app.getVersion());
 }
 
-interface GitHubRelease {
-	tag_name: string;
-	name: string;
-	prerelease: boolean;
-	published_at: string;
-	body: string | null;
-}
+const FETCH_TIMEOUT_MS = 10_000;
 
-interface MarkerPayload {
-	pr: number;
-	base: string;
-	sha: string;
-	slug: string;
-}
-
-function parseMarker(body: string): MarkerPayload | null {
-	const idx = body.indexOf(FEATURE_BUILD_MARKER);
-	if (idx === -1) return null;
-	// Marker format: <!-- ao-feature-build: {"pr":2270,"base":"main","sha":"abc","slug":"..."} -->
-	const start = idx + FEATURE_BUILD_MARKER.length;
-	const end = body.indexOf("-->", start);
-	if (end === -1) return null;
-	try {
-		const payload = JSON.parse(body.slice(start, end).trim()) as MarkerPayload;
-		if (typeof payload.pr !== "number" || typeof payload.base !== "string") return null;
-		return payload;
-	} catch {
-		return null;
-	}
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-	const res = await fetch(url, {
-		headers: {
-			Accept: "application/vnd.github+json",
-			"X-GitHub-Api-Version": "2022-11-28",
-			"User-Agent": `ao-desktop/${app.getVersion()}`,
-		},
-	});
-	if (!res.ok) throw new Error(`GitHub API ${res.status}: ${url}`);
-	return res.json() as Promise<T>;
-}
-
-async function isPrOpen(pr: number): Promise<boolean> {
-	try {
-		const { owner, repo } = resolveRepo();
-		const data = await fetchJson<{ state: string }>(`${GITHUB_API}/repos/${owner}/${repo}/pulls/${pr}`);
-		return data.state === "open";
-	} catch {
-		// ponytail: unauthenticated GitHub API hits the 60 req/hr limit; per-PR-state
-		// calls are batched/deduped below but could still be exhausted on large lists.
-		// Upgrade path: pass the app's OAuth token (if one exists) in the Authorization
-		// header to raise the limit to 5000 req/hr.
-		//
-		// On any error keep the entry rather than incorrectly filtering it out.
-		return true;
-	}
+function parseIndexEntry(value: unknown): FeatureBuild | null {
+	if (value === null || typeof value !== "object") return null;
+	const e = value as Record<string, unknown>;
+	if (typeof e.pr !== "number" || !Number.isInteger(e.pr) || e.pr <= 0) return null;
+	if (typeof e.buildId !== "string" || typeof e.publishedAt !== "string") return null;
+	if (!Number.isFinite(new Date(e.publishedAt).getTime())) return null;
+	return {
+		pr: e.pr,
+		title: typeof e.title === "string" ? e.title : e.buildId,
+		base: typeof e.base === "string" ? e.base : "",
+		sha: typeof e.sha === "string" ? e.sha : "",
+		slug: typeof e.slug === "string" ? e.slug : "",
+		buildId: e.buildId,
+		publishedAt: e.publishedAt,
+	};
 }
 
 /**
- * Fetch and filter the live feature builds: prerelease + ao-feature-build marker
- * + published within the last 7 days + PR still open, grouped to the newest
- * build per PR, newest-first. THROWS on a releases-fetch failure so callers can
- * tell "no live builds" apart from "could not reach GitHub".
+ * Fetch and filter the live feature builds from the update server's feature
+ * index: published within the last 7 days, grouped to the newest build per PR,
+ * newest-first. The server owns PR liveness (it prunes merged/closed PRs from
+ * the index), so the client makes no per-PR lookups. THROWS when the origin is
+ * not configured or the index cannot be fetched, so callers can tell "no live
+ * builds" apart from "could not reach the update server".
  */
 async function collectFeatureBuilds(): Promise<FeatureBuild[]> {
-	const { owner, repo } = resolveRepo();
-	// Fetch up to 100 releases; feature builds are always recent so this is plenty.
-	const releases = await fetchJson<GitHubRelease[]>(`${GITHUB_API}/repos/${owner}/${repo}/releases?per_page=100`);
+	const origin = app.isPackaged ? readBakedUpdateOrigin() : undefined;
+	if (!origin) throw new Error("update server is not configured");
+	const res = await fetch(featureIndexUrl(origin), {
+		cache: "no-store",
+		headers: { Accept: "application/json", "User-Agent": `ao-desktop/${app.getVersion()}` },
+		signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+	});
+	if (!res.ok) throw new Error(`feature index ${res.status}`);
+	const body = (await res.json()) as { builds?: unknown };
+	if (!Array.isArray(body?.builds)) throw new Error("feature index is malformed");
 
-	const now = Date.now();
-	const cutoff = now - MAX_AGE_MS;
-
-	// Parse candidates: prerelease, within age window, valid marker.
-	interface Candidate extends FeatureBuild {
-		publishedMs: number;
-	}
-
-	const candidates: Candidate[] = [];
-	for (const rel of releases) {
-		if (!rel.prerelease) continue;
-		const publishedMs = new Date(rel.published_at).getTime();
+	const cutoff = Date.now() - MAX_AGE_MS;
+	const bestByPr = new Map<number, FeatureBuild>();
+	for (const raw of body.builds) {
+		const build = parseIndexEntry(raw);
+		if (!build) continue;
+		const publishedMs = new Date(build.publishedAt).getTime();
 		if (publishedMs < cutoff) continue;
-		const body = rel.body ?? "";
-		const marker = parseMarker(body);
-		if (!marker) continue;
-		candidates.push({
-			pr: marker.pr,
-			title: rel.name,
-			base: marker.base,
-			sha: marker.sha,
-			slug: marker.slug,
-			buildId: rel.tag_name,
-			publishedAt: rel.published_at,
-			publishedMs,
-		});
+		const existing = bestByPr.get(build.pr);
+		if (!existing || publishedMs > new Date(existing.publishedAt).getTime()) bestByPr.set(build.pr, build);
 	}
-
-	if (candidates.length === 0) return [];
-
-	// Dedupe PR numbers for the open-state batch check.
-	const uniquePrs = [...new Set(candidates.map((c) => c.pr))];
-	const openMap = new Map<number, boolean>();
-	await Promise.all(
-		uniquePrs.map(async (pr) => {
-			openMap.set(pr, await isPrOpen(pr));
-		}),
+	return [...bestByPr.values()].sort(
+		(a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
 	);
-
-	// Keep only open PRs, then group by PR keeping the newest build per PR.
-	const bestByPr = new Map<number, Candidate>();
-	for (const c of candidates) {
-		if (!openMap.get(c.pr)) continue;
-		const existing = bestByPr.get(c.pr);
-		if (!existing || c.publishedMs > existing.publishedMs) {
-			bestByPr.set(c.pr, c);
-		}
-	}
-
-	// Sort newest-first by publishedMs.
-	const results = [...bestByPr.values()].sort((a, b) => b.publishedMs - a.publishedMs);
-
-	// Strip the internal publishedMs field before returning.
-	return results.map(({ publishedMs: _ms, ...rest }) => rest);
 }
 
 /**

@@ -1,8 +1,10 @@
 import { app, dialog, shell, type BaseWindow, type MessageBoxOptions } from "electron";
 import semver from "semver";
+import { defaultDownloadUrl, floorUrl, isUrlOnOrigin, readBakedUpdateOrigin } from "./update-origin";
 
-const FLOOR_URL =
-  "https://raw.githubusercontent.com/Untrivial-ai/agent-orchestrator/main/desktop-version-floor.json";
+// The floor is read from the BlueAsh update server, whose origin is baked into
+// the packaged app. With no valid baked origin the check is skipped entirely
+// (fail closed): there is no default floor host and no upstream fallback.
 
 const FETCH_TIMEOUT_MS = 10_000;
 
@@ -11,9 +13,6 @@ type Floor = {
   latest?: string;
   downloadUrl?: string;
 };
-
-const DEFAULT_DOWNLOAD_URL =
-  "https://github.com/Untrivial-ai/agent-orchestrator/releases/latest";
 
 function usableVersion(v: string | null | undefined): string | null {
   const trimmed = v?.trim();
@@ -66,9 +65,11 @@ async function requireUpdate(options: FloorOptions, running: string, minVersion:
 
 export async function checkDesktopVersionFloor(options: FloorOptions = {}): Promise<void> {
   if (!app.isPackaged) return;
+  const origin = readBakedUpdateOrigin();
+  if (!origin) return;
   let floor: Floor;
   try {
-    const response = await fetch(FLOOR_URL, {
+    const response = await fetch(floorUrl(origin), {
       cache: "no-store",
       headers: {
         "User-Agent": `ao-desktop/${app.getVersion()}`,
@@ -83,8 +84,9 @@ export async function checkDesktopVersionFloor(options: FloorOptions = {}): Prom
   }
 
   const running = app.getVersion();
-  const rawUrl = floor.downloadUrl || DEFAULT_DOWNLOAD_URL;
-  const downloadUrl = rawUrl.startsWith("https://github.com/") ? rawUrl : DEFAULT_DOWNLOAD_URL;
+  // A downloadUrl is only honoured on the update origin; anything else (including
+  // any upstream or third-party host) is replaced by the origin's download page.
+  const downloadUrl = isUrlOnOrigin(floor.downloadUrl, origin) ? floor.downloadUrl : defaultDownloadUrl(origin);
   const minVersion = usableVersion(floor.min);
   const latestVersion = usableVersion(floor.latest);
 

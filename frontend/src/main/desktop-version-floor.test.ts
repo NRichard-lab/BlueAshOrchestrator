@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const ORIGIN = "https://updates.example.test";
+
 describe("checkDesktopVersionFloor", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -13,10 +15,15 @@ describe("checkDesktopVersionFloor", () => {
     floor?: { min?: string; latest?: string; downloadUrl?: string };
     fetchError?: boolean;
     fetchStatus?: number;
+    origin?: string | undefined;
   } = {}) {
     const dialog = { showMessageBox: vi.fn(() => Promise.resolve({ response: 1 })) };
     const shellMock = { openExternal: vi.fn(() => Promise.resolve()) };
     const quit = vi.fn();
+    vi.doMock("./update-origin", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("./update-origin")>();
+      return { ...actual, readBakedUpdateOrigin: () => ("origin" in options ? options.origin : ORIGIN) };
+    });
     vi.doMock("electron", () => ({
       app: {
         isPackaged: options.isPackaged ?? true,
@@ -128,15 +135,44 @@ describe("checkDesktopVersionFloor", () => {
     expect(dialog.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({ title: "Update Available" }));
   });
 
-  it("opens the download URL when user clicks Download on required update", async () => {
+  it("opens an on-origin download URL when user clicks Download on required update", async () => {
     const { mod, dialog, shellMock, quit } = await importModule({
       version: "0.12.12",
-      floor: { min: "0.12.13", downloadUrl: "https://github.com/Untrivial-ai/agent-orchestrator/releases/tag/v0.12.13" },
+      floor: { min: "0.12.13", downloadUrl: `${ORIGIN}/download/v0.12.13` },
     });
     dialog.showMessageBox.mockResolvedValue({ response: 0 });
     await mod.checkDesktopVersionFloor();
-    expect(shellMock.openExternal).toHaveBeenCalledWith("https://github.com/Untrivial-ai/agent-orchestrator/releases/tag/v0.12.13");
+    expect(shellMock.openExternal).toHaveBeenCalledWith(`${ORIGIN}/download/v0.12.13`);
     expect(quit).toHaveBeenCalled();
+  });
+
+  it("reads the floor only from the baked origin", async () => {
+    const { mod, fetchMock } = await importModule({ floor: { min: "", latest: "" } });
+    await mod.checkDesktopVersionFloor();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0] as unknown[])[0]).toBe(`${ORIGIN}/policy/desktop-version-floor.json`);
+  });
+
+  it("makes no request and shows nothing when no update origin is baked", async () => {
+    const { mod, fetchMock, dialog } = await importModule({ origin: undefined, version: "0.0.1", floor: { min: "9.9.9" } });
+    await mod.checkDesktopVersionFloor();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(dialog.showMessageBox).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "https://github.com/Untrivial-ai/agent-orchestrator/releases/latest",
+    "https://evil.example.test/download",
+    "http://updates.example.test/download",
+    "https://updates.example.test.evil.test/download",
+  ])("replaces a foreign downloadUrl (%s) with the origin download page, never an upstream default", async (downloadUrl) => {
+    const { mod, dialog, shellMock } = await importModule({
+      version: "0.12.12",
+      floor: { min: "0.12.13", downloadUrl },
+    });
+    dialog.showMessageBox.mockResolvedValue({ response: 0 });
+    await mod.checkDesktopVersionFloor();
+    expect(shellMock.openExternal).toHaveBeenCalledWith(`${ORIGIN}/download/`);
   });
 
   it("shows a dismissible dialog when below latest but at or above min", async () => {

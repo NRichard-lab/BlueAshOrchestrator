@@ -1,5 +1,5 @@
 import { autoUpdater as stockAutoUpdater } from "electron-updater";
-import { StableGitHubProvider } from "./stable-github-provider";
+import { desktopFeedUrl, readBakedUpdateOrigin } from "./update-origin";
 import { MacDifferentialV2Updater } from "./mac-differential-v2-updater";
 import macV2TrustedKeys from "../../scripts/mac-differential-v2-trust.json";
 import macDifferentialRollout from "../../scripts/mac-differential-rollout.json";
@@ -164,14 +164,17 @@ async function reconcileAndPersist(
   return latest;
 }
 
-// configureFeed sets the update channel on electron-updater. The repo/owner
-// come from app-update.yml, written by forge.config.ts at build time. Stable
-// uses the same GitHub download discovery with an exact-tag release-notes lookup.
+// configureFeed points electron-updater at the BlueAsh update server. The origin
+// is baked into app-update.yml by forge.config.ts (AO_UPDATE_ORIGIN) and every
+// channel is a directory under it: stable, nightly, or feature/pr<N>, each read
+// through the generic provider. There is no GitHub provider and no fallback host:
+// a packaged build without a valid baked origin never reaches the network (see
+// assertUpdateServerConfigured).
 //
-// When settings.feature is set, the feed tracks the pr<N> prerelease channel
-// (e.g. "pr2270") with allowPrerelease enabled. Otherwise it uses the home
-// channel (latest vs nightly). An older binary cannot safely read a database
-// already migrated by this one, so a channel switch must wait for a newer build.
+// When settings.feature is set, the feed tracks the pr<N> channel directory.
+// Otherwise it uses the home channel (latest vs nightly). An older binary cannot
+// safely read a database already migrated by this one, so a channel switch must
+// wait for a newer build.
 export function configureFeed(
   settings: Pick<UpdateSettings, "channel" | "feature">,
 ): void {
@@ -179,11 +182,13 @@ export function configureFeed(
     directFeedReleaseNotes = undefined;
     directFeedDiscoveredAvailable = undefined;
   }
-  const coordinates = readAppUpdateYml();
-  if (coordinates) {
-    autoUpdater.setFeedURL(settings.channel === "latest" && !settings.feature
-      ? { provider: "custom", updateProvider: StableGitHubProvider, ...coordinates }
-      : { provider: "github", ...coordinates });
+  const origin = readUpdateOrigin();
+  if (origin) {
+    autoUpdater.setFeedURL({
+      provider: "generic",
+      url: desktopFeedUrl(origin, settings),
+      useMultipleRangeRequest: false,
+    });
   }
   if (settings.feature !== null && settings.feature !== undefined) {
     // Feature build: pin to the pr<N> semver prerelease identifier channel.
@@ -195,10 +200,9 @@ export function configureFeed(
 
   const channel: UpdateChannel = settings.channel;
   autoUpdater.channel = channel; // "latest" | "nightly"
-  // Nightly builds ship as GitHub *prereleases*. With allowPrerelease false
-  // (the default) electron-updater only inspects the latest NON-prerelease
-  // release and looks for nightly-mac.yml there, which 404s. Enable prerelease
-  // scanning on the nightly channel only; stable must never pull prereleases.
+  // Channels are separate directories on the generic feed, so this only keeps
+  // electron-updater's prerelease-version handling aligned with the channel:
+  // stable must never accept prerelease versions.
   autoUpdater.allowPrerelease = channel === "nightly";
   autoUpdater.allowDowngrade = false;
 }
@@ -867,174 +871,23 @@ function broadcastCompletedCheck(
 // yaml dependency, and a parse miss just means "no info", never an error state
 // (see issue #2270 for why this path must not broadcast errors).
 
-/** Owner/repo from the bundled app-update.yml; undefined in dev or on any failure. */
-function readAppUpdateYml(): { owner: string; repo: string } | undefined {
-  if (!app.isPackaged) return undefined;
-  try {
-    const yml = readFileSync(
-      path.join(process.resourcesPath, "app-update.yml"),
-      "utf8",
-    );
-    const owner = /^owner:\s*(.+)$/m.exec(yml)?.[1]?.trim();
-    const repo = /^repo:\s*(.+)$/m.exec(yml)?.[1]?.trim();
-    return owner && repo ? { owner, repo } : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-interface GitHubReleaseSummary {
-  tag_name: string;
-  draft: boolean;
-  prerelease: boolean;
-  body?: string | null;
-  assets?: Array<{ name?: string }>;
-}
-
-// Retain only one public release response. Revalidate on every check: a 304
-// avoids transferring/parsing the whole history without hiding a new release.
-// Never use cached discovery on a network failure or for another repository.
-let releaseDiscoveryCache: { url: string; etag: string; releases: GitHubReleaseSummary[] } | undefined;
-
-/**
- * Resolve a completed Nightly release through GitHub's API. electron-updater's
- * GitHub provider discovers prereleases through releases.atom, which can lag
- * behind a just-published release even when the release and manifest are ready.
- * This is used only for user-requested checks; failures fall back to the normal
- * provider so API rate limits or an outage never break update checks.
- */
-async function fetchLatestCompletedPrereleaseTag(
-  owner: string,
-  repo: string,
-  channel: string,
-): Promise<{ tag: string; body?: string } | undefined> {
-  try {
-    const url = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=100`;
-    const cached = releaseDiscoveryCache?.url === url ? releaseDiscoveryCache : undefined;
-    const response = await fetch(
-      url,
-      {
-        cache: "no-store",
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          "User-Agent": `ao-desktop/${app.getVersion()}`,
-          ...(cached ? { "If-None-Match": cached.etag } : {}),
-        },
-        signal: AbortSignal.timeout(10000),
-      },
-    );
-    if (response.status !== 304 && !response.ok) return undefined;
-    const releases = response.status === 304 ? cached?.releases : (await response.json()) as GitHubReleaseSummary[];
-    if (!Array.isArray(releases)) return undefined;
-    if (response.status !== 304) {
-      const etag = response.headers.get("etag");
-      releaseDiscoveryCache = etag ? { url, etag, releases } : undefined;
-    }
-    const manifestName = `${channel}${platformSuffix()}.yml`;
-    const newest = releases
-      .filter((release) => {
-        const parsed = semver.valid(release.tag_name);
-        return (
-          !release.draft &&
-          release.prerelease &&
-          parsed !== null &&
-          semver.prerelease(parsed)?.[0] === channel &&
-          release.assets?.some((asset) => asset.name === manifestName) === true
-        );
-      })
-      .sort((left, right) => semver.rcompare(left.tag_name, right.tag_name))[0];
-    if (newest === undefined) return undefined;
-    // The body comes back on the same response, so carrying it costs nothing.
-    // Every channel resolved this way needs it: the direct feed below is
-    // electron-updater's GENERIC provider, which never populates releaseNotes
-    // (only GitHubProvider does), and the channel manifests have no field for
-    // them. Without this the "what's new" section could never say anything on
-    // nightly or on a pinned feature build.
-    return {
-      tag: newest.tag_name,
-      ...(typeof newest.body === "string" ? { body: newest.body } : {}),
-    };
-  } catch {
-    return undefined;
-  }
-}
-
-function directPrereleaseChannel(
-  settings: Pick<UpdateSettings, "channel" | "feature">,
-): string | undefined {
-  if (settings.feature) return `pr${settings.feature.pr}`;
-  return settings.channel === "nightly" ? "nightly" : undefined;
+/** Update-server origin baked into the packaged app; undefined in dev or when invalid. */
+function readUpdateOrigin(): string | undefined {
+  return app.isPackaged ? readBakedUpdateOrigin() : undefined;
 }
 
 /**
- * Point one Nightly check directly at the newest completed release. Applies to
- * automatic checks as well as manual ones: an atom feed that lags a fresh
- * release makes a background check answer "not-available" and the install goes
- * silently stale, and an entry whose manifest has not finished uploading 404s
- * a check whose error the automatic path deliberately swallows — in both cases
- * the sidebar never learns an update exists.
- * The returned reset restores the normal GitHub provider for later background
- * checks; electron-updater retains the direct provider with the discovered
- * update, so a subsequent Download action still uses the correct asset URLs.
+ * Fail closed for packaged builds with no valid baked update origin (a legacy
+ * GitHub-provider app-update.yml, a missing file, or an invalid origin).
+ * electron-updater would otherwise read that file itself and could contact the
+ * host it names, so refuse before any check runs.
  */
-async function configureDirectPrereleaseFeed(
-  settings: UpdateSettings,
-): Promise<(() => void) | undefined> {
-  // Cleared up front so a discovery that finds nothing newer (or bails below)
-  // never leaves a stale build from a previous check readable by the caller.
-  directFeedDiscoveredAvailable = undefined;
-  const channel = directPrereleaseChannel(settings);
-  if (!channel) return undefined;
-  const coordinates = await readAppUpdateYml();
-  if (!coordinates) return undefined;
-  const release = await fetchLatestCompletedPrereleaseTag(
-    coordinates.owner,
-    coordinates.repo,
-    channel,
-  );
-  if (!release) return undefined;
-  const { tag } = release;
-  const runningVersion = app.getVersion();
-  if (
-    semver.valid(runningVersion) !== null &&
-    semver.prerelease(runningVersion)?.[0] === channel &&
-    semver.lt(tag, runningVersion)
-  ) {
-    return undefined;
+function assertUpdateServerConfigured(): void {
+  if (app.isPackaged && readUpdateOrigin() === undefined) {
+    throw new Error(
+      "This build has no valid update server configured, so updates are disabled. Install a current build from your BlueAsh download page.",
+    );
   }
-
-  // Stand in for what the generic provider cannot supply. Overwritten by the
-  // real thing if a later event does carry notes.
-  directFeedReleaseNotes = normalizeReleaseNotes(release.body);
-  // Record the discovered build when it is strictly newer than what is running,
-  // so the automatic check can still show it if the manifest fetch stalls. An
-  // unparseable running version is treated as "older" so the discovered build
-  // still surfaces rather than being silently dropped.
-  if (
-    semver.valid(tag) !== null &&
-    (semver.valid(runningVersion) === null || semver.gt(tag, runningVersion))
-  ) {
-    directFeedDiscoveredAvailable = {
-      // Release tags carry a "v" prefix; status versions are bare (electron-updater's
-      // info.version), and every label adds its own "v".
-      version: semver.valid(tag)!,
-      ...(directFeedReleaseNotes !== undefined ? { notes: directFeedReleaseNotes } : {}),
-    };
-  }
-  autoUpdater.setFeedURL({
-    provider: "generic",
-    url: `https://github.com/${coordinates.owner}/${coordinates.repo}/releases/download/${tag}`,
-    channel,
-    useMultipleRangeRequest: false,
-  });
-  return () => {
-    autoUpdater.setFeedURL({
-      provider: "github",
-      owner: coordinates.owner,
-      repo: coordinates.repo,
-    });
-  };
 }
 
 /** Platform suffix matching the feed.mjs naming convention. */
@@ -1044,12 +897,9 @@ function platformSuffix(): string {
   return "";
 }
 
-/** Latest stable version via GitHub's /releases/latest redirect; undefined on any failure. */
-async function fetchLatestStableVersion(
-  owner: string,
-  repo: string,
-): Promise<string | undefined> {
-  const url = `https://github.com/${owner}/${repo}/releases/latest/download/latest${platformSuffix()}.yml`;
+/** Latest stable version from the update server's stable manifest; undefined on any failure. */
+async function fetchLatestStableVersion(origin: string): Promise<string | undefined> {
+  const url = `${desktopFeedUrl(origin, { channel: "latest" })}latest${platformSuffix()}.yml`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return undefined;
@@ -1061,17 +911,15 @@ async function fetchLatestStableVersion(
   }
 }
 
-/** important flag on the staged nightly's release yml; false when absent, 404, or any failure. */
-async function fetchNightlyImportant(
-  owner: string,
-  repo: string,
-  version: string,
-): Promise<boolean> {
-  const url = `https://github.com/${owner}/${repo}/releases/download/v${version}/nightly${platformSuffix()}.yml`;
+/** important flag on the nightly head manifest when it is the staged version; false otherwise or on any failure. */
+async function fetchNightlyImportant(origin: string, version: string): Promise<boolean> {
+  const url = `${desktopFeedUrl(origin, { channel: "nightly" })}nightly${platformSuffix()}.yml`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return false;
-    return /^important:\s*true\s*$/m.test(await res.text());
+    const text = await res.text();
+    const head = /^version:\s*(.+)$/m.exec(text)?.[1]?.trim();
+    return head === version && /^important:\s*true\s*$/m.test(text);
   } catch {
     return false;
   }
@@ -1418,6 +1266,7 @@ async function checkForUpdatesWithDeadline(): Promise<UpdateCheckOutcome> {
   }, UPDATE_CHECK_TIMEOUT_MS);
   timer.unref?.();
   try {
+    assertUpdateServerConfigured();
     return await autoUpdater.checkForUpdates();
   } catch (err) {
     throw timedOut ? new Error(UPDATE_CHECK_TIMEOUT_MESSAGE) : err;
@@ -1525,14 +1374,14 @@ async function runEscalationCheck(): Promise<void> {
     const settings = await readUpdateSettings(escalationStateDir);
     let important = false;
     let latestStableVersion: string | undefined;
-    const coords = await readAppUpdateYml();
-    if (coords && settings.channel === "nightly") {
+    const origin = readUpdateOrigin();
+    if (origin && settings.channel === "nightly") {
       // stagedVersion is only needed by the important-flag fetch; the
       // latest-channel 48h rule (and the behind-stable check) work without it.
       [latestStableVersion, important] = await Promise.all([
-        fetchLatestStableVersion(coords.owner, coords.repo),
+        fetchLatestStableVersion(origin),
         stagedVersion !== undefined
-          ? fetchNightlyImportant(coords.owner, coords.repo, stagedVersion)
+          ? fetchNightlyImportant(origin, stagedVersion)
           : Promise.resolve(false),
       ]);
     }
@@ -2529,10 +2378,6 @@ async function runAutomaticUpdateCheck(
         staleStaged || (hasStagedBuild() && !isNativeInstallReady()) ||
         (settings.enabled && !hasStagedBuild() && !automaticRecoveryExhausted()));
       applyInstallOnQuitPolicy();
-      // Stable configuration is synchronous so check events retain their ordering.
-      const restoreFeed = directPrereleaseChannel(settings)
-        ? await configureDirectPrereleaseFeed(settings)
-        : undefined;
       try {
         const result = await checkForUpdatesWithDeadline();
         settleCheckStatus(result);
@@ -2573,8 +2418,7 @@ async function runAutomaticUpdateCheck(
         // After the download too: the staged build is already resolved against
         // the direct provider, and later background checks start from the
         // normal GitHub feed again.
-        restoreFeed?.();
-        // If the check could not confirm the update (a stalled or timed-out
+            // If the check could not confirm the update (a stalled or timed-out
         // manifest fetch on a network that cannot reach the asset CDN), fall
         // back to the build API discovery already found on a host that answers.
         broadcastDiscoveredAvailable();
@@ -2748,7 +2592,6 @@ export async function checkForUpdatesNow(
         autoUpdater.autoDownload = !stagingDiskShortfall && (staleStaged || (hasStagedBuild() && !isNativeInstallReady()));
         applyInstallOnQuitPolicy();
         broadcastUpdaterStatus({ state: "checking" });
-        const restoreFeed = await configureDirectPrereleaseFeed(settings);
         try {
           const result = await checkForUpdatesWithDeadline();
           settleCheckStatus(result);
@@ -2769,8 +2612,7 @@ export async function checkForUpdatesNow(
             await autoUpdater.downloadUpdate(token);
           }
         } finally {
-          restoreFeed?.();
-        }
+              }
       },
       options.requestId,
     );
@@ -3210,7 +3052,6 @@ async function prepareRememberedMacUpdate(confirmedVersion?: string): Promise<Up
   autoUpdater.autoDownload = false;
   applyInstallOnQuitPolicy();
   broadcastUpdaterStatus({ state: "checking" });
-  const restoreFeed = await configureDirectPrereleaseFeed(settings);
   try {
     const result = await checkForUpdatesWithDeadline();
     if (result?.isUpdateAvailable !== true) {
@@ -3234,7 +3075,6 @@ async function prepareRememberedMacUpdate(confirmedVersion?: string): Promise<Up
     // native readiness: waitForNativePreparation separately gates the quit.
     await autoUpdater.downloadUpdate(token);
   } finally {
-    restoreFeed?.();
   }
 }
 
@@ -3248,7 +3088,6 @@ async function prepareRememberedNonDarwinUpdate(): Promise<void> {
   configureFeed(settings);
   autoUpdater.autoDownload = false;
   broadcastUpdaterStatus({ state: "checking" });
-  const restoreFeed = await configureDirectPrereleaseFeed(settings);
   try {
     const result = await checkForUpdatesWithDeadline();
     if (result?.isUpdateAvailable !== true) {
@@ -3260,7 +3099,6 @@ async function prepareRememberedNonDarwinUpdate(): Promise<void> {
     activeDownloadCancellation = token;
     await autoUpdater.downloadUpdate(token);
   } finally {
-    restoreFeed?.();
   }
 }
 

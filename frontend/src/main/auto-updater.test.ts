@@ -27,6 +27,7 @@ type ImportOptions = {
     settings: UpdateSettings,
   ) => Promise<{ settings: UpdateSettings; cleared: boolean }>;
   isPackaged?: boolean;
+  updateOrigin?: string | undefined;
   rolloutReady?: boolean;
   version?: string;
 };
@@ -421,6 +422,13 @@ async function importAutoUpdater(
       settings: UpdateSettings;
     }) => platform === "darwin" && settings.channel === "nightly" && settings.feature === null && settings.macDifferentialUpdates === true,
   }));
+  vi.doMock("./update-origin", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./update-origin")>();
+    return {
+      ...actual,
+      readBakedUpdateOrigin: () => ("updateOrigin" in options ? options.updateOrigin : "https://updates.example.test"),
+    };
+  });
   vi.doMock("./feature-builds", () => ({
     reconcileFeaturePin:
       options.reconcileFeaturePin ??
@@ -715,534 +723,67 @@ describe("startAutoUpdates", () => {
     expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(2);
   });
 
-  it.each(["manual", "automatic"])("uses exact-tag stable notes for %s checks", async (trigger) => {
-    const original = Object.getOwnPropertyDescriptor(process, "resourcesPath");
-    const resourcesPath = mkdtempSync(nodePath.join(os.tmpdir(), "ao-stable-feed-"));
-    writeFileSync(nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: OrchestratorInc\nrepo: agent-orchestrator\n");
-    Object.defineProperty(process, "resourcesPath", { configurable: true, value: resourcesPath });
-    try {
+  describe("generic BlueAsh feed", () => {
+    const ORIGIN = "https://updates.example.test";
+
+    it.each(["manual", "automatic"])("points %s checks at the stable directory on the baked origin", async (trigger) => {
       const { module, autoUpdater } = await importAutoUpdater();
       if (trigger === "manual") await module.checkForUpdatesNow(stateDir);
       else await module.startAutoUpdates(stateDir);
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(1, {
-        provider: "custom", updateProvider: expect.any(Function),
-        owner: "OrchestratorInc", repo: "agent-orchestrator",
-      });
       expect(autoUpdater.setFeedURL).toHaveBeenCalledTimes(1);
+      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(1, {
+        provider: "generic",
+        url: `${ORIGIN}/desktop/stable/`,
+        useMultipleRangeRequest: false,
+      });
       expect(autoUpdater.allowPrerelease).toBe(false);
       expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(1);
-      for (const settings of [
-        { channel: "nightly", feature: null },
-        { channel: "latest", feature: { pr: 123 } },
-      ] satisfies Pick<UpdateSettings, "channel" | "feature">[]) {
-        module.configureFeed(settings);
-        expect(autoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-          provider: "github", owner: "OrchestratorInc", repo: "agent-orchestrator",
-        });
-        expect(autoUpdater.allowPrerelease).toBe(true);
-      }
-    } finally {
-      if (original) Object.defineProperty(process, "resourcesPath", original);
-      else Reflect.deleteProperty(process, "resourcesPath");
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  it("manual nightly checks resolve the newest completed release without the Atom feed", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "nightly-mac.yml"
-        : process.platform === "linux"
-          ? "nightly-linux.yml"
-          : "nightly.yml";
-    const resourcesPath = mkdtempSync(
-      nodePath.join(os.tmpdir(), "ao-nightly-feed-"),
-    );
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(
-      process,
-      "resourcesPath",
-    );
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
     });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            tag_name: "v1.0.1-nightly.202608231518",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: "Agent.Orchestrator.dmg" }],
-          },
-          {
-            tag_name: "v1.0.1-nightly.202608231517",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-          {
-            tag_name: "v1.0.1-nightly.202608231350",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-        ]),
-        { status: 200 },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
 
-    try {
-      const { module, autoUpdater } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
+    it("maps nightly and pinned feature builds to their own channel directories", async () => {
+      const { module, autoUpdater } = await importAutoUpdater();
+      module.configureFeed({ channel: "nightly", feature: null });
+      expect(autoUpdater.setFeedURL).toHaveBeenLastCalledWith({
+        provider: "generic", url: `${ORIGIN}/desktop/nightly/`, useMultipleRangeRequest: false,
       });
+      expect(autoUpdater.channel).toBe("nightly");
+      module.configureFeed({ channel: "latest", feature: { pr: 123 } });
+      expect(autoUpdater.setFeedURL).toHaveBeenLastCalledWith({
+        provider: "generic", url: `${ORIGIN}/desktop/feature/pr123/`, useMultipleRangeRequest: false,
+      });
+      expect(autoUpdater.channel).toBe("pr123");
+      expect(autoUpdater.allowDowngrade).toBe(false);
+    });
 
+    it("never contacts a GitHub host while checking, on any channel", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      try {
+        for (const channel of ["latest", "nightly"] as const) {
+          const { module, autoUpdater } = await importAutoUpdater({ enabled: true, channel, nightlyAck: true, feature: null });
+          await module.checkForUpdatesNow(stateDir);
+          for (const call of autoUpdater.setFeedURL.mock.calls) {
+            expect(JSON.stringify(call)).not.toMatch(/github|Untrivial|OrchestratorInc|aoagents/i);
+          }
+        }
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("fails closed in a packaged build with no valid baked origin", async () => {
+      const { module, autoUpdater, statusMessages } = await importAutoUpdater(undefined, { updateOrigin: undefined });
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
       await module.checkForUpdatesNow(stateDir);
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://api.github.com/repos/Untrivial-ai/agent-orchestrator/releases?per_page=100",
-        expect.objectContaining({ signal: expect.any(AbortSignal) }),
-      );
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(2, {
-        provider: "generic",
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.1-nightly.202608231517",
-        channel: "nightly",
-        useMultipleRangeRequest: false,
-      });
-      expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(1);
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(3, {
-        provider: "github",
-        owner: "Untrivial-ai",
-        repo: "agent-orchestrator",
-      });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  it("surfaces the API-discovered nightly build when the check cannot reach the asset CDN", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "nightly-mac.yml"
-        : process.platform === "linux"
-          ? "nightly-linux.yml"
-          : "nightly.yml";
-    const resourcesPath = mkdtempSync(
-      nodePath.join(os.tmpdir(), "ao-nightly-feed-"),
-    );
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(
-      process,
-      "resourcesPath",
-    );
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
-    });
-    // Discovery answers from api.github.com (the host these users can reach).
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            tag_name: "v1.0.1-nightly.202608231517",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-        ]),
-        { status: 200 },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    try {
-      const { module, autoUpdater, statusMessages } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-      // The manifest fetch the electron-updater check depends on never reaches
-      // the release asset CDN, exactly the failure blocked users hit.
-      autoUpdater.checkForUpdates.mockRejectedValue(new Error("request timed out"));
-
-      await module.startAutoUpdates(stateDir);
-
-      expect(autoUpdater.checkForUpdates).toHaveBeenCalled();
-      // The user still learns an update exists, from what discovery already found.
+      consoleErrorSpy.mockRestore();
+      expect(autoUpdater.setFeedURL).not.toHaveBeenCalled();
+      expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
       expect(statusMessages().at(-1)?.payload).toMatchObject({
-        state: "available",
-        version: "1.0.1-nightly.202608231517",
+        state: "error",
+        message: expect.stringMatching(/no valid update server/),
       });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  it("revalidates release history without a second body and refreshes when a release changes", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "nightly-mac.yml"
-        : process.platform === "linux"
-          ? "nightly-linux.yml"
-          : "nightly.yml";
-    const resourcesPath = mkdtempSync(
-      nodePath.join(os.tmpdir(), "ao-nightly-feed-"),
-    );
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(
-      process,
-      "resourcesPath",
-    );
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
     });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            tag_name: "v1.0.1-nightly.202608231518",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: "Agent.Orchestrator.dmg" }],
-          },
-          {
-            tag_name: "v1.0.1-nightly.202608231517",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-          {
-            tag_name: "v1.0.1-nightly.202608231350",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-        ]),
-        { status: 200, headers: { etag: '"release-v1"' } },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    try {
-      const { module, autoUpdater } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-
-      await module.checkForUpdatesNow(stateDir);
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://api.github.com/repos/Untrivial-ai/agent-orchestrator/releases?per_page=100",
-        expect.objectContaining({ signal: expect.any(AbortSignal) }),
-      );
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(2, {
-        provider: "generic",
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.1-nightly.202608231517",
-        channel: "nightly",
-        useMultipleRangeRequest: false,
-      });
-      fetchMock.mockResolvedValueOnce(new Response(null, { status: 304 }));
-      await module.checkForUpdatesNow(stateDir);
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        expect.any(String),
-        expect.objectContaining({ headers: expect.objectContaining({ "If-None-Match": '"release-v1"' }) }),
-      );
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(5, expect.objectContaining({
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.1-nightly.202608231517",
-      }));
-      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([{
-        tag_name: "v1.0.2-nightly.202608241000", draft: false, prerelease: true,
-        assets: [{ name: platformManifest }],
-      }]), { status: 200, headers: { etag: '"release-v2"' } }));
-      await module.checkForUpdatesNow(stateDir);
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(8, expect.objectContaining({
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.2-nightly.202608241000",
-      }));
-      expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(3);
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(3, {
-        provider: "github",
-        owner: "Untrivial-ai",
-        repo: "agent-orchestrator",
-      });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  // Regression: the nightly direct feed is electron-updater's GENERIC provider,
-  // which never populates releaseNotes -- only GitHubProvider does -- and
-  // nightly-mac.yml has no field for them. So "what's new" could never say
-  // anything on nightly unless the notes are resolved out of band.
-  it("carries release notes for nightly, whose feed provider cannot", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "nightly-mac.yml"
-        : process.platform === "linux"
-          ? "nightly-linux.yml"
-          : "nightly.yml";
-    const resourcesPath = mkdtempSync(nodePath.join(os.tmpdir(), "ao-nightly-notes-"));
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
-    Object.defineProperty(process, "resourcesPath", { configurable: true, value: resourcesPath });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify([
-            {
-              tag_name: "v1.0.1-nightly.202608231517",
-              draft: false,
-              prerelease: true,
-              body: "<ul><li>Stopped the re-stage loop</li><li>Rebuilt the Updates page</li></ul>",
-              assets: [{ name: platformManifest }],
-            },
-          ]),
-          { status: 200 },
-        ),
-      ),
-    );
-
-    try {
-      const { module, autoUpdater, updaterEvents, statusMessages } = await importAutoUpdater({
-        enabled: false,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-
-      await module.checkForUpdatesNow(stateDir);
-      updaterEvents.get("update-available")?.({ version: "1.0.1-nightly.202608231517" });
-
-      // HTML stripped, list items kept as Markdown bullets.
-      expect(statusMessages().at(-1)?.payload).toMatchObject({
-        state: "available",
-        releaseNotes: "- Stopped the re-stage loop\n- Rebuilt the Updates page",
-      });
-
-      // No nightly was staged. A stable lookup with no verified notes must not
-      // reuse the direct prerelease provider's cached notes.
-      autoUpdater.checkForUpdates.mockImplementationOnce(async () => {
-        updaterEvents.get("update-available")?.({ version: "1.0.1" });
-        return { isUpdateAvailable: true, updateInfo: { version: "1.0.1" } };
-      });
-      await module.checkForUpdatesNow(stateDir, { settings: {
-        enabled: false, channel: "latest", nightlyAck: false, feature: null,
-      } });
-      expect(module.getUpdateStatus()).toMatchObject({ state: "available", version: "1.0.1" });
-      expect(module.getUpdateStatus()).not.toHaveProperty("releaseNotes");
-
-      // Background stable checks must also forget the old nightly offer.
-      autoUpdater.checkForUpdates.mockImplementationOnce(async () => {
-        updaterEvents.get("checking-for-update")?.();
-        return { isUpdateAvailable: false, updateInfo: { version: "1.0.0" } };
-      });
-      await module.startAutoUpdates(stateDir);
-      expect(module.getUpdateStatus()).toMatchObject({ state: "not-available" });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  it("automatic nightly checks resolve the newest completed release without the Atom feed", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "nightly-mac.yml"
-        : process.platform === "linux"
-          ? "nightly-linux.yml"
-          : "nightly.yml";
-    const resourcesPath = mkdtempSync(
-      nodePath.join(os.tmpdir(), "ao-nightly-feed-"),
-    );
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(
-      process,
-      "resourcesPath",
-    );
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
-    });
-    // The newest entry is still uploading its manifest: the Atom feed would
-    // point electron-updater at it and 404, and the automatic path swallows
-    // that error, so the install would go silently stale (no sidebar row).
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            tag_name: "v1.0.1-nightly.202608231518",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: "Agent.Orchestrator.dmg" }],
-          },
-          {
-            tag_name: "v1.0.1-nightly.202608231517",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-        ]),
-        { status: 200 },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    try {
-      const { module, autoUpdater } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-
-      await module.startAutoUpdates(stateDir);
-
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(2, {
-        provider: "generic",
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.1-nightly.202608231517",
-        channel: "nightly",
-        useMultipleRangeRequest: false,
-      });
-      expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(1);
-      // Later background checks start from the normal provider again.
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(3, {
-        provider: "github",
-        owner: "Untrivial-ai",
-        repo: "agent-orchestrator",
-      });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
-  });
-
-  it("feature checks resolve the newest completed PR release without the Atom feed", async () => {
-    const platformManifest =
-      process.platform === "darwin"
-        ? "pr4473-mac.yml"
-        : process.platform === "linux"
-          ? "pr4473-linux.yml"
-          : "pr4473.yml";
-    const resourcesPath = mkdtempSync(
-      nodePath.join(os.tmpdir(), "ao-feature-feed-"),
-    );
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(
-      process,
-      "resourcesPath",
-    );
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
-    });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            tag_name: "v1.0.0-pr4473.202608271543",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: "Agent.Orchestrator.dmg" }],
-          },
-          {
-            tag_name: "v1.0.0-pr4473.202608271542",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-          {
-            tag_name: "v1.0.0-pr9999.202608271544",
-            draft: false,
-            prerelease: true,
-            assets: [{ name: platformManifest }],
-          },
-        ]),
-        { status: 200 },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    try {
-      const { module, autoUpdater } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: { pr: 4473 },
-      });
-
-      await module.startAutoUpdates(stateDir);
-
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(2, {
-        provider: "generic",
-        url: "https://github.com/Untrivial-ai/agent-orchestrator/releases/download/v1.0.0-pr4473.202608271542",
-        channel: "pr4473",
-        useMultipleRangeRequest: false,
-      });
-      expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(1);
-      expect(autoUpdater.setFeedURL).toHaveBeenNthCalledWith(3, {
-        provider: "github",
-        owner: "Untrivial-ai",
-        repo: "agent-orchestrator",
-      });
-    } finally {
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
   });
 
   it("checks stable on launch and every 15 minutes when automatic downloads are disabled", async () => {
@@ -1703,6 +1244,7 @@ describe("startAutoUpdates", () => {
       return automaticCheck.promise;
     });
     const startPromise = module.startAutoUpdates(stateDir);
+    await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
 
@@ -3141,66 +2683,6 @@ describe("startAutoUpdates", () => {
       settings: { enabled: false, channel: "latest", nightlyAck: false, feature: null },
     });
     expect(autoDownloadAtCheck).toEqual([true]);
-  });
-
-  it("backfills notes when an older staged record rediscovers the same nightly", async () => {
-    const version = "1.0.1-nightly.202608231517";
-    const stagedAt = Date.now() - 60_000;
-    writeFileSync(nodePath.join(stateDir, "staged-update.json"), JSON.stringify({
-      version,
-      stagedAt,
-      channel: "nightly",
-    }));
-    const resourcesPath = mkdtempSync(nodePath.join(os.tmpdir(), "ao-staged-nightly-notes-"));
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
-    Object.defineProperty(process, "resourcesPath", { configurable: true, value: resourcesPath });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify([{
-          tag_name: `v${version}`,
-          draft: false,
-          prerelease: true,
-          body: "<ul><li>Fixed the restart dialog</li><li>Improved update reliability</li></ul>",
-          assets: [{ name: "nightly-linux.yml" }],
-        }]), { status: 200 }),
-      ),
-    );
-
-    try {
-      const harness = await importAutoUpdaterKeepingStagedFile({
-        enabled: false,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-      await harness.module.startAutoUpdates(stateDir);
-
-      expect(harness.module.getUpdateStatus()).toMatchObject({
-        releaseNotes: "- Fixed the restart dialog\n- Improved update reliability",
-        staged: { version, stagedAt },
-      });
-      expect(harness.autoUpdater.downloadUpdate).not.toHaveBeenCalled();
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(JSON.parse(readFileSync(nodePath.join(stateDir, "staged-update.json"), "utf8")))
-        .toMatchObject({
-          version,
-          stagedAt,
-          releaseNotes: "- Fixed the restart dialog\n- Improved update reliability",
-        });
-    } finally {
-      vi.unstubAllGlobals();
-      if (originalResourcesPath) {
-        Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      } else {
-        Reflect.deleteProperty(process, "resourcesPath");
-      }
-      rmSync(resourcesPath, { recursive: true, force: true });
-    }
   });
 
   it("keeps staged notes on the staged stamp when a later check offers a newer build", async () => {
@@ -5459,54 +4941,6 @@ describe("disk preflight refusal (#6607)", () => {
       expect(module.getUpdateStatus().staged?.ready).toBeUndefined();
       expect(autoUpdater.autoInstallOnAppQuit).toBe(true);
     } finally { restore(); }
-  });
-
-  it("keeps the refusal when the automatic nightly check falls back to API discovery", async () => {
-    const restore = stubProcess("darwin", process.execPath);
-    const resourcesPath = mkdtempSync(nodePath.join(os.tmpdir(), "ao-nightly-disk-"));
-    writeFileSync(
-      nodePath.join(resourcesPath, "app-update.yml"),
-      "provider: github\nowner: Untrivial-ai\nrepo: agent-orchestrator\n",
-    );
-    const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
-    Object.defineProperty(process, "resourcesPath", { configurable: true, value: resourcesPath });
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(
-      JSON.stringify([{
-        tag_name: "v1.0.1-nightly.202608231517",
-        draft: false,
-        prerelease: true,
-        assets: [{ name: "nightly-mac.yml" }],
-      }]),
-      { status: 200 },
-    )));
-    try {
-      const { module, autoUpdater, updaterEvents } = await importAutoUpdater({
-        enabled: true,
-        channel: "nightly",
-        nightlyAck: true,
-        feature: null,
-      });
-      module.__setStagingProbesForTesting({ stagingDiskIsFull: () => true });
-      await module.checkForUpdatesNow(stateDir);
-      updaterEvents.get("update-downloaded")?.({ version: "1.0.1-nightly.202608231350" });
-      expect(module.getUpdateStatus()).toMatchObject({ state: "error", message: DISK_MESSAGE });
-
-      // The manifest fetch stalls, so only discovery knows about the newer build.
-      autoUpdater.checkForUpdates.mockRejectedValue(new Error("request timed out"));
-      await module.startAutoUpdates(stateDir);
-
-      // Offering Download here would only be refused by the same preflight.
-      expect(module.getUpdateStatus()).toMatchObject({
-        state: "error",
-        message: DISK_MESSAGE,
-        version: "1.0.1-nightly.202608231517",
-      });
-    } finally {
-      if (originalResourcesPath) Object.defineProperty(process, "resourcesPath", originalResourcesPath);
-      else Reflect.deleteProperty(process, "resourcesPath");
-      rmSync(resourcesPath, { recursive: true, force: true });
-      restore();
-    }
   });
 
   it("still refuses an explicit restart while the disk is full", async () => {
