@@ -52,7 +52,7 @@ The VM needs Ubuntu 24.04 x64, outbound internet, and a non-root user with
    a failed download exit non-zero:
 
    ```bash
-   ssh USER@HOST 'set -o pipefail; curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/main/scripts/bootstrap-self-hosted.sh | bash'
+   ssh USER@HOST 'set -o pipefail; curl -fsSL https://<update-origin>/selfhost/bootstrap-self-hosted.sh | AO_UPDATE_ORIGIN=https://<update-origin> bash'
    ```
 
    This installs stable. For nightly, end it with `bash -s -- --nightly`.

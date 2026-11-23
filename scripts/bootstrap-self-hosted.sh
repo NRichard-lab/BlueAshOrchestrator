@@ -5,10 +5,41 @@ set -euo pipefail
 # Braced so bash reads the whole script before running any of it: a download
 # cut off mid-way by `curl ... | bash` runs nothing.
 {
+# Prints the normalized update origin (https://host[:port], no trailing slash) or
+# fails. Mirrors frontend/scripts/update-origin-core.mjs and
+# backend/internal/cli/update_origin.go: https only, a public DNS name (no IP,
+# no localhost, no credentials/path/query), and never an upstream host.
+validate_update_origin() {
+	local raw="${1%/}" host suffix
+	if [[ -z "$raw" ]]; then
+		printf '%s\n' 'AO_UPDATE_ORIGIN is not set. Set it to your BlueAsh update server origin (https://<host>).' >&2
+		return 1
+	fi
+	raw="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+	if [[ ! "$raw" =~ ^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+)(:[0-9]{1,5})?$ ]]; then
+		printf 'AO_UPDATE_ORIGIN must be a bare https origin on a public DNS name, got: %s\n' "$1" >&2
+		return 1
+	fi
+	host="${BASH_REMATCH[1]}"
+	if [[ "$host" =~ ^[0-9.]+$ || "$host" == localhost || "$host" == *.localhost ]]; then
+		printf 'AO_UPDATE_ORIGIN must be a public DNS name, not an address or localhost: %s\n' "$1" >&2
+		return 1
+	fi
+	for suffix in github.com githubusercontent.com githubassets.com github.io orchestrator.inc orchestratorusercontent.com expo.dev expo.io; do
+		if [[ "$host" == "$suffix" || "$host" == *".$suffix" ]]; then
+			printf 'AO_UPDATE_ORIGIN must not be an upstream Orchestrator or GitHub host: %s\n' "$1" >&2
+			return 1
+		fi
+	done
+	printf '%s\n' "$raw"
+}
+
 usage() {
 	printf '%s\n' 'Usage: bootstrap-self-hosted.sh [--nightly | --source-ref BRANCH] [--lan]'
 	printf '%s\n' 'Installs prerequisites, then installs released Orchestrator or builds a source branch.'
 	printf '%s\n' 'Downloads stable by default; --nightly installs the newest published nightly.'
+	printf '%s\n' 'Releases come from the update server named by AO_UPDATE_ORIGIN (https://<host>); there is no default.'
+	printf '%s\n' 'Source builds clone AO_SOURCE_REPO_URL (default: the BlueAsh repository).'
 }
 
 source_ref=""
@@ -54,7 +85,9 @@ stage="$(mktemp -d)"
 trap 'rm -rf -- "$stage"' EXIT
 installer="$stage/setup-self-hosted.sh"
 if [[ -z "$source_ref" ]]; then
-	curl -fsSL https://raw.githubusercontent.com/OrchestratorInc/agent-orchestrator/main/scripts/setup-self-hosted.sh -o "$installer"
+	origin="$(validate_update_origin "${AO_UPDATE_ORIGIN:-}")" || exit 1
+	export AO_UPDATE_ORIGIN="$origin"
+	curl -fsSL "$origin/selfhost/setup-self-hosted.sh" -o "$installer"
 else
 	sudo apt-get install -y build-essential pkg-config xz-utils
 	tools="$HOME/.local/ao-build-tools"
@@ -77,7 +110,12 @@ else
 		tar -xJf "$stage/node.tar.xz" -C "$tools"
 	fi
 	export PATH="$tools/go/bin:$tools/node-v22.23.5-linux-x64/bin:$PATH"
-	git clone --depth 1 --single-branch --branch "$source_ref" https://github.com/OrchestratorInc/agent-orchestrator.git "$stage/source"
+	source_repo="${AO_SOURCE_REPO_URL:-https://github.com/NRichard-lab/BlueAshOrchestrator.git}"
+	[[ "$source_repo" =~ ^https://[A-Za-z0-9._/-]+$ ]] || { printf 'AO_SOURCE_REPO_URL must be a plain https URL: %s\n' "$source_repo" >&2; exit 2; }
+	if [[ "${source_repo,,}" =~ (untrivial-ai|orchestratorinc|agentwrapper|aoagents) ]]; then
+		printf 'AO_SOURCE_REPO_URL must not point at the upstream Orchestrator project: %s\n' "$source_repo" >&2; exit 2
+	fi
+	git clone --depth 1 --single-branch --branch "$source_ref" "$source_repo" "$stage/source"
 	(
 		cd "$stage/source/frontend"
 		export GOMAXPROCS=2 NODE_OPTIONS=--max-old-space-size=1536

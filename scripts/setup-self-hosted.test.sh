@@ -83,8 +83,8 @@ PY
 			'while [ "$#" -gt 0 ]; do case "$1" in -o) out="$2"; shift 2 ;; https://*) url="$1"; shift ;; --retry) shift 2 ;; *) shift ;; esac; done' \
 			'echo "$url" >> "$TEST_CURL_LOG"' \
 			'case "$url" in' \
-			'  */releases/latest) cp "$TEST_RELEASE_FIXTURES/stable.json" "$out" ;;' \
-			'  */releases\?per_page=100) cp "$TEST_RELEASE_FIXTURES/$TEST_RELEASE_CASE.json" "$out" ;;' \
+			'  */selfhost/latest.json) cp "$TEST_RELEASE_FIXTURES/stable.json" "$out" ;;' \
+			'  */selfhost/nightly.json) cp "$TEST_RELEASE_FIXTURES/$TEST_RELEASE_CASE.json" "$out" ;;' \
 			'  https://example.test/*) cp "$TEST_RELEASE_FIXTURES/app.AppImage" "$out" ;;' \
 			'  *) exit 1 ;;' 'esac' > "$tmp/bin/curl"
 		chmod +x "$tmp/bin/curl"
@@ -92,7 +92,7 @@ PY
 			args=()
 			[[ "$fixture" == stable ]] || args+=(--nightly)
 			result=0
-			env PATH="$tmp/bin" AO_HOST_INSTALL_DIR="$tmp/host-$fixture" TEST_RELEASE_PACKAGE="$tmp/pkg" \
+			env PATH="$tmp/bin" AO_UPDATE_ORIGIN="https://example.test" AO_HOST_INSTALL_DIR="$tmp/host-$fixture" TEST_RELEASE_PACKAGE="$tmp/pkg" \
 				TEST_RELEASE_FIXTURES="$tmp" TEST_RELEASE_CASE="$fixture" TEST_CURL_LOG="$tmp/$fixture.urls" \
 				/bin/bash "$script" "${args[@]}" --install-only > "$tmp/out" 2>&1 || result=$?
 			case "$fixture" in
@@ -128,7 +128,7 @@ PY
 			args=()
 			[[ "$mode" == stable ]] || args+=(--nightly)
 			[[ "$mode" != nightly-lan ]] || args+=(--lan)
-			env PATH="$tmp/bin" TEST_INSTALLER="$tmp/installer" TEST_INSTALL_ARGS="$tmp/args" \
+			env PATH="$tmp/bin" AO_UPDATE_ORIGIN="https://example.test" TEST_INSTALLER="$tmp/installer" TEST_INSTALL_ARGS="$tmp/args" \
 				/bin/bash "$bootstrap" "${args[@]}" > "$tmp/out" 2>&1 || { cat "$tmp/out" >&2; exit 1; }
 			if [[ "$mode" == stable ]]; then
 				if grep -q -- '--nightly' "$tmp/args"; then exit 1; fi
@@ -432,6 +432,19 @@ PY
 			! grep -q 'Pair this host' "$tmp/out" || { cat "$tmp/out" >&2; exit 1; }
 		fi
 		;;
-	*) printf 'Usage: %s {release-channels|bootstrap-nightly|bad-tmux|no-systemd|inactive-systemd|prune|failed-restarts|failed-first-install|failed-readiness|failed-mac-bootstrap|failed-mac-readiness|failed-mac-first|relative-current|concurrent|interrupted|piped|tunnel-pairing|tunnel-pairing-code|tunnel-unavailable|tunnel-linked}\n' "$0" >&2; exit 2 ;;
+	origin-validation)
+		eval "$(sed -n '/^validate_update_origin() {/,/^}/p' "$script")"
+		[[ "$(validate_update_origin 'https://updates.example.test/')" == 'https://updates.example.test' ]]
+		[[ "$(validate_update_origin 'https://Updates.Example.test:8443')" == 'https://updates.example.test:8443' ]]
+		for bad in '' 'http://updates.example.test' 'https://updates.example.test/path' 'https://user@updates.example.test' \
+			'https://127.0.0.1' 'https://localhost' 'https://intranet' 'https://github.com' 'https://raw.githubusercontent.com' \
+			'https://api.github.com' 'https://orchestrator.inc' 'https://auth.orchestrator.inc' 'https://u.expo.dev' \
+			'https://updates.example.test?x=1'; do
+			if validate_update_origin "$bad" >/dev/null 2>&1; then
+				printf 'accepted invalid origin: %s\n' "$bad" >&2; exit 1
+			fi
+		done
+		;;
+	*) printf 'Usage: %s {origin-validation|release-channels|bootstrap-nightly|bad-tmux|no-systemd|inactive-systemd|prune|failed-restarts|failed-first-install|failed-readiness|failed-mac-bootstrap|failed-mac-readiness|failed-mac-first|relative-current|concurrent|interrupted|piped|tunnel-pairing|tunnel-pairing-code|tunnel-unavailable|tunnel-linked}\n' "$0" >&2; exit 2 ;;
 esac
 printf 'PASS %s\n' "$1"

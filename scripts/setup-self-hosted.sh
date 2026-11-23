@@ -6,6 +6,7 @@ usage() {
 	printf '%s\n' 'Usage: setup-self-hosted.sh [--nightly | --bundle PATH] [--tunnel] [--install-only]'
 	printf '%s\n' 'Installs Orchestrator under ~/.ao/host, starts a user service, and links it to your Orchestrator account (or prints pairing details).'
 	printf '%s\n' 'Downloads stable by default; --nightly downloads the newest published nightly.'
+	printf '%s\n' 'Release metadata comes from the update server named by AO_UPDATE_ORIGIN (https://<host>); there is no default.'
 }
 
 bundle=""
@@ -25,6 +26,35 @@ done
 if "$nightly" && [[ -n "$bundle" ]]; then
 	printf '%s\n' '--nightly cannot be combined with --bundle.' >&2; exit 2
 fi
+
+# Prints the normalized update origin (https://host[:port], no trailing slash) or
+# fails. Mirrors frontend/scripts/update-origin-core.mjs and
+# backend/internal/cli/update_origin.go: https only, a public DNS name (no IP,
+# no localhost, no credentials/path/query), and never an upstream host.
+validate_update_origin() {
+	local raw="${1%/}" host suffix
+	if [[ -z "$raw" ]]; then
+		printf '%s\n' 'AO_UPDATE_ORIGIN is not set. Set it to your BlueAsh update server origin (https://<host>).' >&2
+		return 1
+	fi
+	raw="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+	if [[ ! "$raw" =~ ^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+)(:[0-9]{1,5})?$ ]]; then
+		printf 'AO_UPDATE_ORIGIN must be a bare https origin on a public DNS name, got: %s\n' "$1" >&2
+		return 1
+	fi
+	host="${BASH_REMATCH[1]}"
+	if [[ "$host" =~ ^[0-9.]+$ || "$host" == localhost || "$host" == *.localhost ]]; then
+		printf 'AO_UPDATE_ORIGIN must be a public DNS name, not an address or localhost: %s\n' "$1" >&2
+		return 1
+	fi
+	for suffix in github.com githubusercontent.com githubassets.com github.io orchestrator.inc orchestratorusercontent.com expo.dev expo.io; do
+		if [[ "$host" == "$suffix" || "$host" == *".$suffix" ]]; then
+			printf 'AO_UPDATE_ORIGIN must not be an upstream Orchestrator or GitHub host: %s\n' "$1" >&2
+			return 1
+		fi
+	done
+	printf '%s\n' "$raw"
+}
 
 if [[ "$(id -u)" == 0 ]]; then
 	printf '%s\n' 'Run this as the user who will own Orchestrator sessions, not as root.' >&2
@@ -108,10 +138,13 @@ PY
 else
 	command -v curl >/dev/null || { printf '%s\n' 'curl is required.' >&2; exit 1; }
 	metadata="$stage/release.json"
-	release_api='https://api.github.com/repos/OrchestratorInc/agent-orchestrator/releases/latest'
-	"$nightly" && release_api='https://api.github.com/repos/OrchestratorInc/agent-orchestrator/releases?per_page=100'
+	# The BlueAsh update server is the only release source. There is no default
+	# origin and no upstream fallback: AO_UPDATE_ORIGIN must name it.
+	origin="$(validate_update_origin "${AO_UPDATE_ORIGIN:-}")" || exit 1
+	release_api="$origin/selfhost/latest.json"
+	"$nightly" && release_api="$origin/selfhost/nightly.json"
 	curl -fsSL --retry 3 "$release_api" -o "$metadata"
-	asset_info="$(python3 - "$metadata" "$asset" "$nightly" <<'PY'
+	asset_info="$(python3 - "$metadata" "$asset" "$nightly" "$origin" <<'PY'
 import json, re, sys
 release = json.load(open(sys.argv[1]))
 if sys.argv[3] == 'true':
@@ -123,6 +156,8 @@ if sys.argv[3] == 'true':
 item = next((a for a in release.get('assets', []) if a['name'] == sys.argv[2]), None)
 if not item or not re.fullmatch(r'sha256:[0-9a-f]{64}', item.get('digest') or ''):
     raise SystemExit(f'No verified release asset: {sys.argv[2]}')
+if not item.get('browser_download_url', '').startswith(sys.argv[4] + '/'):
+    raise SystemExit(f'Release asset is not hosted on the update server: {sys.argv[2]}')
 print(f"Downloading Orchestrator release: {release['tag_name']}", file=sys.stderr)
 print(item['browser_download_url'])
 print(item['digest'][7:])
