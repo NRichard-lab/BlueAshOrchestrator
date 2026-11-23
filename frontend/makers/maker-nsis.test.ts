@@ -45,6 +45,7 @@ describe("MakerNSIS", () => {
 		// A real installer: not Squirrel's silent one-click per-user drop.
 		expect(options.config.nsis.oneClick).toBe(false);
 		expect(options.config.nsis.allowToChangeInstallationDirectory).toBe(true);
+		expect(String(options.config.nsis.include)).toMatch(/resources[/\\]installer\.nsh$/);
 	});
 
 	it("forwards executableName so the Start menu shortcut targets the real binary (#2414)", async () => {

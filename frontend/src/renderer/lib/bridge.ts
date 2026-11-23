@@ -19,6 +19,17 @@ export const aoBridge: AoBridge =
 		},
 		app: {
 			getVersion: async () => "0.0.0-preview",
+			getStorageLocations: async () => ({
+				dataDir: "",
+				electronDir: "",
+				workspaceDir: "",
+				installDir: "",
+				source: "default" as const,
+				restartRequired: false,
+			}),
+			setStorageLocation: async () => {
+				throw new Error("Storage location requires the desktop app.");
+			},
 			chooseDirectory: async () => null,
 			checkGitRepository: async () => true,
 			openExternal: async (url: string) => {

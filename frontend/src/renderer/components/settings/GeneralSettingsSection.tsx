@@ -11,6 +11,7 @@ import { useAnalyticsOptOutStore } from "../../stores/analytics-opt-out-store";
 import { CliLinkSettings } from "./CliLinkSettingsRow";
 import { CliShadowSettingsRow } from "./CliShadowSettingsRow";
 import { openChromeAgentsSettings } from "./BrowserChromeSection";
+import { StorageLocationSection } from "./StorageLocationSection";
 import { Button } from "../ui/button";
 import { ArrowRight } from "@/components/app-icons";
 import { useTerminalShellStore } from "../../stores/terminal-shell-store";
@@ -445,6 +446,8 @@ export function GeneralSettingsSection({
 					/>
 				</SettingsRow>
 			</SettingsSection>
+
+			<StorageLocationSection />
 
 			{/* Sessions */}
 			<SettingsSection title={t("settings.sessions")} grouped>

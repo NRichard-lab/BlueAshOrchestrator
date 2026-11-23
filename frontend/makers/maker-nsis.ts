@@ -163,6 +163,9 @@ export default class MakerNSIS extends MakerBase<MakerNSISConfig> {
 						allowToChangeInstallationDirectory: true,
 						createDesktopShortcut: true,
 						createStartMenuShortcut: true,
+						// Writes ao-home.json + hidden data/electron under $INSTDIR
+						// so app-data and worker workspaces follow the folder picker.
+						include: path.join(__dirname, "..", "resources", "installer.nsh"),
 						...cfg.nsis,
 					},
 				},

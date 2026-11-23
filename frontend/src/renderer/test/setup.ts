@@ -150,6 +150,22 @@ if (typeof window !== "undefined") {
 		},
 		app: {
 			getVersion: async () => "0.0.0-test",
+			getStorageLocations: async () => ({
+				dataDir: "/tmp/ao-data",
+				electronDir: "/tmp/ao-electron",
+				workspaceDir: "/tmp/ao-data/worktrees",
+				installDir: "/tmp/ao",
+				source: "default" as const,
+				restartRequired: false,
+			}),
+			setStorageLocation: async (root: string) => ({
+				dataDir: `${root}/data`,
+				electronDir: `${root}/electron`,
+				workspaceDir: `${root}/data/worktrees`,
+				installDir: root,
+				source: "marker" as const,
+				restartRequired: true,
+			}),
 			chooseDirectory: async () => null,
 			checkGitRepository: async () => true,
 			openExternal: async () => undefined,

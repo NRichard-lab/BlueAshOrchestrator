@@ -55,6 +55,16 @@ import {
 import { listFeatureBuilds, getActiveFeatureBuild } from "./main/feature-builds";
 import { clearMainSentryCache, initMainSentry, sanitizeRendererCapture } from "./main/sentry-main";
 import { TelemetryPolicyAuthority, resolveDesktopDataDir } from "./main/telemetry-policy-file";
+import {
+	ensureInstallHomeLayout,
+	migrateDataDir,
+	pathExists,
+	readInstallHomeMarkerSync,
+	resolveInstallHomePaths,
+	writeInstallHomeMarker,
+	defaultInstallHomeRecord,
+	type InstallHomePaths,
+} from "./main/install-home";
 import { DesktopTelemetryController } from "./main/desktop-telemetry-controller";
 import { TelemetryIdentityController } from "./main/telemetry-identity";
 import { readUpdateSettings, type UpdateSettings, type UpdateStatus } from "./main/update-settings";
@@ -339,34 +349,39 @@ if (disableGpu === "1" || disableGpu === "true" || disableGpu === "yes" || disab
 	app.disableHardwareAcceleration();
 }
 
-// Pin ALL Electron-owned state (Chromium cache, cookies, local/session storage,
-// crash dumps) under the canonical AO home at ~/.ao instead of Electron's macOS
-// default ~/Library/Application Support/<name>. Keeps the app's entire footprint
-// inside ~/.ao alongside the daemon's data dir and running.json. sessionData and
-// crashDumps derive from userData, so this one override reparents them all.
-// Must run before app ready.
-// Dev runs get their own profile under the same ~/.ao root: the packaged app
-// keeps this directory open, and two Chromium instances sharing one profile
-// corrupt its LevelDB stores. Mirrors how dev already isolates running.json and
-// the daemon data dir into ~/.ao/dev.
-// AO_DEV_ELECTRON_DIR overrides the dev profile location. The default dev path
-// is shared by every checkout, and Chromium puts a singleton lock in a profile,
-// so a second worktree's `npm run dev` loses requestSingleInstanceLock() and
-// exits immediately. That is a real constraint for a tool built around parallel
-// worktree sessions: two sessions could not both run the app. Packaged builds
-// are deliberately NOT overridable — their profile is part of the install.
-app.setPath(
-	"userData",
-	app.isPackaged
-		? path.join(os.homedir(), ".ao", "electron")
-		: (process.env.AO_DEV_ELECTRON_DIR ?? path.join(os.homedir(), ".ao", "dev", "electron")),
-);
-
 // Resolve once against the launch cwd, before the daemon can chdir. The exact
 // absolute value is shared by policy bootstrap and every daemon spawn.
+// Packaged Windows installs may pin data + Electron profile under the folder
+// the NSIS picker chose (ao-home.json beside the exe); otherwise ~/.ao.
 const desktopLaunchWorkingDirectory = process.cwd();
+const packagedExecDir = app.isPackaged ? path.dirname(process.execPath) : null;
+const installHomeMarker = packagedExecDir ? readInstallHomeMarkerSync(packagedExecDir) : null;
+const installHome: InstallHomePaths = resolveInstallHomePaths({
+	env: process.env,
+	homeDir: os.homedir(),
+	launchWorkingDirectory: desktopLaunchWorkingDirectory,
+	isPackaged: app.isPackaged,
+	execDir: packagedExecDir,
+	marker: installHomeMarker,
+});
+const desktopDataDir =
+	installHome.source === "default"
+		? resolveDesktopDataDir(process.env, os.homedir(), desktopLaunchWorkingDirectory, app.isPackaged)
+		: installHome.dataDir;
+const desktopElectronDir = app.isPackaged
+	? installHome.electronDir
+	: (process.env.AO_DEV_ELECTRON_DIR ?? path.join(os.homedir(), ".ao", "dev", "electron"));
+const desktopWorkspaceDir = installHome.workspaceDir;
+
+// Pin ALL Electron-owned state (Chromium cache, cookies, local/session storage,
+// crash dumps) under the resolved AO home instead of Electron's OS default
+// Application Support / AppData path. sessionData and crashDumps derive from
+// userData, so this one override reparents them all. Must run before app ready.
+// Dev runs get their own profile under ~/.ao/dev so a second worktree's
+// `npm run dev` does not fight the packaged (or another) Chromium profile lock.
+app.setPath("userData", desktopElectronDir);
+
 const launchTiming = createLaunchTiming(process.getCreationTime() ?? performance.timeOrigin);
-const desktopDataDir = resolveDesktopDataDir(process.env, os.homedir(), desktopLaunchWorkingDirectory, app.isPackaged);
 initializeDesktopLog(desktopDataDir);
 let telemetryPolicyController: DesktopTelemetryController | null = null;
 // PostHog identity: the user-facing analytics opt-out (marker file shared with the
@@ -1494,6 +1509,9 @@ const DAEMON_PROBE_TIMEOUT_MS = 2_000;
 function runFilePath(): string | null {
 	if (process.env.AO_RUN_FILE) return process.env.AO_RUN_FILE;
 	if (isDev) return path.join(os.homedir(), ".ao", DEV_STATE_SUBDIR, "running.json");
+	// Install-tied data keeps the handshake beside the data dir so CLI and the
+	// desktop agree when the profile is no longer under ~/.ao.
+	if (installHome.source !== "default") return path.join(desktopDataDir, "running.json");
 	return defaultRunFilePath(process.platform, process.env, os.homedir());
 }
 
@@ -3257,6 +3275,44 @@ ipcMain.handle("editorHandoff:copyWorkspacePath", (event, sessionId: string) => 
 	return editorHandoff.copyWorkspacePath(typeof sessionId === "string" ? sessionId : "");
 });
 ipcMain.handle("app:getVersion", () => app.getVersion());
+ipcMain.handle("app:getStorageLocations", () => ({
+	dataDir: desktopDataDir,
+	electronDir: app.getPath("userData"),
+	workspaceDir: desktopWorkspaceDir,
+	installDir: installHome.installDir,
+	source: installHome.source,
+	restartRequired: false,
+}));
+ipcMain.handle("app:setStorageLocation", async (event, chosenRoot: unknown) => {
+	if (event.sender !== getShellWebContents()) throw new Error("Untrusted storage location request.");
+	if (typeof chosenRoot !== "string" || !chosenRoot.trim()) throw new Error("A folder is required.");
+	if (!app.isPackaged || !packagedExecDir) {
+		throw new Error("Storage location can only be changed in a packaged install.");
+	}
+	const root = path.resolve(chosenRoot.trim());
+	const record = defaultInstallHomeRecord(root);
+	await ensureInstallHomeLayout({
+		dataDir: record.dataDir,
+		electronDir: record.electronDir,
+		workspaceDir: record.workspaceDir ?? path.join(record.dataDir, "worktrees"),
+		installDir: root,
+		source: "marker",
+	});
+	const destHasDb = await pathExists(path.join(record.dataDir, "ao.db"));
+	const sourceHasDb = await pathExists(path.join(desktopDataDir, "ao.db"));
+	if (!destHasDb && sourceHasDb && path.resolve(desktopDataDir) !== path.resolve(record.dataDir)) {
+		await migrateDataDir(desktopDataDir, record.dataDir);
+	}
+	await writeInstallHomeMarker(packagedExecDir, record);
+	return {
+		dataDir: record.dataDir,
+		electronDir: record.electronDir,
+		workspaceDir: record.workspaceDir ?? path.join(record.dataDir, "worktrees"),
+		installDir: root,
+		source: "marker" as const,
+		restartRequired: true,
+	};
+});
 async function triageEnv(): Promise<NodeJS.ProcessEnv> {
 	await ensureShellEnv();
 	const env = process.platform === "win32"
@@ -4593,6 +4649,22 @@ async function writeAppStateOnLaunch(): Promise<void> {
 app.whenReady().then(async () => {
 	applyUserAgentFallback(app);
 	launchTiming.mark("appReady");
+	try {
+		await ensureInstallHomeLayout(installHome);
+		// First launch into an install-tied data dir: copy existing ~/.ao/data
+		// when the new location is empty. Never deletes the profile copy.
+		if (installHome.source === "marker") {
+			const defaultData = path.join(os.homedir(), ".ao", "data");
+			const destHasDb = await pathExists(path.join(installHome.dataDir, "ao.db"));
+			const sourceHasDb = await pathExists(path.join(defaultData, "ao.db"));
+			if (!destHasDb && sourceHasDb && path.resolve(defaultData) !== path.resolve(installHome.dataDir)) {
+				const migrated = await migrateDataDir(defaultData, installHome.dataDir);
+				console.info(`AO: migrated ${migrated.copied.length} entries from ${defaultData} into install data dir`);
+			}
+		}
+	} catch (error) {
+		console.error("AO: install home layout failed:", error);
+	}
 	// Before any browser partition exists; both run in the background.
 	void sweepTemporaryBrowserPartitions(app.getPath("userData")).then(({ removed, failed }) => {
 		if (removed || failed) console.info(`browser storage: removed ${removed} leftover temporary profiles${failed ? `, ${failed} failed` : ""}`);

@@ -283,6 +283,24 @@ const api = {
 	},
 	app: {
 		getVersion: () => ipcRenderer.invoke("app:getVersion") as Promise<string>,
+		getStorageLocations: () =>
+			ipcRenderer.invoke("app:getStorageLocations") as Promise<{
+				dataDir: string;
+				electronDir: string;
+				workspaceDir: string;
+				installDir: string;
+				source: "env" | "marker" | "default";
+				restartRequired: boolean;
+			}>,
+		setStorageLocation: (root: string) =>
+			ipcRenderer.invoke("app:setStorageLocation", root) as Promise<{
+				dataDir: string;
+				electronDir: string;
+				workspaceDir: string;
+				installDir: string;
+				source: "env" | "marker" | "default";
+				restartRequired: boolean;
+			}>,
 		chooseDirectory: (input?: string | { title?: string; defaultPath?: string }) => ipcRenderer.invoke("app:chooseDirectory", input) as Promise<string | null>,
 		checkGitRepository: (remoteUrl: string) => ipcRenderer.invoke("app:checkGitRepository", remoteUrl) as Promise<boolean>,
 		openExternal: (url: string) => ipcRenderer.invoke("app:openExternal", url) as Promise<void>,
