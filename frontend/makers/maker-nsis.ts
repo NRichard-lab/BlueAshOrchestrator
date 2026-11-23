@@ -26,6 +26,8 @@ export type MakerNSISConfig = {
 	icon?: string;
 	// Any extra electron-builder `nsis` options, merged over our defaults.
 	nsis?: Record<string, unknown>;
+	// electron-builder installer compression ("store" skips LZMA; used by local update tests).
+	compression?: "store" | "normal" | "maximum";
 	// Any extra electron-builder `win` options (e.g. a hard-coded
 	// signtoolOptions/azureSignOptions override), merged over our defaults.
 	// Env-derived signing (see envSigningOptions below) still wins on the
@@ -150,6 +152,7 @@ export default class MakerNSIS extends MakerBase<MakerNSISConfig> {
 					appId: cfg.appId,
 					productName: cfg.productName ?? appName,
 					directories: { output },
+					...(cfg.compression ? { compression: cfg.compression } : {}),
 					// Forge owns publishing (the workflow uploads via `gh release`).
 					// `null` stops electron-builder from inferring a GitHub publish
 					// target from package.json `repository` and trying to upload,

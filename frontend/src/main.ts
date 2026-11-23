@@ -248,6 +248,7 @@ import { AgentBrowserRuntime } from "./main/agent-browser-runtime";
 import { sameBrowserRuntimeIdentity, type BrowserRuntimeIdentity } from "./main/browser-runtime-identity";
 import { connectSupervisor, type SupervisorLinkHandle } from "./main/supervisor-link";
 import { daemonHandshakeRunFile, supervisorPipeFromRunFile } from "./main/daemon-run-file";
+import { applyTestInstancePin } from "./main/instance-pin";
 import {
 	BROWSER_RUNTIME_DISCONNECTED,
 	connectBrowserRuntime,
@@ -356,6 +357,17 @@ if (disableGpu === "1" || disableGpu === "true" || disableGpu === "yes" || disab
 // the NSIS picker chose (ao-home.json beside the exe); otherwise ~/.ao.
 const desktopLaunchWorkingDirectory = process.cwd();
 const packagedExecDir = app.isPackaged ? path.dirname(process.execPath) : null;
+// Test builds only (compile-time identity, empty in release builds): pin the run file, port and
+// protocol/telemetry opt-outs before anything reads them. See src/main/instance-pin.ts.
+const instancePinError = applyTestInstancePin({
+	buildIdentity: process.env.AO_TEST_BUILD_IDENTITY ?? "",
+	execDir: packagedExecDir,
+	env: process.env,
+});
+if (instancePinError) {
+	dialog.showErrorBox("Test build refused to start", instancePinError);
+	process.exit(2);
+}
 const installHomeMarker = packagedExecDir ? readInstallHomeMarkerSync(packagedExecDir) : null;
 const installHome: InstallHomePaths = resolveInstallHomePaths({
 	env: process.env,

@@ -10,13 +10,18 @@ import MakerNSIS from "./makers/maker-nsis";
 import MakerDMG, { isSigningConfigured, sealDmg, verifyDmg, verifyMacArtifact } from "./makers/maker-dmg";
 import { machoHasX86_64Slice } from "./makers/macho-archs";
 import MakerAppImage from "./makers/maker-appimage";
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { BUNDLED_TMUX_VERSION } from "./scripts/tmux-version.mjs";
 import { checkMacDmgLayout } from "./scripts/build-mac-dmg.mjs";
 import { parseReleaseRepo, resolveAppUpdateYml } from "./makers/update-feed";
+import { resolveTestIdentity, testInstallerInclude } from "./makers/test-identity";
+
+// Local update-test builds get their own executable name, appId, product name, installer
+// name and updater cache (see makers/test-identity.ts); production builds are unchanged.
+const TEST_IDENTITY = resolveTestIdentity(process.env);
 
 // The update plane is a BlueAsh-owned HTTPS origin (AO_UPDATE_ORIGIN, validated by
 // parseUpdateOrigin). There is deliberately NO default origin and no upstream
@@ -30,7 +35,7 @@ import { parseReleaseRepo, resolveAppUpdateYml } from "./makers/update-feed";
 // names the exe/ELF from this, and the NSIS + deb makers must point their
 // shortcut/launcher at the SAME name. Drift here means a broken Start menu
 // shortcut on Windows (#2414) or "could not find the Electron app binary" on deb.
-const EXECUTABLE_NAME = "agent-orchestrator";
+const EXECUTABLE_NAME = TEST_IDENTITY?.executableName ?? "agent-orchestrator";
 export const WINDOWS_DISPLAY_NAME = "Orchestrator.inc";
 const AUTH_PROTOCOL = {
 	name: "Orchestrator authentication callback",
@@ -70,7 +75,7 @@ async function prepareNativeDependencies(platform: NodeJS.Platform, arch: string
 // Packager app name. It sets the bundle filename ("<name>.app"), which the
 // installed path, updater, and `ao start` keep using, so it is not the label
 // people see in Finder.
-const PACKAGER_NAME = "Agent Orchestrator";
+const PACKAGER_NAME = TEST_IDENTITY?.packagerName ?? "Agent Orchestrator";
 
 // Finder uses the localized label only when the base display name matches the
 // bundle filename, but the packager defaults it to the executable name. Set it,
@@ -177,6 +182,14 @@ function githubPublishers(): ForgeConfig["publishers"] {
 	];
 }
 
+function writeTestInstallerInclude(identity: NonNullable<typeof TEST_IDENTITY>): string {
+	const dir = path.join(__dirname, "out", "test-identity");
+	mkdirSync(dir, { recursive: true });
+	const file = path.join(dir, `installer-${identity.id}.nsh`);
+	writeFileSync(file, testInstallerInclude(identity, readFileSync(path.join(__dirname, "resources", "installer.nsh"), "utf8")));
+	return file;
+}
+
 const config: ForgeConfig = {
 	packagerConfig: {
 		asar: true,
@@ -190,9 +203,9 @@ const config: ForgeConfig = {
 		executableName: EXECUTABLE_NAME,
 		// Match the Windows installer without changing the executable name.
 		win32metadata: {
-			FileDescription: WINDOWS_DISPLAY_NAME,
-			InternalName: WINDOWS_DISPLAY_NAME,
-			ProductName: WINDOWS_DISPLAY_NAME,
+			FileDescription: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
+			InternalName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
+			ProductName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
 		},
 		extendInfo: {
 			// macOS 26+ draws the Icon Composer icon from Resources/Assets.car;
@@ -387,17 +400,27 @@ const config: ForgeConfig = {
 		// custom install dir or proper uninstaller (issue #401).
 		new MakerNSIS(
 			{
-				appId: "dev.agent-orchestrator.desktop",
+				appId: TEST_IDENTITY?.appId ?? "dev.agent-orchestrator.desktop",
 				// The name shown in the installer, the updater, the shortcuts, and
 				// Windows Apps. It matches the app's display name in main.ts.
-				productName: WINDOWS_DISPLAY_NAME,
+				productName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
 				// Match the packaged binary name so the Start menu shortcut targets
 				// the real "agent-orchestrator.exe" (not "Agent Orchestrator.exe").
 				executableName: EXECUTABLE_NAME,
 				icon: "assets/icon.ico",
 				// Keep the installer filename unchanged. electron-builder names it
 				// after productName by default.
-				nsis: { artifactName: "Agent Orchestrator Setup ${version}.${ext}" },
+				nsis: TEST_IDENTITY
+					? {
+							artifactName: TEST_IDENTITY.installerArtifactName,
+							// A test install must not add shortcuts to the real user profile.
+							createDesktopShortcut: false,
+							createStartMenuShortcut: false,
+							// Production include + the test-only ao-instance.json pin (see makers/test-identity.ts).
+							include: writeTestInstallerInclude(TEST_IDENTITY),
+						}
+					: { artifactName: "Agent Orchestrator Setup ${version}.${ext}" },
+				...(TEST_IDENTITY ? { compression: "store" as const } : {}),
 			},
 			["win32"],
 		),

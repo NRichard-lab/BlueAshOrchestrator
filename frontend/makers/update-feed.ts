@@ -1,4 +1,5 @@
 import { parseUpdateOrigin, renderAppUpdateYml } from "../src/main/update-origin";
+import { resolveTestIdentity } from "./test-identity";
 
 // Owners that are the upstream Orchestrator project. A publish target there would
 // push BlueAsh builds into the upstream release plane.
@@ -21,7 +22,7 @@ export function parseReleaseRepo(value: string | undefined): { owner: string; na
 
 // resolveAppUpdateYml renders the app-update.yml baked into the bundle.
 export function resolveAppUpdateYml(env: NodeJS.ProcessEnv): string {
-	const cacheDir = "agent-orchestrator-updater";
+	const cacheDir = resolveTestIdentity(env)?.updaterCacheDirName ?? "agent-orchestrator-updater";
 	const raw = env.AO_UPDATE_ORIGIN;
 	if (!raw && env.AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN === "1") {
 		// No feed: runtime treats this as "update server not configured" and
