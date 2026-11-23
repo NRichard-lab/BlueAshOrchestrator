@@ -105,6 +105,8 @@ export function rendererTelemetryEnabled(
 	env: Record<string, string | undefined>,
 	isPackaged: boolean,
 ): boolean {
+	// Compile-time brand switch: no environment value can turn remote analytics on in a build without it.
+	if (!BRAND.remoteTelemetryEnabled) return false;
 	const explicit = env.AO_TELEMETRY_RENDERER?.trim().toLowerCase();
 	if (explicit === "on") return true;
 	if (explicit === "off") return false;

@@ -183,6 +183,9 @@ func writeAgentInstallError(w http.ResponseWriter, r *http.Request, err error) b
 		return true
 	}
 	switch {
+	case errors.Is(err, systeminstall.ErrUpdatesDisabled):
+		envelope.WriteAPIError(w, r, http.StatusBadRequest, "bad_request", "UPDATES_DISABLED", "harness updates are disabled in this build", nil)
+		return true
 	case errors.Is(err, systeminstall.ErrUpdateVersion):
 		envelope.WriteAPIError(w, r, http.StatusBadRequest, "bad_request", "INVALID_UPDATE_VERSION", "expectedVersion is only accepted for updates and must be a version newer than the installed one", nil)
 		return true

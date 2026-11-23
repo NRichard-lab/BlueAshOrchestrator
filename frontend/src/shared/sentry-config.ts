@@ -1,3 +1,5 @@
+import { BRAND } from "./brand";
+
 // Separate Sentry projects identify errors from the Go daemon and the desktop
 // Electron surfaces. The daemon sends only when its existing consent gate allows
 // it. Electron main sends consented desktop errors; renderer captures pass
@@ -21,6 +23,8 @@ export function isPublishedSentryBuild(version: string, isDev: boolean): boolean
 }
 
 export function daemonSentryDsn(override: string | undefined, version: string, isDev: boolean): string {
+	// Compile-time brand switch: a build with remote telemetry compiled out never carries a crash-report DSN.
+	if (!BRAND.remoteTelemetryEnabled) return "";
 	return override ?? (isPublishedSentryBuild(version, isDev) ? DEFAULT_DAEMON_SENTRY_DSN : "");
 }
 

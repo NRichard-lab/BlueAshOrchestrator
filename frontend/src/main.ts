@@ -1681,6 +1681,18 @@ const configuredLoginShell = process.platform === "darwin" ? (os.userInfo().shel
 // events and inflate install/DAU counts. Set AO_TELEMETRY_REMOTE explicitly to
 // exercise the export path from a dev build.
 function telemetryOverrides(): Record<string, string> {
+	// Compile-time brand switch (BlueAshAI): the daemon gets no exporter, key, host or crash-report DSN, and
+	// the daemon enforces the same switch itself (config.Load), so a stray inherited variable cannot revive it.
+	if (!BRAND.remoteTelemetryEnabled) {
+		return {
+			AO_TELEMETRY_EVENTS: process.env.AO_TELEMETRY_EVENTS ?? "on",
+			AO_TELEMETRY_REMOTE: "off",
+			AO_TELEMETRY_POSTHOG_KEY: "",
+			AO_TELEMETRY_POSTHOG_HOST: "",
+			AO_SENTRY_DSN: "",
+			AO_TELEMETRY_APP_VERSION: process.env.AO_TELEMETRY_APP_VERSION ?? app.getVersion(),
+		};
+	}
 	return {
 		AO_TELEMETRY_EVENTS: process.env.AO_TELEMETRY_EVENTS ?? "on",
 		AO_TELEMETRY_REMOTE: process.env.AO_TELEMETRY_REMOTE ?? (isDev ? "off" : "posthog"),

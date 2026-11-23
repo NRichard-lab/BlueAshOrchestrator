@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
+import { BRAND } from "../shared/brand";
 import type { RendererTelemetryCapture } from "../shared/telemetry-policy";
 import { DEFAULT_ELECTRON_SENTRY_DSN, isPublishedSentryBuild, SAFE_APP_ASSET, SAFE_FUNCTION, safeSentryExceptionType, safeSentryFunctionName, sentryEnvironment } from "../shared/sentry-config";
 import { scrubSentryMessage, sentryExceptionValue, sentryMessageFingerprint } from "../../../packages/shared/telemetry/sentry-message";
@@ -13,6 +14,7 @@ import type { DesktopTelemetryTransport } from "./desktop-telemetry-controller";
 import { isSafeMainErrorDetail, MAIN_ERROR_CATEGORIES, MAIN_ERROR_REASONS, sanitizeMainErrorCapture, type MainErrorCapture } from "./main-error-capture";
 
 export function electronMainSentryDsn(version: string, isDev: boolean): string {
+	if (!BRAND.remoteTelemetryEnabled) return "";
 	return process.env.AO_ELECTRON_SENTRY_DSN ?? (isPublishedSentryBuild(version, isDev) ? DEFAULT_ELECTRON_SENTRY_DSN : "");
 }
 

@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/observe/sentryobs"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -39,6 +40,8 @@ var (
 	ErrInstallOwner = errors.New("systeminstall: installation owner not confirmed")
 	// ErrUpdateVersion rejects an invalid caller-supplied verification target.
 	ErrUpdateVersion = errors.New("systeminstall: invalid expected update version")
+	// ErrUpdatesDisabled is returned when this build has update mechanisms compiled out (brand.UpdatesEnabled=false).
+	ErrUpdatesDisabled = errors.New("systeminstall: harness updates are disabled in this build")
 )
 
 // Target is one of the fixed install targets AO knows how to install.
@@ -566,7 +569,7 @@ func NewWithDeps(executables ports.ExecutableFinder, commands ports.CommandRunne
 		verifier:                   deps.Verifier,
 		sessions:                   deps.Sessions,
 		reviewers:                  deps.Reviewers,
-		updateChecksDisabled:       deps.DisableUpdateChecks,
+		updateChecksDisabled:       deps.DisableUpdateChecks || !brand.UpdatesAllowed(),
 		updateWhileRunningDisabled: deps.DisableUpdateWhileRunning,
 		updateWhenIdle:             deps.UpdateWhenIdle,
 		managedRoot:                deps.ManagedRoot,
@@ -783,6 +786,9 @@ func (s *Service) StartAgentOperation(ctx context.Context, target Target, method
 	}
 	if !operation.valid() {
 		return Job{}, fmt.Errorf("%w: unknown install operation %q", ErrInstallMethod, operation)
+	}
+	if operation == AgentOperationUpdate && !brand.UpdatesAllowed() {
+		return Job{}, ErrUpdatesDisabled
 	}
 	if expected != "" {
 		if _, ok := parseUpdateVersion(expected); !ok || operation != AgentOperationUpdate {

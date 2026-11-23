@@ -289,7 +289,7 @@ func Load() (Config, error) {
 		},
 		CloudOffering:          true,
 		LocalOffering:          true,
-		HarnessUpdateChecks:    true,
+		HarnessUpdateChecks:    brand.UpdatesAllowed(),
 		HarnessUpdateInterval:  DefaultHarnessUpdateInterval,
 		UpdateWhileRunning:     true,
 		VersionRefresh:         true,
@@ -372,6 +372,10 @@ func Load() (Config, error) {
 			return Config{}, err
 		}
 		cfg.HarnessUpdateChecks = v
+	}
+	if !brand.UpdatesAllowed() {
+		// Compile-time brand switch: AO_HARNESS_UPDATE_CHECKS=on must not re-enable remote version lookups.
+		cfg.HarnessUpdateChecks = false
 	}
 	if raw, present := os.LookupEnv("AO_UPDATE_WHILE_RUNNING"); present && strings.TrimSpace(raw) != "" {
 		v, err := parseToggleEnv("AO_UPDATE_WHILE_RUNNING", raw)
@@ -463,6 +467,12 @@ func Load() (Config, error) {
 	}
 	if raw := os.Getenv("AO_SENTRY_DSN"); raw != "" {
 		cfg.Telemetry.SentryDSN = strings.TrimSpace(raw)
+	}
+	if !brand.RemoteTelemetryAllowed() {
+		// Compile-time brand switch: no environment value can turn a remote exporter or crash reporting on.
+		cfg.Telemetry.Remote = TelemetryRemoteOff
+		cfg.Telemetry.PostHogKey = ""
+		cfg.Telemetry.SentryDSN = ""
 	}
 	if raw := os.Getenv("AO_TELEMETRY_RETENTION"); raw != "" {
 		d, err := time.ParseDuration(raw)

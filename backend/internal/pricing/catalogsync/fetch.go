@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/pricing"
 )
 
@@ -60,6 +61,13 @@ func NewFetcher(client *http.Client, url string) *Fetcher {
 
 // Fetch implements pricing.CatalogFetcher.
 func (f *Fetcher) Fetch(ctx context.Context, etag string, cacheAvailable bool) (pricing.FetchResult, error) {
+	// Compile-time brand switch (pricingCatalogSyncEnabled): a build that must not call out never builds a
+	// request. NotModified is the refresher's quiet "nothing to change" answer, so it neither logs a failure
+	// nor retries every minute; it simply idles on its normal 24 h interval. Prices then come only from a
+	// cached catalog already on disk and from the user's own price overrides.
+	if !brand.PricingCatalogSyncAllowed() {
+		return pricing.FetchResult{ETag: etag, NotModified: true}, nil
+	}
 	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, f.url, http.NoBody)

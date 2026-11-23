@@ -40,6 +40,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
 	"github.com/aoagents/agent-orchestrator/backend/internal/attachmentstore"
 	"github.com/aoagents/agent-orchestrator/backend/internal/autoreview"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/browserruntime"
 	"github.com/aoagents/agent-orchestrator/backend/internal/browserstream"
 	"github.com/aoagents/agent-orchestrator/backend/internal/caller"
@@ -1423,7 +1424,7 @@ func Run(buildVersion string) (retErr error) {
 		// bounded subprocess probes no longer contend with the synchronous
 		// migration and fencing reconcile that gate the port bind.
 		readinessDone := agentSvc.WarmReadiness()
-		if cfg.HarnessUpdateChecks {
+		if cfg.HarnessUpdateChecks && brand.UpdatesAllowed() {
 			go func() {
 				defer sentryobs.RecoverBackground()
 				watchInstalledHarnessUpdates(ctx, readinessDone, cfg.HarnessUpdateInterval, agentSvc.EnsureInstallationReadiness, func(ctx context.Context, target systeminstall.Target, refresh bool) (systeminstall.UpdateAdvisory, error) {

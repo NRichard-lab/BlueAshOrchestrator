@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -393,6 +394,11 @@ func fetchRegistryJSON(ctx context.Context, client *http.Client, endpoint string
 // fetchRegistry GETs a release-metadata document, bounded to
 // maxRegistryMetadataBytes. accept, when set, is sent as the Accept header.
 func fetchRegistry(ctx context.Context, client *http.Client, endpoint, accept string) ([]byte, error) {
+	// Lowest-level kill switch: no release-metadata request (npm, PyPI, Homebrew, vendor, GitHub) is ever
+	// built when this build has updates compiled out, whatever called in.
+	if !brand.UpdatesAllowed() {
+		return nil, ErrUpdatesDisabled
+	}
 	if client == nil {
 		return nil, fmt.Errorf("registry client unavailable")
 	}

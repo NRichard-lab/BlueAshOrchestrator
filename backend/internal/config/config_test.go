@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 func TestLoadDefaults(t *testing.T) {
@@ -617,6 +619,22 @@ func TestLoadHarnessUpdateChecksToggle(t *testing.T) {
 	t.Setenv("AO_HARNESS_UPDATE_CHECKS", "sometimes")
 	if _, err := Load(); err == nil {
 		t.Fatal("invalid AO_HARNESS_UPDATE_CHECKS value was accepted")
+	}
+}
+
+func TestLoadHarnessUpdateChecksCompiledOutIgnoresEnvironment(t *testing.T) {
+	old := brand.UpdatesEnabled
+	brand.UpdatesEnabled = "false"
+	t.Cleanup(func() { brand.UpdatesEnabled = old })
+	for _, raw := range []string{"", "on", "true", "1"} {
+		t.Setenv("AO_HARNESS_UPDATE_CHECKS", raw)
+		cfg, err := Load()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.HarnessUpdateChecks {
+			t.Fatalf("AO_HARNESS_UPDATE_CHECKS=%q re-enabled remote version lookups in a build with updates compiled out", raw)
+		}
 	}
 }
 

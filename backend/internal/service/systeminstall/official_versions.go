@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // officialReleaseSource marks an advisory compared against the vendor's own
@@ -215,6 +217,9 @@ func parseOfficialVersion(source officialSource, body []byte) (string, error) {
 // is not subject to the REST API's 60 requests per hour unauthenticated limit
 // and returns no body.
 func githubLatestReleaseTag(ctx context.Context, client *http.Client, repo string) (string, error) {
+	if !brand.UpdatesAllowed() {
+		return "", ErrUpdatesDisabled
+	}
 	noFollow := *client
 	noFollow.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	request, err := http.NewRequestWithContext(ctx, http.MethodHead, "https://github.com/"+repo+"/releases/latest", http.NoBody)
