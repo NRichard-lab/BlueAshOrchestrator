@@ -21,12 +21,15 @@ import { join, relative } from "node:path";
 import { parseUpdateOrigin } from "./update-origin-core.mjs";
 
 // Deny patterns for packaged artifacts: update/download plane URLs of the
-// upstream project. Plain module paths (github.com/aoagents/...) are not
-// network endpoints and are intentionally not listed.
+// upstream project. Plain module paths (github.com/aoagents/...) and human-facing
+// repository/doc links (issues, docs pages) are not update endpoints and are
+// intentionally not listed; runtime egress proves they are never requested.
 export const ARTIFACT_DENY = [
 	"raw.githubusercontent.com/Untrivial-ai/",
 	"Untrivial-ai/agent-orchestrator/releases",
-	"github.com/Untrivial-ai/agent-orchestrator",
+	"raw.githubusercontent.com/OrchestratorInc/",
+	"api.github.com/repos/Untrivial-ai/",
+	"api.github.com/repos/OrchestratorInc/",
 	"github.com/OrchestratorInc/agent-orchestrator/releases",
 	"repos/Untrivial-ai/",
 	"repos/OrchestratorInc/agent-orchestrator/releases",
