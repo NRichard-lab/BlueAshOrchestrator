@@ -4065,7 +4065,7 @@
 	"usage.view.cost": "费用",
 	"usage.view.tokens": "Token",
 	"usage.view.limits": "限额",
-	"usage.view.spend": "支出",
+	"usage.view.token": "令牌",
 	"usage.view.windows": "窗口",
 	"usage.unit": "单位",
 	"usage.total.cost": "总费用",

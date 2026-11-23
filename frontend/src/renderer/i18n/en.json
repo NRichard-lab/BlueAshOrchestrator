@@ -4065,7 +4065,7 @@
 	"usage.view.cost": "Cost",
 	"usage.view.tokens": "Tokens",
 	"usage.view.limits": "Limits",
-	"usage.view.spend": "Spend",
+	"usage.view.token": "Token",
 	"usage.view.windows": "Windows",
 	"usage.unit": "Measure",
 	"usage.total.cost": "Total cost",

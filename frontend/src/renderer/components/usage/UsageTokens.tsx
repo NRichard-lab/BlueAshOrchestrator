@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+﻿import { Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { agentLabel } from "../../lib/agent-options";
@@ -44,7 +44,7 @@ const SPEED_LABELS = {
 const SESSION_ROWS = 50;
 const BREAKDOWN_ROWS = 10;
 
-export function UsageSpend({
+export function UsageTokens({
 	report,
 	unit,
 	onUnitChange,
@@ -87,19 +87,28 @@ export function UsageSpend({
 									<TooltipTrigger asChild>
 										<button
 											type="button"
-											aria-label={t("usage.estimateNote")}
+											aria-label={t("usage.estimatedCostInfoLabel")}
 											className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 										>
 											<Info aria-hidden="true" className="size-icon-sm" />
 										</button>
 									</TooltipTrigger>
-									<TooltipContent>{t("usage.estimateNote")}</TooltipContent>
+									<TooltipContent>{t("usage.estimatedCostInfo")}</TooltipContent>
 								</Tooltip>
 							) : null}
 						</p>
+						{/*
+						 * AO prices usage itself from published API list prices; no
+						 * provider tells it what was billed. A figure a reader could
+						 * mistake for a bill therefore says so in the open, rather
+						 * than only in a tooltip nobody opens.
+						 */}
+						{unit === "cost" ? (
+							<p className="text-xs text-muted-foreground">{t("usage.estimateNote")}</p>
+						) : null}
 						<p className="truncate text-xs text-muted-foreground">
 							{t("usage.sessionCount", { count: report.sessions.length })}
-							{unit === "cost" && unpriced > 0 ? ` · ${t("usage.unpricedNote", { value: unpriced.toLocaleString(locale) })}` : null}
+							{unit === "cost" && unpriced > 0 ? ` Â· ${t("usage.unpricedNote", { value: unpriced.toLocaleString(locale) })}` : null}
 						</p>
 					</div>
 					<div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pe-2 lg:[contain:size]">
@@ -257,7 +266,7 @@ function UsageBreakdown({ report, unit, projectNames, total }: { report: UsageRe
 	const fraction = (cost: number, tokens: number) => (total > 0 ? (unit === "cost" ? cost : tokens) / total : 0);
 	const share = (cost: number, tokens: number, pricedEvents: number, harness?: string) =>
 		unit === "cost" && pricedEvents === 0 ? (
-			<span className="block text-end">—</span>
+			<span className="block text-end">â€”</span>
 		) : (
 			<span className="flex items-center justify-end gap-2">
 				<ShareBar fraction={fraction(cost, tokens)} tone={harness ? agentTone(harness) : undefined} className="w-14" />
@@ -328,7 +337,7 @@ function UsageBreakdown({ report, unit, projectNames, total }: { report: UsageRe
 								</span>
 							</td>
 							<td className="py-2.5 text-end text-muted-foreground">{formatShare(model.cacheHitRate, locale)}</td>
-							<td className="py-2.5 text-end text-muted-foreground">{model.costPerMillionNanos === null ? "—" : formatUsd(model.costPerMillionNanos, locale)}</td>
+							<td className="py-2.5 text-end text-muted-foreground">{model.costPerMillionNanos === null ? "â€”" : formatUsd(model.costPerMillionNanos, locale)}</td>
 							<td className="py-2.5 text-end text-foreground">
 									{model.pricedEvents === 0 ? (
 										<span className="text-muted-foreground">

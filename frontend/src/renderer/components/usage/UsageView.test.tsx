@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,13 +48,13 @@ describe("UsageView", () => {
 		const title = screen.getByRole("heading", { name: "Usage", level: 1 });
 		expect(title.closest("header")?.querySelectorAll("button")).toHaveLength(0);
 		const views = screen.getByRole("group", { name: "Usage view" });
-		expect(within(views).getAllByRole("button").map((button) => button.textContent)).toEqual(["Spend", "Limits"]);
-		expect(within(views).getByRole("button", { name: "Spend" })).toHaveAttribute("aria-pressed", "true");
+		expect(within(views).getAllByRole("button").map((button) => button.textContent)).toEqual(["Token", "Limits"]);
+		expect(within(views).getByRole("button", { name: "Token" })).toHaveAttribute("aria-pressed", "true");
 		expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
 		await user.click(within(views).getByRole("button", { name: "Limits" }));
 		expect(within(views).getByRole("button", { name: "Limits" })).toHaveAttribute("aria-pressed", "true");
 		expect(screen.getByText("Limits content")).toBeInTheDocument();
-		// Project and period only apply to spend; refresh stays for every view.
+		// Project and period only apply to the token view; refresh stays for every view.
 		expect(screen.queryByRole("button", { name: "Filter" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: "Previous period" })).not.toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("UsageView", () => {
 		expect(within(views).getByRole("button", { name: /Windows/ })).toHaveTextContent("Experimental");
 	});
 
-	it("filters spend by project from the Filter menu and clears it from the chip", async () => {
+	it("filters token usage by project from the Filter menu and clears it from the chip", async () => {
 		const user = userEvent.setup();
 		renderView();
 		expect(mocks.report).toHaveBeenLastCalledWith(7, 0, undefined);

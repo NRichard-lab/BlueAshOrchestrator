@@ -270,7 +270,6 @@ import {
 	shouldFlashFrame,
 	shouldPlaySound,
 	shouldReplaceBounce,
-	shouldSignalAttention,
 	shouldToast,
 	toastSilent,
 } from "./main/notification-signals";

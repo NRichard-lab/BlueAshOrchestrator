@@ -10,17 +10,17 @@ function Bone({ className }: { className?: string }) {
 	return <Skeleton className={cn("motion-reduce:animate-none", className)} />;
 }
 
-export function UsageSkeleton({ view }: { view: "spend" | "limits" | "windows" }) {
+export function UsageSkeleton({ view }: { view: "token" | "limits" | "windows" }) {
 	const { t } = useTranslation();
 	return (
 		<div role="status" aria-busy="true">
 			<span className="sr-only">{t("usage.loading")}</span>
-			{view === "limits" ? <LimitsSkeleton /> : view === "windows" ? <WindowsSkeleton /> : <SpendSkeleton />}
+			{view === "limits" ? <LimitsSkeleton /> : view === "windows" ? <WindowsSkeleton /> : <TokensSkeleton />}
 		</div>
 	);
 }
 
-function SpendSkeleton() {
+function TokensSkeleton() {
 	return (
 		<div className="flex flex-col gap-8">
 			<section className="grid gap-8 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">

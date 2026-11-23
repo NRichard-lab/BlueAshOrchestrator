@@ -4452,7 +4452,7 @@
 	"usage.view.cost": "Стоимость",
 	"usage.view.tokens": "Токены",
 	"usage.view.limits": "Лимиты",
-	"usage.view.spend": "Расходы",
+	"usage.view.token": "Токены",
 	"usage.view.windows": "Окна",
 	"usage.unit": "Единица",
 	"usage.total.cost": "Общая стоимость",

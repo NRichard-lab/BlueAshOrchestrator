@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Gauge, RefreshCw } from "lucide-react";
+﻿import { ChevronLeft, ChevronRight, Gauge, RefreshCw } from "lucide-react";
 import { Filter } from "@/components/app-icons";
 import { ScrollArea } from "radix-ui";
 import { useEffect, useMemo, useState } from "react";
@@ -27,10 +27,13 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { UsageLimits } from "./UsageLimits";
 import { UsageSkeleton } from "./UsageSkeleton";
-import { UsageSpend } from "./UsageSpend";
+import { UsageTokens } from "./UsageTokens";
 import { UsageWindows } from "./UsageWindows";
 
-type UsageTab = "spend" | "limits" | "windows";
+// "token" rather than "spend": the figures AO observes are tokens, and the
+// only money it can show is its own estimate from published API list prices.
+// Naming the view after the spending would promise a bill AO never sees.
+type UsageTab = "token" | "limits" | "windows";
 const ALL_PROJECTS = "all";
 const PERIODS = [
 	{ days: 1, label: "usage.period.day" },
@@ -50,11 +53,11 @@ function useNow(intervalMs: number): Date {
 
 export function UsageView() {
 	const { t, i18n } = useTranslation();
-	const [chosenTab, setTab] = useState<UsageTab>("spend");
+	const [chosenTab, setTab] = useState<UsageTab>("token");
 	const developerMode = useUiStore((state) => state.developerMode);
 	const showGlobalToast = useUiStore((state) => state.showGlobalToast);
-	const tab = chosenTab === "windows" && !developerMode ? "spend" : chosenTab;
-	const [unit, setUnit] = useState<UsageUnit>("cost");
+	const tab = chosenTab === "windows" && !developerMode ? "token" : chosenTab;
+	const [unit, setUnit] = useState<UsageUnit>("tokens");
 	const [days, setDays] = useState(7);
 	const [offset, setOffset] = useState(0);
 	const [projectFilter, setProjectFilter] = useState(ALL_PROJECTS);
@@ -101,7 +104,7 @@ export function UsageView() {
 	const failed = (error: Error) => <p role="alert" className="py-16 text-center text-sm text-destructive">{error.message}</p>;
 	const staleError = (error: Error | null) => (error ? <p role="alert" className="mb-4 text-xs text-destructive">{error.message}</p> : null);
 	const range = report.data ? formatRange(report.data.since, report.data.until, i18n.language) : null;
-	const views: UsageTab[] = developerMode ? ["spend", "limits", "windows"] : ["spend", "limits"];
+	const views: UsageTab[] = developerMode ? ["token", "limits", "windows"] : ["token", "limits"];
 	const selectedProjectName = projectFilter === ALL_PROJECTS ? null : projectNames.get(projectFilter) ?? projectFilter;
 
 	return (
@@ -119,7 +122,7 @@ export function UsageView() {
 							))}
 						</div>
 						<div className="ms-auto flex shrink-0 items-center gap-0.5">
-							{tab === "spend" && filterProjects.length > 0 ? (
+							{tab === "token" && filterProjects.length > 0 ? (
 								<DropdownMenu>
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -140,7 +143,7 @@ export function UsageView() {
 									</DropdownMenuContent>
 								</DropdownMenu>
 							) : null}
-							{tab === "spend" ? (
+							{tab === "token" ? (
 								<div className="flex items-center gap-0.5">
 									<Button type="button" variant="quiet" size="icon-sm" aria-label={t("usage.period.previous")} onClick={() => setOffset((value) => value + 1)}>
 										<ChevronLeft aria-hidden="true" className="size-icon-sm" />
@@ -158,7 +161,7 @@ export function UsageView() {
 										renderTrigger={(selected) => (
 											<span className="min-w-0 truncate">
 												{offset === 0 || !range ? selected?.label : null}
-												{range ? <span className="text-muted-foreground">{offset === 0 ? ` · ${range}` : range}</span> : null}
+												{range ? <span className="text-muted-foreground">{offset === 0 ? ` Â· ${range}` : range}</span> : null}
 											</span>
 										)}
 									/>
@@ -177,7 +180,7 @@ export function UsageView() {
 							</Tooltip>
 						</div>
 					</div>
-					{tab === "spend" && selectedProjectName ? (
+					{tab === "token" && selectedProjectName ? (
 						<div className="mt-2 flex flex-wrap items-center gap-1.5">
 							<FilterChip
 								label={t("usage.projectFilter")}
@@ -221,7 +224,7 @@ export function UsageView() {
 								<>
 									{staleError(report.error)}
 									<div className={cn("transition-opacity", report.isPlaceholderData && "opacity-60")}>
-										<UsageSpend report={report.data} unit={unit} onUnitChange={setUnit} projectNames={projectNames} />
+										<UsageTokens report={report.data} unit={unit} onUnitChange={setUnit} projectNames={projectNames} />
 									</div>
 								</>
 							) : report.isLoading ? (

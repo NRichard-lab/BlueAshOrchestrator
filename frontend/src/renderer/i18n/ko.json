@@ -4083,7 +4083,7 @@
 	"usage.view.cost": "비용",
 	"usage.view.tokens": "토큰",
 	"usage.view.limits": "한도",
-	"usage.view.spend": "지출",
+	"usage.view.token": "토큰",
 	"usage.view.windows": "창",
 	"usage.unit": "단위",
 	"usage.total.cost": "총 비용",
