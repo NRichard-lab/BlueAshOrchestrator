@@ -37,7 +37,7 @@ validate_update_origin() {
 		printf '%s\n' 'AO_UPDATE_ORIGIN is not set. Set it to your BlueAsh update server origin (https://<host>).' >&2
 		return 1
 	fi
-	raw="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+	raw="${raw,,}"
 	if [[ ! "$raw" =~ ^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+)(:[0-9]{1,5})?$ ]]; then
 		printf 'AO_UPDATE_ORIGIN must be a bare https origin on a public DNS name, got: %s\n' "$1" >&2
 		return 1
