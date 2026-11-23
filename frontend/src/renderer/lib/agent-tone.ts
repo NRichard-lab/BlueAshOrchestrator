@@ -42,6 +42,7 @@ const AGENT_HUES: Record<AgentId, number | null> = {
 	memcode: 140,
 	hermes: 75,
 	stakpak: 215,
+	local: 165,
 };
 
 export function agentTone(harness: string): string {

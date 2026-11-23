@@ -94,6 +94,77 @@ func TestLocalProvidersAddAndRemove(t *testing.T) {
 	}
 }
 
+func TestLocalProvidersHarnessLinkRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/models" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]string{{"id": "coder-v1"}},
+		})
+	}))
+	t.Cleanup(server.Close)
+
+	ctrl := &controllers.LocalProvidersController{DataDir: dir, Client: server.Client()}
+	r := chi.NewRouter()
+	ctrl.Register(r)
+
+	add := httptest.NewRequest(http.MethodPost, "/local-providers", strings.NewReader(`{"name":"lab","baseUrl":"`+server.URL+`","kind":"openai-compatible"}`))
+	add.Header.Set("Content-Type", "application/json")
+	addRec := httptest.NewRecorder()
+	r.ServeHTTP(addRec, add)
+	if addRec.Code != http.StatusOK {
+		t.Fatalf("add status = %d body=%s", addRec.Code, addRec.Body.String())
+	}
+
+	put := httptest.NewRequest(http.MethodPut, "/local-providers/harness-link", strings.NewReader(`{"endpointName":"lab","model":"coder-v1","apiKey":"secret-token"}`))
+	put.Header.Set("Content-Type", "application/json")
+	putRec := httptest.NewRecorder()
+	r.ServeHTTP(putRec, put)
+	if putRec.Code != http.StatusOK {
+		t.Fatalf("put link status = %d body=%s", putRec.Code, putRec.Body.String())
+	}
+	if strings.Contains(putRec.Body.String(), "secret-token") {
+		t.Fatal("API key must not appear in link response")
+	}
+	var link map[string]any
+	if err := json.Unmarshal(putRec.Body.Bytes(), &link); err != nil {
+		t.Fatal(err)
+	}
+	if link["linked"] != true || link["model"] != "coder-v1" || link["hasApiKey"] != true {
+		t.Fatalf("link = %#v", link)
+	}
+
+	list := httptest.NewRequest(http.MethodGet, "/local-providers", nil)
+	listRec := httptest.NewRecorder()
+	r.ServeHTTP(listRec, list)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("list status = %d", listRec.Code)
+	}
+	if strings.Contains(listRec.Body.String(), "secret-token") {
+		t.Fatal("API key must not appear in list response")
+	}
+	var listBody struct {
+		HarnessLink map[string]any `json:"harnessLink"`
+		Notes       map[string]string `json:"notes"`
+	}
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listBody); err != nil {
+		t.Fatal(err)
+	}
+	if listBody.HarnessLink["linked"] != true || listBody.Notes["local"] == "" {
+		t.Fatalf("list body harnessLink=%#v notes=%#v", listBody.HarnessLink, listBody.Notes)
+	}
+
+	del := httptest.NewRequest(http.MethodDelete, "/local-providers/harness-link", nil)
+	delRec := httptest.NewRecorder()
+	r.ServeHTTP(delRec, del)
+	if delRec.Code != http.StatusNoContent {
+		t.Fatalf("unlink status = %d", delRec.Code)
+	}
+}
+
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

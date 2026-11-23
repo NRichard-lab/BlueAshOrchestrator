@@ -46,6 +46,9 @@ const (
 	HarnessDockerAgent AgentHarness = "docker-agent"
 	HarnessHermes      AgentHarness = "hermes"
 	HarnessStakpak     AgentHarness = "stakpak"
+	// HarnessLocal runs coding workers against a linked Ollama / llama.cpp /
+	// OpenAI-compatible endpoint via OpenCode 2.
+	HarnessLocal AgentHarness = "local"
 	// HarnessFake is retained for existing test fixtures and historical session
 	// rows, but is not user-selectable.
 	HarnessFake AgentHarness = "fake"
@@ -61,6 +64,7 @@ var AllHarnesses = []AgentHarness{
 	HarnessKimchi, HarnessPrimeAgent, HarnessAutohand,
 	HarnessOMP, HarnessFX, HarnessUnreal, HarnessCodewhale, HarnessMiMoCode, HarnessMiniMaxCode, HarnessDeepSeek, HarnessOpenHands,
 	HarnessCommandCode, HarnessDockerAgent, HarnessMemcode, HarnessHermes, HarnessStakpak,
+	HarnessLocal,
 }
 
 // ChatOnly reports whether h has no terminal interface, so every session on it

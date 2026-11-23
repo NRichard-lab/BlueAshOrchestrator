@@ -20290,6 +20290,7 @@ components:
           - memcode
           - hermes
           - stakpak
+          - local
           - fake
           type: string
         approvalMode:
@@ -25326,6 +25327,7 @@ components:
           - memcode
           - hermes
           - stakpak
+          - local
           type: string
         issueId:
           type: string

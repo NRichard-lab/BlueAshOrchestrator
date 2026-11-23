@@ -2,6 +2,25 @@ package domain
 
 import "testing"
 
+func TestLocalHarnessIsKnown(t *testing.T) {
+	if HarnessLocal != AgentHarness("local") {
+		t.Fatalf("HarnessLocal = %q, want local", HarnessLocal)
+	}
+	if !HarnessLocal.IsKnown() {
+		t.Fatal("HarnessLocal.IsKnown() = false, want true")
+	}
+	found := false
+	for _, harness := range AllHarnesses {
+		if harness == HarnessLocal {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("AllHarnesses does not contain HarnessLocal")
+	}
+}
+
 func TestOpenCodeV2HarnessIsKnownAndDistinct(t *testing.T) {
 	if HarnessOpenCodeV2 != AgentHarness("opencode-v2") {
 		t.Fatalf("HarnessOpenCodeV2 = %q, want opencode-v2", HarnessOpenCodeV2)

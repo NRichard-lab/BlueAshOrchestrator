@@ -1,7 +1,9 @@
 # Local model endpoints
 
-Orchestrator can discover model servers running on this machine and keep the
-address of any others you name.
+Orchestrator can discover model servers running on this machine, keep the
+address of any others you name, and **link** one endpoint + model to the
+**Local** coding harness so it appears beside Claude and Cursor in project and
+session pickers.
 
 ```bash
 ao local-provider ls                                   # probe and list
@@ -65,23 +67,45 @@ different base URL or kind.
 LAN and other non-loopback addresses are never probed until you add them. Only
 use addresses on a network you trust.
 
+## Local coding harness
+
+Discovery alone does not generate tokens. To use a local endpoint as a **worker**:
+
+1. Install **OpenCode 2** (Local reuses its workspace tools and permission modes;
+   Orchestrator does not ship a second tool runtime).
+2. In Settings → Local models, choose an endpoint and a discovered (or supported
+   manual) model, then **Link Local worker**. An optional API key is stored only
+   in `local-harness.json` under the data directory (mode `0600` on Unix) and is
+   never returned by the list API or written to logs.
+3. Select **Local** in a project worker picker or new-session picker, the same
+   way you select Claude or Cursor.
+
+At launch, Orchestrator injects an OpenAI-compatible provider (`ao-local`) into
+OpenCode’s config with the linked `baseURL` and model. Normal coding turns then
+call that endpoint’s `/v1/chat/completions` (including tool calls). Project
+permission modes (`default`, `accept-edits`, `auto`, `bypass-permissions`) map to
+OpenCode’s existing controls.
+
+Capabilities, stated honestly:
+
+- **Requires** OpenCode 2 on PATH (or a managed install AO can resolve).
+- **Requires** a linked endpoint + model; until linked, Local is not authorized
+  for launch.
+- **Tools** are OpenCode’s workspace-scoped tools under AO’s permission modes.
+- **Compatibility** of a given Ollama / llama.cpp / LM Studio / Bionic build is
+  whatever that server’s OpenAI-compatible surface actually implements.
+
 ## What discovery does and does not do
 
 Discovery is read-only: it asks an endpoint what it serves and never sends a
-prompt. The only HTTP requests Orchestrator makes are:
+prompt. The only HTTP requests Orchestrator makes during discovery are:
 
 | Kind | Probe |
 | --- | --- |
 | `ollama` | `GET <base-url>/api/tags` |
 | `openai-compatible` | `GET <base-url>/v1/models` |
 
-Orchestrator does **not** call `/v1/chat/completions`, `/api/chat`, or any other
-generation route. A turn still goes harness → endpoint. Settings → Local models
-copies `OLLAMA_API_BASE=<base>` or `OPENAI_BASE_URL=<base>` so you can paste it
-into Project settings → Environment (or the harness's own config). Until that
-variable is set for a worker, discovery alone changes nothing about which model
-answers.
-
-To make a harness use one, set the variable that harness reads. For example
-Aider reads `OLLAMA_API_BASE`, and most OpenAI-compatible CLIs read
-`OPENAI_BASE_URL`; check the harness's own documentation for the name it expects.
+Generation for the Local harness is a separate path: OpenCode (launched by AO)
+calls `/v1/chat/completions` on the linked endpoint. Other harnesses may still
+read `OLLAMA_API_BASE` / `OPENAI_BASE_URL` if you copy those from Settings; that
+env-copy path remains available but is not required for Local once linked.

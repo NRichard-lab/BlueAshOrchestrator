@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getApiBaseUrl } from "../../lib/api-client";
 import { Button } from "../ui/button";
@@ -18,10 +18,21 @@ type LocalEndpoint = {
 	harnessEnv: string;
 };
 
+type HarnessLink = {
+	linked: boolean;
+	endpointName?: string;
+	model?: string;
+	hasApiKey?: boolean;
+	openCodeModel?: string;
+	harness: string;
+	requires: string;
+};
+
 type LocalProvidersResponse = {
 	endpoints: LocalEndpoint[];
 	presets: Array<{ name: string; baseUrl: string; kind: string }>;
 	notes: Record<string, string>;
+	harnessLink?: HarnessLink;
 };
 
 const KIND_OPTIONS = [
@@ -37,7 +48,7 @@ async function fetchLocalProviders(): Promise<LocalProvidersResponse> {
 
 /**
  * Desktop Local options: probe Ollama / llama.cpp, add LAN or Bionic-style
- * OpenAI-compatible servers, and show the harness env var to point a worker at.
+ * OpenAI-compatible servers, and link one endpoint+model to the Local worker.
  */
 export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: boolean }) {
 	const { t } = useTranslation();
@@ -48,12 +59,20 @@ export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: b
 	const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:1234");
 	const [kind, setKind] = useState("openai-compatible");
 	const [copied, setCopied] = useState<string | null>(null);
+	const [linkEndpoint, setLinkEndpoint] = useState("");
+	const [linkModel, setLinkModel] = useState("");
+	const [linkApiKey, setLinkApiKey] = useState("");
 
 	const reload = useCallback(async () => {
 		setError(null);
 		setBusy(true);
 		try {
-			setData(await fetchLocalProviders());
+			const next = await fetchLocalProviders();
+			setData(next);
+			if (next.harnessLink?.linked) {
+				setLinkEndpoint(next.harnessLink.endpointName || "");
+				setLinkModel(next.harnessLink.model || "");
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -64,6 +83,21 @@ export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: b
 	useEffect(() => {
 		void reload();
 	}, [reload]);
+
+	const endpointOptions = useMemo(
+		() => (data?.endpoints ?? []).map((endpoint) => ({ value: endpoint.name, label: endpoint.name })),
+		[data?.endpoints],
+	);
+
+	const modelOptions = useMemo(() => {
+		const endpoint = (data?.endpoints ?? []).find((item) => item.name === linkEndpoint);
+		const models = endpoint?.models ?? [];
+		const options = models.map((model) => ({ value: model, label: model }));
+		if (linkModel && !models.includes(linkModel)) {
+			options.unshift({ value: linkModel, label: linkModel });
+		}
+		return options;
+	}, [data?.endpoints, linkEndpoint, linkModel]);
 
 	const addEndpoint = async () => {
 		setError(null);
@@ -101,6 +135,47 @@ export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: b
 		}
 	};
 
+	const saveLink = async () => {
+		setError(null);
+		setBusy(true);
+		try {
+			const response = await fetch(`${getApiBaseUrl()}/api/v1/local-providers/harness-link`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					endpointName: linkEndpoint,
+					model: linkModel,
+					...(linkApiKey.trim() ? { apiKey: linkApiKey.trim() } : {}),
+				}),
+			});
+			const body = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error((body as { error?: string }).error || response.statusText);
+			setLinkApiKey("");
+			await reload();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+			setBusy(false);
+		}
+	};
+
+	const clearLink = async () => {
+		setError(null);
+		setBusy(true);
+		try {
+			const response = await fetch(`${getApiBaseUrl()}/api/v1/local-providers/harness-link`, { method: "DELETE" });
+			if (!response.ok && response.status !== 204) {
+				const body = await response.json().catch(() => ({}));
+				throw new Error((body as { error?: string }).error || response.statusText);
+			}
+			setLinkEndpoint("");
+			setLinkModel("");
+			await reload();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+			setBusy(false);
+		}
+	};
+
 	const applyPreset = (preset: { name: string; baseUrl: string; kind: string }) => {
 		setName(preset.name);
 		setBaseUrl(preset.baseUrl);
@@ -114,12 +189,91 @@ export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: b
 		window.setTimeout(() => setCopied((current) => (current === endpoint.name ? null : current)), 2000);
 	};
 
+	const useForLocal = (endpoint: LocalEndpoint) => {
+		setLinkEndpoint(endpoint.name);
+		const firstModel = endpoint.models?.[0] || "";
+		setLinkModel(firstModel);
+	};
+
 	return (
 		<SettingsSection title={t("settings.localProviders")} titleHidden={titleHidden} grouped>
 			<p className="px-3 pb-2 text-xs text-muted-foreground">{t("settings.localProviders.description")}</p>
 			{error ? <p role="alert" className="px-3 pb-2 text-xs text-error">{error}</p> : null}
 			{data?.notes.bionic ? <p className="px-3 pb-2 text-xs text-muted-foreground">{data.notes.bionic}</p> : null}
 			{data?.notes.lan ? <p className="px-3 pb-2 text-xs text-muted-foreground">{data.notes.lan}</p> : null}
+			{data?.notes.local ? <p className="px-3 pb-2 text-xs text-muted-foreground">{data.notes.local}</p> : null}
+
+			<SettingsRow
+				label={t("settings.localProviders.linkTitle")}
+				description={
+					data?.harnessLink?.linked
+						? t("settings.localProviders.linkActive", {
+								endpoint: data.harnessLink.endpointName,
+								model: data.harnessLink.model,
+							})
+						: t("settings.localProviders.linkIdle")
+				}
+			>
+				<div className="flex w-full max-w-xl flex-col gap-2">
+					{endpointOptions.length > 0 ? (
+						<SettingsOptionMenu
+							aria-label={t("settings.localProviders.linkEndpoint")}
+							value={linkEndpoint}
+							options={endpointOptions}
+							onChange={(value) => {
+								setLinkEndpoint(value);
+								const endpoint = (data?.endpoints ?? []).find((item) => item.name === value);
+								if (endpoint?.models?.[0]) setLinkModel(endpoint.models[0]);
+							}}
+						/>
+					) : (
+						<p className="text-xs text-muted-foreground">{t("settings.localProviders.linkNeedEndpoint")}</p>
+					)}
+					{modelOptions.length > 0 ? (
+						<SettingsOptionMenu
+							aria-label={t("settings.localProviders.linkModel")}
+							value={linkModel}
+							options={modelOptions}
+							onChange={setLinkModel}
+						/>
+					) : (
+						<Input
+							aria-label={t("settings.localProviders.linkModel")}
+							value={linkModel}
+							onChange={(event) => setLinkModel(event.target.value)}
+							placeholder="model-id"
+						/>
+					)}
+					<Input
+						aria-label={t("settings.localProviders.linkApiKey")}
+						type="password"
+						autoComplete="off"
+						value={linkApiKey}
+						onChange={(event) => setLinkApiKey(event.target.value)}
+						placeholder={
+							data?.harnessLink?.hasApiKey
+								? t("settings.localProviders.linkApiKeySet")
+								: t("settings.localProviders.linkApiKeyOptional")
+						}
+					/>
+					<div className="flex flex-wrap gap-1">
+						<Button
+							type="button"
+							size="sm"
+							disabled={busy || !linkEndpoint.trim() || !linkModel.trim()}
+							onClick={() => void saveLink()}
+						>
+							{t("settings.localProviders.linkSave")}
+						</Button>
+						{data?.harnessLink?.linked ? (
+							<Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void clearLink()}>
+								{t("settings.localProviders.linkClear")}
+							</Button>
+						) : null}
+					</div>
+					<p className="text-xs text-muted-foreground">{t("settings.localProviders.linkRequires")}</p>
+				</div>
+			</SettingsRow>
 
 			{(data?.endpoints ?? []).map((endpoint) => (
 				<SettingsRow
@@ -137,6 +291,9 @@ export function LocalProvidersSection({ titleHidden = false }: { titleHidden?: b
 					}
 				>
 					<div className="flex flex-wrap items-center gap-1">
+						<Button type="button" size="sm" variant="ghost" onClick={() => useForLocal(endpoint)}>
+							{t("settings.localProviders.useForLocal")}
+						</Button>
 						<Button type="button" size="sm" variant="ghost" onClick={() => void copyConnection(endpoint)}>
 							{copied === endpoint.name ? t("settings.localProviders.copied") : t("settings.localProviders.copyEnv")}
 						</Button>
