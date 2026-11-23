@@ -171,6 +171,13 @@ export function macSignOptionsForFile(filePath: string): { entitlements?: string
 }
 
 function githubPublishers(): ForgeConfig["publishers"] {
+	if (!PRODUCT.updatesEnabled) {
+		// A profile with updates compiled out never publishes a release feed, so a publish target is a mistake.
+		if (process.env.AO_RELEASE_REPO) {
+			throw new Error(`AO_RELEASE_REPO must not be set for the ${PRODUCT.displayName} build: its product profile has updates disabled.`);
+		}
+		return [];
+	}
 	const repository = parseReleaseRepo(process.env.AO_RELEASE_REPO);
 	if (!repository) return [];
 	return [

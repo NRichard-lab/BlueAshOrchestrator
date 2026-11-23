@@ -11,6 +11,9 @@
 //   (add --no-feed to `app` or `yml` to accept ONLY a deliberately feed-less app-update.yml)
 //   node scripts/verify-update-origin.mjs yml <app-update.yml> [--origin https://<host>]
 //       Just the baked feed file (cheap pre-package/post-package check).
+//   (add --require-updates-off to `app` to also require the daemon's updates/telemetry/pricing stamps and no update manifests)
+//   node scripts/verify-update-origin.mjs brand <brands.json> [profile]
+//       The profile (default blueashai) must keep updates, remote telemetry and the price-catalog fetch off.
 //   node scripts/verify-update-origin.mjs source <repoRoot>
 //       Release-critical source paths must not name the upstream release plane.
 //
@@ -122,8 +125,45 @@ export function checkAppUpdateYml(yml, expectedOrigin, { feedless = false } = {}
 	return problems;
 }
 
+// The Go daemon is stamped with these by ldflags (frontend/scripts/build-daemon.mjs) when AO_BRAND=blueashai, and Go
+// writes the ldflags into the binary's build info as plain text. Their presence in the shipped ao/ao.exe is the
+// evidence that the compiled daemon has updates, remote telemetry and the price-catalog fetch compiled out.
+export const REQUIRED_DAEMON_STAMPS = [
+	"brand.UpdatesEnabled=false",
+	"brand.RemoteTelemetryEnabled=false",
+	"brand.PricingCatalogSyncEnabled=false",
+];
+
+// Manifests an update server would serve; none may ship inside a build whose updates are compiled out.
+const FEED_MANIFEST_NAME = /^(latest|nightly|beta|alpha|pr\d+|dev-app-update)(-mac|-linux)?\.yml$/i;
+
+/** The BlueAsh product profile must keep every update/remote switch off (brands.json). Pure: takes parsed JSON. */
+export function checkBrandFlags(brands, id = "blueashai") {
+	const profile = brands?.[id];
+	if (!profile) return [`brands.json has no "${id}" profile`];
+	const problems = [];
+	for (const flag of ["updatesEnabled", "remoteTelemetryEnabled", "pricingCatalogSyncEnabled"]) {
+		if (profile[flag] !== false) problems.push(`brands.json ${id}.${flag} must be false (found ${JSON.stringify(profile[flag])})`);
+	}
+	return problems;
+}
+
 export function scanApp(dir, expectedOrigin, options = {}) {
 	const problems = [];
+	if (options.requireUpdatesOff) {
+		const daemons = [...walk(dir)].filter((f) => /(^|[\\/])ao(\.exe)?$/.test(f));
+		if (daemons.length === 0) problems.push(`--require-updates-off: no daemon binary (ao/ao.exe) found under ${dir}`);
+		for (const daemon of daemons) {
+			const data = readFileSync(daemon);
+			for (const stamp of REQUIRED_DAEMON_STAMPS) {
+				if (!data.includes(Buffer.from(stamp))) problems.push(`${relative(dir, daemon)}: daemon is not stamped with ${stamp}`);
+			}
+		}
+		for (const file of walk(dir)) {
+			const base = file.split(/[\\/]/).pop();
+			if (FEED_MANIFEST_NAME.test(base)) problems.push(`${relative(dir, file)}: update manifest ships in a build with updates compiled out`);
+		}
+	}
 	const ymls = [...walk(dir)].filter((f) => f.endsWith("app-update.yml"));
 	if (ymls.length === 0) problems.push(`no app-update.yml found under ${dir}`);
 	for (const yml of ymls) {
@@ -176,7 +216,7 @@ function main(argv) {
 	if (mode === "app") {
 		const i = rest.indexOf("--origin");
 		const origin = (i >= 0 ? rest[i + 1] : undefined) ?? process.env.AO_UPDATE_ORIGIN;
-		const result = scanApp(target, origin, { feedless: rest.includes("--no-feed") });
+		const result = scanApp(target, origin, { feedless: rest.includes("--no-feed"), requireUpdatesOff: rest.includes("--require-updates-off") });
 		problems = result.problems;
 		process.stdout.write(`scanned ${result.scanned} files\n`);
 		for (const e of result.evidence) process.stdout.write(`evidence ${e.file} sha256=${e.sha256}\n`);
@@ -189,6 +229,8 @@ function main(argv) {
 		problems = checkAppUpdateYml(readFileSync(target, "utf8"), origin, { feedless: rest.includes("--no-feed") });
 	} else if (mode === "source") {
 		problems = scanSource(target).problems;
+	} else if (mode === "brand") {
+		problems = checkBrandFlags(JSON.parse(readFileSync(target, "utf8")), rest[0] ?? "blueashai");
 	} else {
 		process.stderr.write(`unknown mode ${mode}\n`);
 		return 2;

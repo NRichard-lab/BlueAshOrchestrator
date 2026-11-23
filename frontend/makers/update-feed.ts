@@ -23,8 +23,23 @@ export function parseReleaseRepo(value: string | undefined): { owner: string; na
 
 // resolveAppUpdateYml renders the app-update.yml baked into the bundle.
 export function resolveAppUpdateYml(env: NodeJS.ProcessEnv): string {
-	const cacheDir = resolveTestIdentity(env)?.updaterCacheDirName ?? resolveBrand(env.AO_BRAND).updaterCacheDirName;
+	const brand = resolveBrand(env.AO_BRAND);
+	const cacheDir = resolveTestIdentity(env)?.updaterCacheDirName ?? brand.updaterCacheDirName;
 	const raw = env.AO_UPDATE_ORIGIN;
+	if (!brand.updatesEnabled) {
+		// The product profile compiles every update mechanism out. A feed here would be unused at runtime
+		// (readBakedUpdateOrigin returns undefined), so refuse it rather than ship a misleading file, and
+		// never need AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN for this brand.
+		if (raw) {
+			throw new Error(
+				`AO_UPDATE_ORIGIN must not be set for the ${brand.displayName} build: its product profile has updates disabled ` +
+					"(frontend/src/shared/brands.json updatesEnabled=false). Unset it, or build a profile with updates.",
+			);
+		}
+		return `# No update feed: the ${brand.displayName} product profile has updates disabled.
+updaterCacheDirName: ${cacheDir}
+`;
+	}
 	if (!raw && env.AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN === "1") {
 		// No feed: runtime treats this as "update server not configured" and
 		// disables updates. Never a placeholder host.

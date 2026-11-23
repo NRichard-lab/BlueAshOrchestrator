@@ -14,7 +14,7 @@ vi.mock("./blockmap.mjs", () => ({
 }));
 
 import { stageUpdateTree, channelLayout } from "./stage-update-tree.mjs";
-import { checkAppUpdateYml, checkFeedlessAppUpdateYml, scanApp, scanSource, RELEASE_CRITICAL_SOURCES } from "./verify-update-origin.mjs";
+import { checkAppUpdateYml, checkBrandFlags, checkFeedlessAppUpdateYml, scanApp, scanSource, RELEASE_CRITICAL_SOURCES, REQUIRED_DAEMON_STAMPS } from "./verify-update-origin.mjs";
 import { parseUpdateOrigin } from "./update-origin-core.mjs";
 import { PLATFORM_CATALOG, selectPlatforms } from "./select-release-platforms.mjs";
 
@@ -191,5 +191,50 @@ describe("feed-less (fail-closed) preview builds", () => {
 		expect(scanApp(app, undefined).problems.length).toBeGreaterThan(0);
 		writeFileSync(join(app, "Resources/daemon"), Buffer.from("https://raw.githubusercontent.com/Untrivial-ai/agent-orchestrator/main/x"));
 		expect(scanApp(app, undefined, { feedless: true }).problems.join()).toMatch(/denied upstream pattern/);
+	});
+});
+
+describe("compiled-out updates (BlueAshAI profile)", () => {
+	const feedless = "# No update feed.\nupdaterCacheDirName: blueashai-updater\n";
+
+	it("checkBrandFlags demands all three switches be off in the named profile", () => {
+		const brands = JSON.parse(readFileSync(join(repoRoot, "frontend", "src", "shared", "brands.json"), "utf8"));
+		expect(checkBrandFlags(brands, "blueashai")).toEqual([]);
+		// The legacy profile legitimately keeps them on, so the guard is about the named profile only.
+		expect(checkBrandFlags(brands, "legacy").length).toBe(3);
+		expect(checkBrandFlags({ blueashai: { updatesEnabled: true, remoteTelemetryEnabled: false, pricingCatalogSyncEnabled: false } }).join()).toMatch(/updatesEnabled/);
+		expect(checkBrandFlags({ blueashai: { updatesEnabled: false } }).length).toBe(2);
+		expect(checkBrandFlags({}, "blueashai")[0]).toMatch(/no "blueashai" profile/);
+	});
+
+	function stagedApp({ stamps, manifest } = {}) {
+		const app = join(dir, "app-off");
+		mkdirSync(join(app, "Resources", "daemon"), { recursive: true });
+		writeFileSync(join(app, "Resources", "app-update.yml"), feedless);
+		writeFileSync(join(app, "Resources", "app.asar"), Buffer.from("fine"));
+		writeFileSync(join(app, "Resources", "daemon", "ao.exe"), Buffer.from(`go build -ldflags=${(stamps ?? REQUIRED_DAEMON_STAMPS).map((x) => "-X x/" + x).join(" ")}`));
+		if (manifest) writeFileSync(join(app, "Resources", manifest), "version: 1.0.0\n");
+		return app;
+	}
+
+	it("--require-updates-off passes only a feed-less app whose daemon carries every stamp and which ships no manifest", () => {
+		expect(scanApp(stagedApp(), undefined, { feedless: true, requireUpdatesOff: true }).problems).toEqual([]);
+	});
+
+	it("fails when a daemon stamp is missing, the daemon is absent, or an update manifest ships", () => {
+		for (const missing of REQUIRED_DAEMON_STAMPS) {
+			const app = stagedApp({ stamps: REQUIRED_DAEMON_STAMPS.filter((x) => x !== missing) });
+			expect(scanApp(app, undefined, { feedless: true, requireUpdatesOff: true }).problems.join(), missing).toContain(missing);
+			rmSync(app, { recursive: true, force: true });
+		}
+		const app = stagedApp({ manifest: "latest.yml" });
+		expect(scanApp(app, undefined, { feedless: true, requireUpdatesOff: true }).problems.join()).toMatch(/update manifest ships/);
+		rmSync(join(app, "Resources", "daemon"), { recursive: true, force: true });
+		expect(scanApp(app, undefined, { feedless: true, requireUpdatesOff: true }).problems.join()).toMatch(/no daemon binary/);
+	});
+
+	it("without the flag nothing changes for builds that still ship updates", () => {
+		const app = stagedApp({ stamps: [] });
+		expect(scanApp(app, undefined, { feedless: true }).problems).toEqual([]);
 	});
 });

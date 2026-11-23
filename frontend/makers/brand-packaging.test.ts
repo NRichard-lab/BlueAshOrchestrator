@@ -19,14 +19,26 @@ describe("BlueAshAI package metadata", () => {
 });
 
 describe("BlueAshAI update cache and fail-closed updates", () => {
-	it("bakes the BlueAshAI updater cache dir, and a feed-less file when no origin is supplied", () => {
-		const env = { AO_BRAND: "blueashai", AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN: "1" } as NodeJS.ProcessEnv;
-		const yml = resolveAppUpdateYml(env);
-		expect(yml).toContain(`updaterCacheDirName: ${BLUEASHAI_BRAND.updaterCacheDirName}`);
-		expect(yml).not.toMatch(/provider|url:|github|orchestrator/i);
-		expect(resolveAppUpdateYml({ AO_BRAND: "blueashai", AO_UPDATE_ORIGIN: "https://updates.example.test" } as NodeJS.ProcessEnv)).toContain("url: https://updates.example.test/desktop/stable/");
-		// Production still refuses to package updates without an origin and without the explicit opt-out.
-		expect(() => resolveAppUpdateYml({ AO_BRAND: "blueashai" } as NodeJS.ProcessEnv)).toThrow(/AO_UPDATE_ORIGIN is required/);
+	it("bakes the BlueAshAI updater cache dir and always a feed-less file: its profile has updates disabled", () => {
+		for (const env of [
+			{ AO_BRAND: "blueashai", AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN: "1" },
+			// No opt-out variable needed: updates are compiled out, so there is nothing to configure.
+			{ AO_BRAND: "blueashai" },
+		] as NodeJS.ProcessEnv[]) {
+			const yml = resolveAppUpdateYml(env);
+			expect(yml).toContain(`updaterCacheDirName: ${BLUEASHAI_BRAND.updaterCacheDirName}`);
+			expect(yml).not.toMatch(/^(provider|url|owner|repo|token):/m);
+			expect(yml).not.toMatch(/github|orchestratorinc|untrivial/i);
+		}
+	});
+
+	it("refuses to bake an update origin or a publish target into a profile with updates disabled", () => {
+		expect(() => resolveAppUpdateYml({ AO_BRAND: "blueashai", AO_UPDATE_ORIGIN: "https://updates.example.test" } as NodeJS.ProcessEnv)).toThrow(/must not be set/);
+	});
+
+	it("a profile with updates still requires an origin or the explicit opt-out (legacy behavior unchanged)", () => {
+		expect(() => resolveAppUpdateYml({} as NodeJS.ProcessEnv)).toThrow(/AO_UPDATE_ORIGIN is required/);
+		expect(resolveAppUpdateYml({ AO_UPDATE_ORIGIN: "https://updates.example.test" } as NodeJS.ProcessEnv)).toContain("url: https://updates.example.test/desktop/stable/");
 	});
 
 	it("the legacy profile keeps the Orchestrator cache dir", () => {
@@ -45,5 +57,24 @@ describe("production build settings", () => {
 		expect(wf).toMatch(/AO_BRAND:\s*blueashai/);
 		expect(wf).toContain(`name="${BLUEASHAI_BRAND.windowsAssetName}"`);
 		expect(wf).not.toMatch(/AO_TEST_IDENTITY/);
+	});
+
+	it("the release workflow bakes no update origin or publish target and verifies compiled-out updates", () => {
+		const wf = readFileSync(join(__dirname, "..", "..", ".github", "workflows", "build-artifacts.yml"), "utf8");
+		// Only comments may name the variables; no step may set or pass them.
+		const live = wf.split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
+		expect(live).not.toMatch(/AO_UPDATE_ORIGIN/);
+		expect(live).not.toMatch(/AO_RELEASE_REPO/);
+		expect(live).toContain("verify-update-origin.mjs brand src/shared/brands.json blueashai");
+		expect(live).toContain("verify-update-origin.mjs app out --no-feed --require-updates-off");
+	});
+
+	it("scheduled workflows no longer poll vendor or release hosts for a product that updates nothing", () => {
+		const read = (name: string) => readFileSync(join(__dirname, "..", "..", ".github", "workflows", name), "utf8");
+		for (const name of ["harness-release-feeds.yml", "release-latest-guard.yml"]) {
+			const live = read(name).split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
+			expect(live, name).not.toMatch(/cron:/);
+		}
+		expect(read("harness-release-feeds.yml")).not.toMatch(/^\s*pull_request:/m);
 	});
 });

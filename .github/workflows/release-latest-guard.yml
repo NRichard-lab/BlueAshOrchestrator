@@ -7,8 +7,8 @@ name: Release latest guard
 on:
   release:
     types: [published, edited, released]
-  schedule:
-    - cron: "17 * * * *"
+  # The hourly schedule is removed: BlueAshAI has no in-app update plane, so a poll of the GitHub
+  # Releases mirror guards nothing the product reads. It still runs on release events and manually.
   workflow_dispatch:
 
 jobs:

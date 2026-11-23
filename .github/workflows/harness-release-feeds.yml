@@ -4,18 +4,12 @@ name: Harness release feeds
 # reads. Vendors change these endpoints without notice and the unit tests only
 # see fakes, so a daily live run surfaces a broken feed before users see an
 # "unknown" update status.
+#
+# BlueAshAI compiles the harness update advisory out (brands.json updatesEnabled=false),
+# so nothing in the shipped product reads these feeds and this job has no reason to hit
+# vendor hosts on a schedule or on every PR. It is manual-only (workflow_dispatch).
 on:
-  schedule:
-    - cron: "23 6 * * *"
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "backend/internal/service/systeminstall/official_versions.go"
-      - "backend/internal/service/systeminstall/manager_versions.go"
-      - "backend/internal/service/systeminstall/update_version.go"
-      - "backend/internal/service/systeminstall/agentplans.go"
-      - "backend/internal/service/systeminstall/release_feeds_live_test.go"
-      - ".github/workflows/harness-release-feeds.yml"
 
 permissions:
   contents: read

@@ -26,6 +26,8 @@ on:
       - "packages/mobile/app.config*"
       - ".github/workflows/update-plane-guard.yml"
       - ".github/workflows/build-artifacts.yml"
+      - "frontend/src/shared/brands.json"
+      - "frontend/makers/update-feed*"
   push:
     branches: [main]
 
@@ -46,5 +48,7 @@ jobs:
           node-version: 22
       - name: Release-critical paths name no upstream update plane
         run: node frontend/scripts/verify-update-origin.mjs source .
+      - name: BlueAshAI profile keeps updates, remote telemetry and price sync off
+        run: node frontend/scripts/verify-update-origin.mjs brand frontend/src/shared/brands.json blueashai
       - name: Self-host origin validation
         run: bash scripts/setup-self-hosted.test.sh origin-validation
