@@ -1,4 +1,4 @@
-import {
+﻿import {
 	canSubmitProjectSetup,
 	ProjectSetupFormView,
 	ProjectSetupHeaderView,
@@ -43,6 +43,12 @@ type TrackerIntakeConfig = components["schemas"]["TrackerIntakeConfig"];
 export type CreateProjectSetup = {
 	workerAgent?: string;
 	orchestratorAgent?: string;
+	/**
+	 * Further worker harnesses the project keeps active beside workerAgent.
+	 * workerAgent stays the default a task starts on when none is named, so
+	 * these only widen what the project can run without being reconfigured.
+	 */
+	extraWorkerAgents?: string[];
 	trackerIntake?: TrackerIntakeConfig;
 };
 
@@ -159,8 +165,8 @@ export function CreateProjectAgentSheet({
 	const agentOptions = useMemo(() => agents?.agents ?? [], [agents]);
 	const selectableAgents = useMemo(() => hostId ? agentOptions.filter(isLaunchableAgent) : agentOptions, [agentOptions, hostId]);
 	// "configured" belongs here even though it is not a verified credential.
-	// This picks the default preselection, not a gate — every agent stays
-	// selectable — and excluding it would silently stop preselecting an agent
+	// This picks the default preselection, not a gate â€” every agent stays
+	// selectable â€” and excluding it would silently stop preselecting an agent
 	// whose credentials AO simply cannot validate, which is most of them.
 	const authorizedAgents = useMemo(
 		() =>
@@ -184,6 +190,7 @@ export function CreateProjectAgentSheet({
 		: null;
 	const displayError = agentsError ?? (hostId && agents && selectableAgents.length === 0 ? t("agentSelector.noneReady") : null);
 	const [workerAgent, setWorkerAgent] = useState("");
+	const [extraWorkerAgents, setExtraWorkerAgents] = useState<string[]>([]);
 	const [orchestratorAgent, setOrchestratorAgent] = useState("");
 	const [workerAgentTouched, setWorkerAgentTouched] = useState(false);
 	const [orchestratorAgentTouched, setOrchestratorAgentTouched] = useState(false);
@@ -203,7 +210,7 @@ export function CreateProjectAgentSheet({
 	);
 	const canSubmit =
 		canSubmitProjectSetup({
-			...(chooseAgents ? { workerAgent, orchestratorAgent } : {}),
+			...(chooseAgents ? { workerAgent, orchestratorAgent, ...(extraWorkerAgents.length > 0 ? { extraWorkerAgents } : {}) } : {}),
 			intakeEnabled: intakeVisible && intake.enabled,
 			intakeAssignee: intake.assignee,
 		}) &&
@@ -220,6 +227,7 @@ export function CreateProjectAgentSheet({
 	useEffect(() => {
 		if (open && !wasOpen.current) {
 			setWorkerAgent("");
+			setExtraWorkerAgents([]);
 			setOrchestratorAgent("");
 			setWorkerAgentTouched(false);
 			setOrchestratorAgentTouched(false);
@@ -289,21 +297,40 @@ export function CreateProjectAgentSheet({
 					<ProjectSetupFormView
 						agentControls={chooseAgents ? {
 							worker: (
-								<RequiredAgentField
-									id="newProjectWorkerAgent"
-									label={t("createProject.workerAgent")}
-									placeholder={t("createProject.selectWorker")}
-									value={workerAgent}
-									agents={selectableAgents}
-									disabled={isLoadingAgents}
-									labelClassName="agents-sheet-label"
-									contentClassName="agents-sheet-menu"
-									hostId={hostId}
-									onChange={(value) => {
-										setWorkerAgent(value);
-										setWorkerAgentTouched(true);
-									}}
-								/>
+								<>
+									<RequiredAgentField
+										id="newProjectWorkerAgent"
+										label={t("createProject.workerAgent")}
+										placeholder={t("createProject.selectWorker")}
+										value={workerAgent}
+										agents={selectableAgents}
+										disabled={isLoadingAgents}
+										labelClassName="agents-sheet-label"
+										contentClassName="agents-sheet-menu"
+										hostId={hostId}
+										onChange={(value) => {
+											setWorkerAgent(value);
+											setWorkerAgentTouched(true);
+										}}
+									/>
+									{/*
+									 * Rendered inside the worker slot rather than as a slot of
+									 * its own: the shared ProjectSetupFormView takes a fixed set
+									 * of controls, and these belong with the field they extend.
+									 */}
+									<ExtraWorkerAgents
+										// authorizedAgents, not selectableAgents: this list shows
+										// every option at once, so an agent whose credentials the
+										// provider definitely rejected would be on screen inviting
+										// a tick. The primary field keeps all of them selectable
+										// because they sit behind a menu the user opens.
+										agents={authorizedAgents}
+										primary={workerAgent}
+										value={extraWorkerAgents}
+										disabled={isLoadingAgents}
+										onChange={setExtraWorkerAgents}
+									/>
+								</>
 							),
 							orchestrator: (
 								<RequiredAgentField
@@ -362,7 +389,7 @@ export function CreateProjectAgentSheet({
 						}
 						onSubmit={() =>
 							void onSubmit({
-								...(chooseAgents ? { workerAgent, orchestratorAgent } : {}),
+								...(chooseAgents ? { workerAgent, orchestratorAgent, ...(extraWorkerAgents.length > 0 ? { extraWorkerAgents } : {}) } : {}),
 								trackerIntake: intakeVisible ? buildIntake(intake) : undefined,
 							})
 						}
@@ -419,6 +446,63 @@ function ProjectSheetCloseButton({
 				{children}
 			</Button>
 		</Dialog.Close>
+	);
+}
+
+/**
+ * The worker harnesses a project keeps active beside its default one.
+ *
+ * A project used to be able to run exactly one, chosen here and then fixed
+ * until someone edited the project's settings. The default still leads â€” it is
+ * what a task starts on when none is named â€” so ticking more only widens what
+ * the project can run.
+ *
+ * The primary is never offered here, and disappears from the list when it
+ * changes to one that was ticked, so the same harness cannot be both.
+ */
+function ExtraWorkerAgents({
+	agents,
+	primary,
+	value,
+	disabled = false,
+	onChange,
+}: {
+	agents?: AgentInfo[];
+	primary: string;
+	value: string[];
+	disabled?: boolean;
+	onChange: (value: string[]) => void;
+}) {
+	const { t } = useTranslation();
+	const offered = (agents ?? []).filter((agent) => agent.id !== primary);
+	// Ticks for a harness that is no longer offered (it became the primary, or
+	// the catalog changed) must not travel on in the submitted list.
+	const chosen = value.filter((id) => offered.some((agent) => agent.id === id));
+	if (offered.length === 0) return null;
+	return (
+		<fieldset className="flex min-w-0 flex-col gap-1.5" disabled={disabled}>
+			<legend className="agents-sheet-label">{t("createProject.extraWorkerAgents")}</legend>
+			<p className="text-[12px] text-muted-foreground">{t("createProject.extraWorkerAgentsHint")}</p>
+			<div className="flex flex-wrap gap-x-4 gap-y-1.5">
+				{offered.map((agent) => {
+					const ticked = chosen.includes(agent.id);
+					return (
+						<label key={agent.id} className="inline-flex items-center gap-1.5 text-[13px] text-foreground">
+							<input
+								type="checkbox"
+								className="size-3.5 accent-primary"
+								checked={ticked}
+								disabled={disabled}
+								onChange={() =>
+									onChange(ticked ? chosen.filter((id) => id !== agent.id) : [...chosen, agent.id])
+								}
+							/>
+							<span className="truncate">{agent.label}</span>
+						</label>
+					);
+				})}
+			</div>
+		</fieldset>
 	);
 }
 

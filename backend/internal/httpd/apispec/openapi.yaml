@@ -22353,6 +22353,10 @@ components:
           $ref: '#/components/schemas/TrackerIntakeConfig'
         worker:
           $ref: '#/components/schemas/RoleOverride'
+        workers:
+          items:
+            $ref: '#/components/schemas/RoleOverride'
+          type: array
         workersRequestReview:
           type: boolean
       type: object

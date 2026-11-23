@@ -840,6 +840,8 @@
 	"createProject.setupGitProject": "このプロジェクトに Git を設定",
 	"createProject.setupRequired": "セットアップが必要です",
 	"createProject.tryImportWorkspace": "ワークスペースとしてインポートを試す",
+	"createProject.extraWorkerAgents": "併せて実行",
+	"createProject.extraWorkerAgentsHint": "このプロジェクトがタスクを実行できる追加のエージェント。上のワーカーが既定のままです。",
 	"createProject.workerAgent": "ワーカーエージェント",
 	"createProject.workspace": "ワークスペース",
 	"createProject.workspaceAgents": "ワークスペースエージェント",

@@ -244,16 +244,29 @@ function findRegisteredWorkspaceByPath(workspaces: WorkspaceSummary[], path: str
 type CreateProjectConfigInput = {
 	workerAgent: string;
 	orchestratorAgent: string;
+	/** Worker harnesses kept active beside workerAgent, which stays the default. */
+	extraWorkerAgents?: string[];
 	reviewerAgent?: string;
 	trackerIntake?: components["schemas"]["TrackerIntakeConfig"];
 	defaultBranch?: string;
 };
 
+type RoleAgent = components["schemas"]["RoleOverride"]["agent"];
+
 export function createProjectConfig(input: CreateProjectConfigInput): components["schemas"]["ProjectConfig"] {
+	// `worker` is the default a spawn resolves to with no agent named, so it is
+	// always written on its own. `workers` is sent only when extras were picked,
+	// and leads with the default so the daemon's ActiveWorkers order matches the
+	// picker's; the harness chosen as default is never repeated among them.
+	const extras = (input.extraWorkerAgents ?? []).filter((agent) => agent !== "" && agent !== input.workerAgent);
+	const unique = [...new Set(extras)];
 	return {
 		...(input.defaultBranch ? { defaultBranch: input.defaultBranch } : {}),
-		worker: { agent: input.workerAgent as components["schemas"]["RoleOverride"]["agent"] },
-		orchestrator: { agent: input.orchestratorAgent as components["schemas"]["RoleOverride"]["agent"] },
+		worker: { agent: input.workerAgent as RoleAgent },
+		...(unique.length > 0
+			? { workers: [input.workerAgent, ...unique].map((agent) => ({ agent: agent as RoleAgent })) }
+			: {}),
+		orchestrator: { agent: input.orchestratorAgent as RoleAgent },
 		...(input.reviewerAgent ? { reviewers: [{ harness: input.reviewerAgent }] } : {}),
 		...(input.trackerIntake ? { trackerIntake: input.trackerIntake } : {}),
 	};

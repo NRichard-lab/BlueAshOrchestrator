@@ -837,6 +837,8 @@
 	"createProject.setupGitProject": "Set up Git for this project",
 	"createProject.setupRequired": "Setup required",
 	"createProject.tryImportWorkspace": "Try importing as workspace",
+	"createProject.extraWorkerAgents": "Also run",
+	"createProject.extraWorkerAgentsHint": "Extra agents this project can run tasks on. The worker above stays the default.",
 	"createProject.workerAgent": "Worker agent",
 	"createProject.workspace": "Workspace",
 	"createProject.workspaceAgents": "Workspace agents",

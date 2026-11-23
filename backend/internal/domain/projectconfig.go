@@ -57,6 +57,14 @@ type ProjectConfig struct {
 	// Worker and Orchestrator are role-specific harness/agent-config overrides.
 	Worker       RoleOverride `json:"worker,omitempty"`
 	Orchestrator RoleOverride `json:"orchestrator,omitempty"`
+	// Workers are further worker harnesses the project keeps active beside
+	// Worker, each with its own agent config.
+	//
+	// Worker remains the project's default — the harness a spawn resolves to
+	// when the caller names none — so nothing that reads it behaves differently
+	// for a project that lists extras. These are the other harnesses a task may
+	// be started on without reconfiguring the project. See ActiveWorkers.
+	Workers []RoleOverride `json:"workers,omitempty"`
 
 	// Reviewers names the agent(s) that review a worker's PR when a review is
 	// triggered. It is configured independently of the Worker override; an empty
@@ -160,6 +168,27 @@ func (c ProjectConfig) DefaultWorkerReviewer() (ReviewerHarness, AgentConfig) {
 		config.Effort = c.Worker.AgentConfig.Effort
 	}
 	return harness, config
+}
+
+// ActiveWorkers lists every worker harness the project keeps active, its
+// default first and without repeats.
+//
+// A project that pins no worker agent gets an empty list rather than one blank
+// entry, so a caller keeps whatever fallback it already had instead of
+// resolving to the empty harness.
+func (c ProjectConfig) ActiveWorkers() []RoleOverride {
+	active := make([]RoleOverride, 0, len(c.Workers)+1)
+	seen := make(map[AgentHarness]bool, len(c.Workers)+1)
+	// The default first: a list whose order came from the picker must not
+	// change which harness a spawn with no --agent resolves to.
+	for _, role := range append([]RoleOverride{c.Worker}, c.Workers...) {
+		if role.Harness == "" || seen[role.Harness] {
+			continue
+		}
+		seen[role.Harness] = true
+		active = append(active, role)
+	}
+	return active
 }
 
 // RoleOverride overrides the harness and/or agent config for a session role.

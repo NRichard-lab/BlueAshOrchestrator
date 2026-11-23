@@ -845,6 +845,8 @@
 	"createProject.setupGitProject": "Настроить Git для этого проекта",
 	"createProject.setupRequired": "Требуется настройка",
 	"createProject.tryImportWorkspace": "Попробовать импорт как рабочее пространство",
+	"createProject.extraWorkerAgents": "Также запускать",
+	"createProject.extraWorkerAgentsHint": "Дополнительные агенты, на которых проект может выполнять задачи. Воркер выше остаётся по умолчанию.",
 	"createProject.workerAgent": "Воркер-агент",
 	"createProject.workspace": "Рабочее пространство",
 	"createProject.workspaceAgents": "Агенты рабочего пространства",

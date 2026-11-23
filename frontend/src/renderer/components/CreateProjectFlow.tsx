@@ -90,6 +90,8 @@ import { Switch } from "./ui/switch";
 type ProjectAgents = CreateProjectSetup & {
 	workerAgent: string;
 	orchestratorAgent: string;
+	/** Worker harnesses kept active beside workerAgent; see CreateProjectSetup. */
+	extraWorkerAgents?: string[];
 	reviewerAgent?: string;
 };
 export type CreateProjectInput = {

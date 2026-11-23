@@ -7757,6 +7757,7 @@ export interface components {
             symlinks?: string[];
             trackerIntake?: components["schemas"]["TrackerIntakeConfig"];
             worker?: components["schemas"]["RoleOverride"];
+            workers?: components["schemas"]["RoleOverride"][];
             workersRequestReview?: boolean;
         };
         ProjectGetResponse: {

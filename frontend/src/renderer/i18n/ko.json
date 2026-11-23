@@ -840,6 +840,8 @@
 	"createProject.setupGitProject": "이 프로젝트에 Git 설정",
 	"createProject.setupRequired": "설정 필요",
 	"createProject.tryImportWorkspace": "워크스페이스로 가져오기 시도",
+	"createProject.extraWorkerAgents": "함께 실행",
+	"createProject.extraWorkerAgentsHint": "이 프로젝트가 작업을 실행할 수 있는 추가 에이전트입니다. 위의 워커가 계속 기본값입니다.",
 	"createProject.workerAgent": "워커 에이전트",
 	"createProject.workspace": "워크스페이스",
 	"createProject.workspaceAgents": "워크스페이스 에이전트",

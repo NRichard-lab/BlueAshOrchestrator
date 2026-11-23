@@ -848,6 +848,8 @@
 	"createProject.setupGitProject": "Configurar o Git para este projeto",
 	"createProject.setupRequired": "Configuração necessária",
 	"createProject.tryImportWorkspace": "Tentar importar como workspace",
+	"createProject.extraWorkerAgents": "Executar também",
+	"createProject.extraWorkerAgentsHint": "Agentes adicionais nos quais este projeto pode executar tarefas. O worker acima continua sendo o padrão.",
 	"createProject.workerAgent": "Agente worker",
 	"createProject.workspace": "Workspace",
 	"createProject.workspaceAgents": "Agentes do workspace",

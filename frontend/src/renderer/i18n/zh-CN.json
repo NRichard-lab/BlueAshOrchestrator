@@ -840,6 +840,8 @@
 	"createProject.setupGitProject": "为此项目设置 Git",
 	"createProject.setupRequired": "需要设置",
 	"createProject.tryImportWorkspace": "尝试作为工作区导入",
+	"createProject.extraWorkerAgents": "同时运行",
+	"createProject.extraWorkerAgentsHint": "此项目还可以在这些智能体上执行任务。上面的工作者仍为默认。",
 	"createProject.workerAgent": "Worker 代理",
 	"createProject.workspace": "工作区",
 	"createProject.workspaceAgents": "工作区代理",
