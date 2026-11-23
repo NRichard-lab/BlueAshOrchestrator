@@ -11,6 +11,32 @@ func TestDefaultsAreLegacyOrchestrator(t *testing.T) {
 	}
 }
 
+func TestFeatureSwitchesDefaultOnAndOnlyExactFalseTurnsThemOff(t *testing.T) {
+	oldU, oldT, oldP := UpdatesEnabled, RemoteTelemetryEnabled, PricingCatalogSyncEnabled
+	t.Cleanup(func() { UpdatesEnabled, RemoteTelemetryEnabled, PricingCatalogSyncEnabled = oldU, oldT, oldP })
+	if !UpdatesAllowed() || !RemoteTelemetryAllowed() || !PricingCatalogSyncAllowed() {
+		t.Fatal("unstamped (legacy/test) builds must keep every feature on")
+	}
+	UpdatesEnabled, RemoteTelemetryEnabled, PricingCatalogSyncEnabled = "false", "true", "true"
+	if UpdatesAllowed() || !RemoteTelemetryAllowed() || !PricingCatalogSyncAllowed() {
+		t.Fatal("flags must be independent: only updates off")
+	}
+	UpdatesEnabled, RemoteTelemetryEnabled, PricingCatalogSyncEnabled = "true", "false", "true"
+	if !UpdatesAllowed() || RemoteTelemetryAllowed() || !PricingCatalogSyncAllowed() {
+		t.Fatal("flags must be independent: only telemetry off")
+	}
+	UpdatesEnabled, RemoteTelemetryEnabled, PricingCatalogSyncEnabled = "true", "true", "false"
+	if !UpdatesAllowed() || !RemoteTelemetryAllowed() || PricingCatalogSyncAllowed() {
+		t.Fatal("flags must be independent: only pricing off")
+	}
+	for _, junk := range []string{"", "FALSE", "0", "no"} {
+		UpdatesEnabled = junk
+		if !UpdatesAllowed() {
+			t.Fatalf("%q must not switch updates off; only the exact stamp \"false\" does", junk)
+		}
+	}
+}
+
 func TestStampedValues(t *testing.T) {
 	oldDir, oldPort := StateDirName, Port
 	t.Cleanup(func() { StateDirName, Port = oldDir, oldPort })

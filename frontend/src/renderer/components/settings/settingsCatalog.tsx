@@ -20,6 +20,7 @@ import { RemoteHostsSettings } from "./RemoteHostsSettings";
 import { SettingsSection } from "./SettingsSection";
 import { teamsUnavailable } from "../../hooks/useTeams";
 import { TeamsSection } from "./TeamsSection";
+import { UPDATES_ENABLED } from "../../../shared/brand";
 
 /** The memory window's own blocks, loaded only when the page is opened: it
  * samples the machine every two seconds while it is on screen. */
@@ -191,6 +192,8 @@ const globalSettingsCatalog: SettingsCatalogItem[] = [
 	{
 		id: "updates",
 		icon: RefreshCw,
+		// Compile-time brand switch: BlueAshAI has no Updates page at all (no check, channel, feature-build or restart UI).
+		visible: () => UPDATES_ENABLED,
 		label: (t) => t("settings.updates"),
 		render: (_t, titleHidden) => <UpdatesSection titleHidden={titleHidden} />,
 	},

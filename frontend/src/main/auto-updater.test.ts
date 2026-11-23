@@ -30,6 +30,8 @@ type ImportOptions = {
   updateOrigin?: string | undefined;
   rolloutReady?: boolean;
   version?: string;
+  /** Compile-time product profile (AO_BRAND), e.g. "blueashai". Unset = legacy Orchestrator. */
+  brand?: string;
 };
 
 type AutoUpdaterMock = {
@@ -93,6 +95,7 @@ beforeEach(() => {
   stateDir = mkdtempSync(nodePath.join(os.tmpdir(), "ao-updater-state-"));
 });
 afterEach(() => {
+  vi.unstubAllEnvs();
   Object.defineProperty(process, "platform", hostPlatform);
   rmSync(stateDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 25 });
 });
@@ -326,6 +329,7 @@ async function importAutoUpdater(
   options: ImportOptions = {},
 ) {
   vi.resetModules();
+  if (options.brand) vi.stubEnv("AO_BRAND", options.brand);
   const updaterEvents = new Map<string, UpdaterEventHandler>();
   const autoUpdater = createAutoUpdaterMock();
   const powerMonitor = new EventEmitter();
@@ -5016,4 +5020,46 @@ it("keeps expected update outages out of handled captures and reports genuine fa
     module.reportUpdateFailure(new Error("unexpected staging failure"), "install");
     expect(sink).toHaveBeenCalledTimes(2);
   } finally { resetMainErrorCaptureForTests(); }
+});
+
+// BlueAshAI ships with every inherited update mechanism compiled out (brands.json updatesEnabled=false).
+// Each updater entry point must be inert: no first-run prompt, no feed, no check, no timer, no install.
+describe("BlueAshAI build: updates are compiled out", () => {
+  const enabled: UpdateSettings = { enabled: true, channel: "latest", nightlyAck: false, feature: null };
+
+  it("never shows the first-run opt-in or channel dialogs on an empty profile", async () => {
+    const h = await importAutoUpdater(enabled, { brand: "blueashai", updateOrigin: "https://updates.example.test" });
+    await h.module.ensureUpdatePrefs(stateDir);
+    expect(h.dialog.showMessageBox).not.toHaveBeenCalled();
+    expect(h.writeUpdateSettings).not.toHaveBeenCalled();
+  });
+
+  it("starts no check, no download, no install and no timer, even with a baked feed and enabled settings", async () => {
+    vi.useFakeTimers();
+    try {
+      const h = await importAutoUpdater(enabled, { brand: "blueashai", updateOrigin: "https://updates.example.test" });
+      await h.module.startAutoUpdates(stateDir);
+      await h.module.checkForUpdatesNow(stateDir);
+      await h.module.returnToHome(stateDir);
+      await h.module.downloadUpdateNow();
+      await h.module.setUpdateSettings(stateDir, enabled);
+      await h.module.setMacDifferentialUpdates(stateDir, true);
+      expect(await h.module.quitAndInstallUpdate()).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(2 * 60 * 60 * 1000);
+      expect(h.autoUpdater.checkForUpdates).not.toHaveBeenCalled();
+      expect(h.autoUpdater.downloadUpdate).not.toHaveBeenCalled();
+      expect(h.autoUpdater.quitAndInstall).not.toHaveBeenCalled();
+      expect(h.autoUpdater.setFeedURL).not.toHaveBeenCalled();
+      expect(h.module.getUpdateStatus().state).toBe("idle");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("legacy builds keep the first-run prompt (the switch is the brand, not the code path)", async () => {
+    const h = await importAutoUpdater(enabled, {});
+    h.dialog.showMessageBox.mockResolvedValue({ response: 1 });
+    await h.module.ensureUpdatePrefs(stateDir);
+    expect(h.dialog.showMessageBox).toHaveBeenCalledTimes(1);
+  });
 });

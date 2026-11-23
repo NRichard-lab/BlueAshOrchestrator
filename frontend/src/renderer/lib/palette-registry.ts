@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { UPDATES_ENABLED } from "../../shared/brand";
 import { isSplitPaneShortcut, type AppShortcutId } from "../../shared/shortcuts";
 import { shortcutLabelKeys } from "../i18n/key-maps";
 import type { MessageKey } from "../i18n";
@@ -232,6 +233,7 @@ type SettingsVisibility = { developerMode: boolean; diagnostics: boolean; mac?: 
 /** Mirrors the settings catalog's and General page's visibility rules for the entries here. */
 function entryVisible(entry: SettingsEntry, { developerMode, diagnostics, mac = false }: SettingsVisibility): boolean {
 	if (entry.section === "diagnostics" && !(developerMode && diagnostics)) return false;
+	if (entry.section === "updates" && !UPDATES_ENABLED) return false;
 	if (entry.when === "developerMode") return developerMode;
 	if (entry.when === "mac") return mac;
 	return true;

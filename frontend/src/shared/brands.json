@@ -12,7 +12,10 @@
 		"updaterCacheDirName": "agent-orchestrator-updater",
 		"stateDirName": ".ao",
 		"defaultPort": 3001,
-		"protocolScheme": "ao-app"
+		"protocolScheme": "ao-app",
+		"updatesEnabled": true,
+		"remoteTelemetryEnabled": true,
+		"pricingCatalogSyncEnabled": true
 	},
 	"blueashai": {
 		"id": "blueashai",
@@ -27,6 +30,9 @@
 		"updaterCacheDirName": "blueashai-updater",
 		"stateDirName": ".blueashai",
 		"defaultPort": 3101,
-		"protocolScheme": "blueashai"
+		"protocolScheme": "blueashai",
+		"updatesEnabled": false,
+		"remoteTelemetryEnabled": false,
+		"pricingCatalogSyncEnabled": false
 	}
 }

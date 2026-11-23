@@ -1,5 +1,6 @@
 import { app, dialog, shell, type BaseWindow, type MessageBoxOptions } from "electron";
 import semver from "semver";
+import { UPDATES_ENABLED } from "../shared/brand";
 import { defaultDownloadUrl, floorUrl, isUrlOnOrigin, readBakedUpdateOrigin } from "./update-origin";
 
 // The floor is read from the BlueAsh update server, whose origin is baked into
@@ -65,6 +66,7 @@ async function requireUpdate(options: FloorOptions, running: string, minVersion:
 
 export async function checkDesktopVersionFloor(options: FloorOptions = {}): Promise<void> {
   if (!app.isPackaged) return;
+  if (!UPDATES_ENABLED) return;
   const origin = readBakedUpdateOrigin();
   if (!origin) return;
   let floor: Floor;

@@ -45,6 +45,17 @@ export type Brand = {
 	defaultPort: number;
 	/** URL scheme this app registers and handles (never another product's). */
 	protocolScheme: string;
+	/**
+	 * Master switch for every inherited update mechanism: the Electron auto-updater and its first-run
+	 * prompt, the desktop version floor, feature builds, the update UI, and the daemon's harness/agent-CLI
+	 * "newer version" advisory and its remote lookups. Compile-time only (it comes from this JSON through
+	 * the AO_BRAND build profile); there is deliberately no environment or settings override.
+	 */
+	updatesEnabled: boolean;
+	/** Whether remote (PostHog) telemetry may be enabled at all. A separate flag from updatesEnabled so egress attribution stays clean. */
+	remoteTelemetryEnabled: boolean;
+	/** Whether the daemon may refresh the LiteLLM model price catalog from the network. Separate from updatesEnabled. */
+	pricingCatalogSyncEnabled: boolean;
 };
 
 export const LEGACY_BRAND = brands.legacy as Brand;
@@ -56,3 +67,6 @@ export function resolveBrand(id: string | undefined): Brand {
 
 /** The profile compiled into this build (see the header comment). */
 export const BRAND: Brand = resolveBrand(process.env.AO_BRAND);
+
+/** True when this build may update itself or check harness versions. False for BlueAshAI: nothing updates, nothing checks. */
+export const UPDATES_ENABLED: boolean = BRAND.updatesEnabled;

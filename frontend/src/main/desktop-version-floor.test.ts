@@ -208,3 +208,26 @@ describe("checkDesktopVersionFloor", () => {
     expect(dialog.showMessageBox).not.toHaveBeenCalled();
   });
 });
+
+describe("checkDesktopVersionFloor in a BlueAshAI build", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it("never fetches the floor and never prompts, even with a baked origin", async () => {
+    vi.resetModules();
+    vi.stubEnv("AO_BRAND", "blueashai");
+    const dialog = { showMessageBox: vi.fn() };
+    vi.doMock("./update-origin", async (importOriginal) => ({ ...(await importOriginal<typeof import("./update-origin")>()), readBakedUpdateOrigin: () => ORIGIN }));
+    vi.doMock("electron", () => ({ app: { isPackaged: true, getVersion: () => "0.0.1", quit: vi.fn() }, dialog, shell: { openExternal: vi.fn() } }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const mod = await import("./desktop-version-floor");
+    await mod.checkDesktopVersionFloor();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(dialog.showMessageBox).not.toHaveBeenCalled();
+  });
+});

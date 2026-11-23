@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { UPDATES_ENABLED } from "../shared/brand";
 import { parseUpdateOrigin, type UpdateOriginResult } from "../../scripts/update-origin-core.mjs";
 
 // The BlueAsh update server is addressed by ONE configurable HTTPS origin. It is
@@ -90,6 +91,8 @@ export function renderAppUpdateYml(origin: string, updaterCacheDirName: string):
  * "update plane disabled"; there is no fallback origin.
  */
 export function readBakedUpdateOrigin(resourcesPath: string = process.resourcesPath): string | undefined {
+	// Compile-time brand switch: a build that must never update has no update origin, whatever file it ships.
+	if (!UPDATES_ENABLED) return undefined;
 	try {
 		return originFromAppUpdateYml(readFileSync(path.join(resourcesPath, "app-update.yml"), "utf8"));
 	} catch {

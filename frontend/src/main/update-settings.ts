@@ -178,6 +178,31 @@ export async function writeUpdateSettings(stateDir: string, settings: UpdateSett
 	await runSettingsOperation(() => writeUpdateSettingsUnlocked(stateDir, settings));
 }
 
+/**
+ * One-time migration for builds that must never update (BRAND.updatesEnabled === false). Makes sure the
+ * state dir holds an explicit, fully disabled update-settings.json: a previously enabled profile (a
+ * user who pressed "Enable auto-updates" in an earlier preview) is switched off and unpinned from any
+ * feature build; a missing file is created so the first-run opt-in prompt can never appear. A file that
+ * is already disabled is left untouched. Returns what it did, for diagnostics and tests.
+ */
+export async function disableUpdateSettingsOnDisk(stateDir: string): Promise<"created" | "cleared" | "unchanged"> {
+	return runSettingsOperation(async () => {
+		const file = path.join(stateDir, UPDATE_SETTINGS_FILE_NAME);
+		let present = true;
+		let parseable = true;
+		try {
+			JSON.parse(await readFile(file, "utf8"));
+		} catch (err) {
+			present = (err as NodeJS.ErrnoException).code !== "ENOENT";
+			parseable = false;
+		}
+		const current = await readUpdateSettingsUnlocked(stateDir);
+		if (present && parseable && !current.enabled && current.feature === null && !current.macDifferentialUpdates) return "unchanged";
+		await writeUpdateSettingsUnlocked(stateDir, { ...DEFAULTS, channel: "latest" });
+		return present ? "cleared" : "created";
+	});
+}
+
 /** Serialize a settings read-modify-write with every other settings write. */
 export async function updateUpdateSettings(
 	stateDir: string,

@@ -150,6 +150,7 @@ import { recordManualWorkerOpen } from "../lib/session-management-telemetry";
 import { captureRendererException } from "../lib/telemetry";
 import { AwakeMenuItem, awakeNeedsAttention, useFooterStayAwake } from "./AwakeControl";
 import { FOOTER_RAIL_BUTTON_CLASS, SidebarUpdateRail, SidebarUpdateRow } from "./SidebarUpdate";
+import { UPDATES_ENABLED } from "../../shared/brand";
 import { SettingsSaveStatus, useSettingsPage } from "./SettingsDialog";
 import { useUiStore } from "../stores/ui-store";
 import { useSidebarOrderStore } from "../stores/sidebar-order-store";
@@ -1388,13 +1389,15 @@ export const Sidebar = memo(function Sidebar({
 				)}
 				{settingsPage ? (
 					<>
-						<div className={FOOTER_UPDATES_CLASS}>
-							<SidebarUpdateRow
-								onRequestInstall={openUpdateInstallPrompt}
-								status={updateStatus}
-								tabIndex={isCollapsed ? -1 : 0}
-							/>
-						</div>
+						{UPDATES_ENABLED && (
+							<div className={FOOTER_UPDATES_CLASS}>
+								<SidebarUpdateRow
+									onRequestInstall={openUpdateInstallPrompt}
+									status={updateStatus}
+									tabIndex={isCollapsed ? -1 : 0}
+								/>
+							</div>
+						)}
 						<div className={FOOTER_BOTTOM_ROW_CLASS}>
 							<Pressable
 								className={FOOTER_NAV_BUTTON_CLASS}
@@ -1421,13 +1424,15 @@ export const Sidebar = memo(function Sidebar({
 					hidden={isIconRail}
 					className="sidebar-expanded-chrome relative flex w-full min-w-46.5 flex-col"
 				>
-					<div className={FOOTER_UPDATES_CLASS}>
-						<SidebarUpdateRow
-							onRequestInstall={openUpdateInstallPrompt}
-							status={updateStatus}
-							tabIndex={isCollapsed ? -1 : 0}
-						/>
-					</div>
+					{UPDATES_ENABLED && (
+						<div className={FOOTER_UPDATES_CLASS}>
+							<SidebarUpdateRow
+								onRequestInstall={openUpdateInstallPrompt}
+								status={updateStatus}
+								tabIndex={isCollapsed ? -1 : 0}
+							/>
+						</div>
+					)}
 					<FooterAccountRow
 						onConnectMobile={() => selection.goConnectMobile()}
 						onOpenSettings={() => selection.goGlobalSettings()}
@@ -1438,11 +1443,13 @@ export const Sidebar = memo(function Sidebar({
 					aria-hidden={!isCollapsed || undefined}
 					className="pointer-events-none absolute inset-x-1.5 bottom-0 top-auto flex min-h-row-md flex-col items-center justify-end gap-1 opacity-0 transition-opacity duration-150 ease-out group-data-[collapsible=icon]:pointer-events-auto group-data-[collapsible=icon]:!bottom-2 group-data-[collapsible=icon]:opacity-100"
 				>
-					<SidebarUpdateRail
-						onRequestInstall={openUpdateInstallPrompt}
-						status={updateStatus}
-						tabIndex={isCollapsed ? 0 : -1}
-					/>
+					{UPDATES_ENABLED && (
+						<SidebarUpdateRail
+							onRequestInstall={openUpdateInstallPrompt}
+							status={updateStatus}
+							tabIndex={isCollapsed ? 0 : -1}
+						/>
+					)}
 					<CloudSignInRailButton tabIndex={isCollapsed ? 0 : -1} />
 					<CloudAccountRailButton tabIndex={isCollapsed ? 0 : -1} />
 					<Tooltip>

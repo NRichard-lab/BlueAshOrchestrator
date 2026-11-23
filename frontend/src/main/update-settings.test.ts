@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, writeFile, readdir } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, readdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
 	macDifferentialUpdatesEnabled,
+	disableUpdateSettingsOnDisk,
 	readUpdateSettings,
 	updateUpdateSettings,
 	writeUpdateSettings,
@@ -172,5 +173,41 @@ describe("update-settings", () => {
 		await Promise.all([mutation, laterWrite]);
 
 		expect(await readUpdateSettings(dir)).toEqual({ ...newer, macDifferentialUpdates: false });
+	});
+});
+
+describe("disableUpdateSettingsOnDisk (BlueAshAI one-time migration)", () => {
+	let dir: string;
+	beforeEach(async () => {
+		dir = await mkdtemp(path.join(os.tmpdir(), "ao-update-migrate-"));
+	});
+	afterEach(async () => {
+		await rm(dir, { recursive: true, force: true });
+	});
+	const file = () => path.join(dir, UPDATE_SETTINGS_FILE_NAME);
+
+	it("creates an explicit disabled file on an empty profile so the first-run prompt can never appear", async () => {
+		expect(await disableUpdateSettingsOnDisk(dir)).toBe("created");
+		expect(JSON.parse(await readFile(file(), "utf8"))).toMatchObject({ enabled: false, channel: "latest", feature: null });
+	});
+
+	it("clears a previously enabled profile, including a nightly channel pin and a feature build", async () => {
+		await writeFile(file(), JSON.stringify({ enabled: true, channel: "nightly", nightlyAck: true, feature: { pr: 12 }, macDifferentialUpdates: true }));
+		expect(await disableUpdateSettingsOnDisk(dir)).toBe("cleared");
+		expect(await readUpdateSettings(dir)).toEqual({ enabled: false, channel: "latest", nightlyAck: false, feature: null, macDifferentialUpdates: false });
+	});
+
+	it("leaves an already disabled file untouched and is idempotent", async () => {
+		await writeFile(file(), JSON.stringify({ enabled: false, channel: "latest", nightlyAck: false, feature: null }));
+		const before = await readFile(file(), "utf8");
+		expect(await disableUpdateSettingsOnDisk(dir)).toBe("unchanged");
+		expect(await readFile(file(), "utf8")).toBe(before);
+		expect(await disableUpdateSettingsOnDisk(dir)).toBe("unchanged");
+	});
+
+	it("repairs a corrupt file rather than leaving defaults implicit", async () => {
+		await writeFile(file(), "{not json");
+		expect(await disableUpdateSettingsOnDisk(dir)).toBe("cleared");
+		expect(JSON.parse(await readFile(file(), "utf8")).enabled).toBe(false);
 	});
 });

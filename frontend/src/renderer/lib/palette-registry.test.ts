@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { appI18n } from "../i18n";
 import { buildChoiceCommands, buildSettingsCommands, buildShortcutCommands, choiceValue, type PalettePreferences } from "./palette-registry";
 import { filterCommands } from "./command-palette";
@@ -133,5 +133,27 @@ describe("palette registry", () => {
 		const items = buildSettingsCommands(t, { developerMode: false, diagnostics: false, prefs });
 		expect(filterCommands(items, "nord")[0]?.id).toBe("setting:color-theme");
 		expect(items.some((item) => item.id.startsWith("choice:"))).toBe(false);
+	});
+});
+
+describe("BlueAshAI build (updates compiled out)", () => {
+	it("has no Updates settings entry in the palette, and the legacy build still has them", async () => {
+		const visibility = { developerMode: true, diagnostics: true };
+		const legacy = buildSettingsCommands(t, visibility).map((item) => item.id);
+		expect(legacy).toContain("setting:updates");
+		expect(legacy).toContain("setting:auto-updates");
+		vi.resetModules();
+		vi.stubEnv("AO_BRAND", "blueashai");
+		try {
+			const blue = await import("./palette-registry");
+			const ids = blue.buildSettingsCommands(t, visibility).map((item) => item.id);
+			for (const id of ["setting:updates", "setting:auto-updates", "setting:updates-channel", "setting:feature-build", "setting:version"]) {
+				expect(ids, id).not.toContain(id);
+			}
+			expect(ids).toContain("setting:help");
+		} finally {
+			vi.unstubAllEnvs();
+			vi.resetModules();
+		}
 	});
 });

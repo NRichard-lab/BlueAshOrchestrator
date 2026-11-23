@@ -90,6 +90,7 @@ import { useCloudAccountSwitchReset } from "../hooks/useCloudAccountSwitchReset"
 import { openRemoteOrchestrator } from "../lib/remote-orchestrator";
 import { projectNavigateTarget, sessionNavigateTarget } from "../lib/navigate-to-session";
 import { sessionUiKey } from "../lib/hosts";
+import { UPDATES_ENABLED } from "../../shared/brand";
 import { pageHasTopbar } from "../lib/shell-topbar";
 import { forgetRemoteHost, syncRemoteCache } from "../lib/remote-chat-cache";
 import { watchRemoteUnpins } from "../lib/remote-session-unpins";
@@ -1586,7 +1587,7 @@ const replacementErrorCount = Object.keys(orchestratorReplacementErrors).length;
 			<AppBrowserLinkContext.Provider value={canOpenBrowserLink ? openBrowserLink : undefined}>
 			<SessionTopbarProvider>
 				<NotificationRuntime />
-				<HarnessUpdateNotice enabled={daemonStatus.state === "ready" && !firstRunPromptActive} />
+				{UPDATES_ENABLED && <HarnessUpdateNotice enabled={daemonStatus.state === "ready" && !firstRunPromptActive} />}
 				<TrayRuntime />
 				<SharedWithYouNotifier />
 				{isDragActive ? (
@@ -1608,7 +1609,7 @@ const replacementErrorCount = Object.keys(orchestratorReplacementErrors).length;
 				<NewTaskNavigator />
 				<ArchiveModalHost />
 				<GlobalToast />
-				<RestartToUpdateDialog />
+				{UPDATES_ENABLED && <RestartToUpdateDialog />}
 				<SessionImportDialog />
 				{quitConfirmDialog}
 				<KeyboardShortcutsDialog

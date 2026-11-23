@@ -1,5 +1,6 @@
 import { autoUpdater as stockAutoUpdater } from "electron-updater";
 import { desktopFeedUrl, readBakedUpdateOrigin } from "./update-origin";
+import { UPDATES_ENABLED } from "../shared/brand";
 import { MacDifferentialV2Updater } from "./mac-differential-v2-updater";
 import macV2TrustedKeys from "../../scripts/mac-differential-v2-trust.json";
 import macDifferentialRollout from "../../scripts/mac-differential-rollout.json";
@@ -883,6 +884,8 @@ function readUpdateOrigin(): string | undefined {
  * host it names, so refuse before any check runs.
  */
 function assertUpdateServerConfigured(): void {
+  // Brand kill switch (compile-time): a build that must never update refuses even when a feed was baked in.
+  if (!UPDATES_ENABLED) throw new Error("Updates are disabled in this build.");
   if (app.isPackaged && readUpdateOrigin() === undefined) {
     throw new Error(
       "This build has no valid update server configured, so updates are disabled. Install a current build from your BlueAsh download page.",
@@ -2495,6 +2498,7 @@ async function requestAutomaticUpdateCheck(
 // downloaded automatically. Both preferences come from update-settings.
 // Caller guards on app.isPackaged.
 export async function startAutoUpdates(stateDir: string): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   escalationStateDir = stateDir;
   restoreStagedBuild(stateDir);
   recordUpdateDiagnostic("automatic-updates-started", { stagedVersion, stagedAtMs });
@@ -2531,6 +2535,7 @@ export async function setUpdateSettings(
   stateDir: string,
   settings: UpdateSettings,
 ): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   await runSerializedUpdaterOperation("settings-write", () =>
     persistUpdaterSettings(stateDir, settings),
   );
@@ -2550,6 +2555,7 @@ export async function checkForUpdatesNow(
   stateDir: string,
   options: UpdateCheckOptions = {},
 ): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   escalationStateDir = stateDir;
   wireUpdaterEvents();
   // Asking again IS the explicit retry the exhausted message points at.
@@ -2657,6 +2663,7 @@ export async function returnToHome(
   stateDir: string,
   requestId?: string,
 ): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   escalationStateDir = stateDir;
   wireUpdaterEvents();
   if (!app.isPackaged) {
@@ -2720,6 +2727,7 @@ export async function returnToHome(
 
 // downloadUpdateNow starts downloading the update found by checkForUpdatesNow.
 export async function downloadUpdateNow(requestId?: string): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   if (manualDownloadPending || lastStatus.state === "downloading" || lastStatus.state === "preparing") return;
   const version = lastStatus.version;
   wireUpdaterEvents();
@@ -2784,6 +2792,7 @@ export async function setMacDifferentialUpdates(
   stateDir: string,
   enabled: boolean,
 ): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   if (typeof enabled !== "boolean") return;
   developerModeRequested = enabled;
   // Revoke eligibility synchronously, even while a previous operation is busy.
@@ -2888,6 +2897,7 @@ export function clearUpdateRestartRequest(): void {
 }
 
 export async function quitAndInstallUpdate(confirmedVersion?: string): Promise<UpdateInstallResult> {
+  if (!UPDATES_ENABLED) return;
   recordUpdateDiagnostic("install-requested", { confirmedVersion });
   if (confirmedVersion !== undefined && (typeof confirmedVersion !== "string" || !confirmedVersion.trim())) {
     throw new Error("A valid confirmed update version is required.");
@@ -3105,6 +3115,7 @@ async function prepareRememberedNonDarwinUpdate(): Promise<void> {
 // ensureUpdatePrefs prompts once (first run, before any settings file exists)
 // for auto-update opt-in + channel, with a nightly instability disclaimer.
 export async function ensureUpdatePrefs(stateDir: string): Promise<void> {
+  if (!UPDATES_ENABLED) return;
   if (existsSync(path.join(stateDir, UPDATE_SETTINGS_FILE_NAME))) return;
 
   const installedNightly = installedUpdateChannel() === "nightly";

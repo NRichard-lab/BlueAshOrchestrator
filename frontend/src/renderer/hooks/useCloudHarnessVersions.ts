@@ -16,6 +16,7 @@ import type { AgentId } from "../lib/agent-options";
 import { useCloudCp } from "./useCloudCp";
 import { useCloudGate } from "./useCloudGate";
 import { useCloudOrg } from "./useCloudOrg";
+import { UPDATES_ENABLED } from "../../shared/brand";
 import { hasConfirmedHarnessUpdate, isFailedInstallJob, maintenanceMethodId, updateAdvisoryRefreshInterval } from "./useHarnessUpdates";
 
 /** The host id AO Cloud's updates are dismissed under in the update notice. */
@@ -31,7 +32,7 @@ export function cloudHarnessVersionsQueryKey(baseUrl: string, userId: string, or
 function cloudHarnessVersionsQueryOptions(scope: { client: CloudCpClient; baseUrl: string; userId: string; orgId: string; enabled: boolean }) {
 	return queryOptions<CloudCpHarnessVersionsResponse | null>({
 		queryKey: cloudHarnessVersionsQueryKey(scope.baseUrl, scope.userId, scope.orgId),
-		enabled: scope.enabled,
+		enabled: UPDATES_ENABLED && scope.enabled,
 		// The control plane caches the publishers' answers; this only reads them,
 		// on the schedule the local advisories refresh on.
 		staleTime: (query) => updateAdvisoryRefreshInterval(query.state.status === "error"),

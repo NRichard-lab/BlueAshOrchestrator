@@ -2,7 +2,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   defaultDownloadUrl,
   desktopFeedUrl,
@@ -117,6 +117,20 @@ describe("app-update.yml", () => {
       expect(readBakedUpdateOrigin(dir)).toBe(ORIGIN);
       writeFileSync(join(dir, "app-update.yml"), "provider: github\nowner: a\nrepo: b\n");
       expect(readBakedUpdateOrigin(dir)).toBeUndefined();
+    });
+
+    it("a BlueAshAI build has no update origin even when a valid feed file ships", async () => {
+      dir = mkdtempSync(join(tmpdir(), "ao-origin-"));
+      writeFileSync(join(dir, "app-update.yml"), renderAppUpdateYml(ORIGIN, "x"));
+      vi.resetModules();
+      vi.stubEnv("AO_BRAND", "blueashai");
+      try {
+        const blue = await import("./update-origin");
+        expect(blue.readBakedUpdateOrigin(dir)).toBeUndefined();
+      } finally {
+        vi.unstubAllEnvs();
+        vi.resetModules();
+      }
     });
   });
 });

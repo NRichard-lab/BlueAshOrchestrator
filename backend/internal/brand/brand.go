@@ -22,7 +22,29 @@ var (
 	WindowsInstallDirName = "Agent Orchestrator"
 	// WindowsExeName is the installed app executable inside that folder.
 	WindowsExeName = "agent-orchestrator.exe"
+
+	// UpdatesEnabled, RemoteTelemetryEnabled and PricingCatalogSyncEnabled are compile-time feature
+	// switches stamped by ldflags from brands.json. They are strings because -X only sets strings; only
+	// the exact value "false" turns a feature off, so an unstamped (test, plain go build, legacy) binary
+	// keeps today's behavior. There is deliberately no environment override: a shipped binary cannot be
+	// re-enabled by a variable.
+	//
+	// UpdatesEnabled covers the daemon's harness/agent-CLI "newer version" advisory and every remote
+	// lookup behind it. RemoteTelemetryEnabled covers PostHog. PricingCatalogSyncEnabled covers the
+	// LiteLLM model price catalog refresh. They are separate so egress can be attributed per feature.
+	UpdatesEnabled            = "true"
+	RemoteTelemetryEnabled    = "true"
+	PricingCatalogSyncEnabled = "true"
 )
+
+// UpdatesAllowed reports whether this build may check for or advise about updates.
+func UpdatesAllowed() bool { return UpdatesEnabled != "false" }
+
+// RemoteTelemetryAllowed reports whether this build may send telemetry to a remote service.
+func RemoteTelemetryAllowed() bool { return RemoteTelemetryEnabled != "false" }
+
+// PricingCatalogSyncAllowed reports whether this build may download the model price catalog.
+func PricingCatalogSyncAllowed() bool { return PricingCatalogSyncEnabled != "false" }
 
 // DefaultPort returns the stamped default port, or fallback when none is stamped or it is invalid.
 func DefaultPort(fallback int) int {

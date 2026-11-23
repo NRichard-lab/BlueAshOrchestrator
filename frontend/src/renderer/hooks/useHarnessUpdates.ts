@@ -8,6 +8,7 @@ import { AGENT_OPTIONS, agentLabel, type AgentId } from "../lib/agent-options";
 import { apiErrorCode, apiErrorDetails, apiErrorMessage } from "../lib/api-client";
 import { clientForSessionHost } from "../lib/host-clients";
 import { LOCAL_HOST } from "../lib/hosts";
+import { UPDATES_ENABLED } from "../../shared/brand";
 import type { AgentAuthPlan } from "./useAgentAuth";
 import type { AgentReadiness } from "./useAgentReadinessQuery";
 
@@ -103,7 +104,8 @@ export function useHarnessUpdates(installed: ReadonlySet<AgentId>, hostId?: stri
 	const queries = useQueries({ queries: AGENT_OPTIONS.map((agentId) => queryOptions({
 		queryKey: updateAdvisoryQueryKey(agentId, hostId),
 		queryFn: async () => syncInstallerMethods(queryClient, await fetchUpdateAdvisory(agentId, hostId), hostId),
-		enabled: enabled && installed.has(agentId),
+		// Compile-time brand switch: a build that never checks harness versions never queries the advisory route.
+		enabled: UPDATES_ENABLED && enabled && installed.has(agentId),
 		staleTime: (query) => updateAdvisoryRefreshInterval(query.state.status === "error"),
 		refetchInterval: (query) => updateAdvisoryRefreshInterval(query.state.status === "error"),
 		// Keep the update badge current while the window is hidden or minimized.

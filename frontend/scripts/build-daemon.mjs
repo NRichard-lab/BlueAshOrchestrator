@@ -69,6 +69,10 @@ if (process.env.AO_BRAND === "blueashai") {
 	ldflags.push(`-X ${brandPackage}.WindowsAssetName=${b.windowsAssetName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsInstallDirName=${b.windowsInstallDirName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsExeName=${b.executableName}.exe`);
+	// Compile-time feature switches (brands.json). Three separate flags so egress attribution stays clean.
+	ldflags.push(`-X ${brandPackage}.UpdatesEnabled=${b.updatesEnabled === false ? "false" : "true"}`);
+	ldflags.push(`-X ${brandPackage}.RemoteTelemetryEnabled=${b.remoteTelemetryEnabled === false ? "false" : "true"}`);
+	ldflags.push(`-X ${brandPackage}.PricingCatalogSyncEnabled=${b.pricingCatalogSyncEnabled === false ? "false" : "true"}`);
 }
 const commit = spawnSync("git", ["rev-parse", "--short=12", "HEAD"], {
 	cwd: repoRoot,

@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { BLUEASHAI_BRAND, BRAND, LEGACY_BRAND, resolveBrand } from "./brand";
+import { BLUEASHAI_BRAND, BRAND, LEGACY_BRAND, UPDATES_ENABLED, resolveBrand } from "./brand";
 import { supervisorPipeFromRunFile } from "../main/daemon-run-file";
 import { brandDefine } from "../../vite.brand";
 
@@ -51,6 +51,17 @@ describe("product profiles", () => {
 		}
 	});
 
+	it("BlueAshAI compiles every inherited update path, remote telemetry and the price catalog fetch out, with separate flags", () => {
+		expect(LEGACY_BRAND.updatesEnabled).toBe(true);
+		expect(LEGACY_BRAND.remoteTelemetryEnabled).toBe(true);
+		expect(LEGACY_BRAND.pricingCatalogSyncEnabled).toBe(true);
+		expect(BLUEASHAI_BRAND.updatesEnabled).toBe(false);
+		expect(BLUEASHAI_BRAND.remoteTelemetryEnabled).toBe(false);
+		expect(BLUEASHAI_BRAND.pricingCatalogSyncEnabled).toBe(false);
+		// Source/unit builds are legacy, so the exported constant stays true here.
+		expect(UPDATES_ENABLED).toBe(true);
+	});
+
 	it("is chosen at build time only: the Vite define compiles an empty or blueashai constant", () => {
 		expect(brandDefine({ AO_BRAND: "blueashai" } as NodeJS.ProcessEnv)).toEqual({ "process.env.AO_BRAND": '"blueashai"' });
 		expect(brandDefine({} as NodeJS.ProcessEnv)).toEqual({ "process.env.AO_BRAND": '""' });
@@ -59,7 +70,7 @@ describe("product profiles", () => {
 
 	it("the Go ldflags stamped by build-daemon.mjs name the same values (single JSON source)", () => {
 		const script = readFileSync(path.join(__dirname, "..", "..", "scripts", "build-daemon.mjs"), "utf8");
-		for (const field of ["StateDirName", "Port", "WindowsAssetName", "WindowsInstallDirName", "WindowsExeName"]) {
+		for (const field of ["StateDirName", "Port", "WindowsAssetName", "WindowsInstallDirName", "WindowsExeName", "UpdatesEnabled", "RemoteTelemetryEnabled", "PricingCatalogSyncEnabled"]) {
 			expect(script).toContain(`internal/brand`);
 			expect(script).toContain(`.${field}=`);
 		}

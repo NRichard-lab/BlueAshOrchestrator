@@ -67,7 +67,7 @@ import {
 } from "./main/install-home";
 import { DesktopTelemetryController } from "./main/desktop-telemetry-controller";
 import { TelemetryIdentityController } from "./main/telemetry-identity";
-import { readUpdateSettings, type UpdateSettings, type UpdateStatus } from "./main/update-settings";
+import { disableUpdateSettingsOnDisk, readUpdateSettings, type UpdateSettings, type UpdateStatus } from "./main/update-settings";
 import { readKeybindingOverrides, writeKeybindingOverrides } from "./main/keybinding-settings";
 import { readEditorSettings, writeEditorPreference } from "./main/editor-settings";
 import { createEditorHandoff } from "./main/editor-handoff";
@@ -294,7 +294,7 @@ import { createLocalHostIdentity } from "./main/remote-request";
 import { RemoteRegistry } from "./main/remote-registry";
 import { startRemoteProxy } from "./main/remote-proxy";
 import { captureMainError, reportDaemonFailure, ExpectedIpcError, installIpcErrorCapture, setMainErrorSink } from "./main/main-error-capture";
-import { BRAND } from "./shared/brand";
+import { BRAND, UPDATES_ENABLED } from "./shared/brand";
 
 // Every ipcMain.handle registered from here on reports unexpected throws.
 installIpcErrorCapture(ipcMain);
@@ -4604,6 +4604,13 @@ function initAutoUpdates(): void {
 	const runFile = runFilePath();
 	if (!runFile) return;
 	const stateDir = path.dirname(runFile);
+	// Compile-time brand switch (BlueAshAI): no first-run prompt, no updater, no timers. The only work is
+	// making sure the profile on disk says "disabled", which also clears an "Enable auto-updates" choice
+	// made in an earlier preview. Nothing here touches the network.
+	if (!UPDATES_ENABLED) {
+		void disableUpdateSettingsOnDisk(stateDir).catch((err) => console.warn("update settings migration failed:", err));
+		return;
+	}
 	// Route update pushes at the shell WebContents, the same target daemon status
 	// uses. The shell is a BaseWindow + WebContentsView (#3750), which
 	// BrowserWindow.getAllWindows() does not return, so the updater cannot find
@@ -4856,7 +4863,7 @@ app.whenReady().then(async () => {
 	if (browserQuitRequested) return;
 	// Not awaited: launch must not wait on this network fetch (up to 10 s). It
 	// runs once the window exists so its dialogs attach to it.
-	if (app.isPackaged) {
+	if (app.isPackaged && UPDATES_ENABLED) {
 		void import("./main/desktop-version-floor")
 			.then(({ checkDesktopVersionFloor }) => checkDesktopVersionFloor({
 					parent: () => mainWindow,
