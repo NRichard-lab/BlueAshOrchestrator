@@ -722,7 +722,12 @@ export async function showCloudSignInFailure(error: unknown): Promise<void> {
 // A development build pointed at a deep-link redirect (AO_CLOUD_AUTH_REDIRECT
 // set to a bounce page or ao-app://callback) does need the scheme. It claims it
 // for as long as it runs and gives it back when it quits.
+// AO_SKIP_PROTOCOL_REGISTRATION=1 makes this instance neither claim nor release the
+// scheme. It exists for isolated test instances (for example the packaged-build
+// egress harness): the registration is per OS user, not per data directory, so
+// without it a test build would repoint the real installed app's deep links.
 export function registerCloudProtocol(): void {
+  if (process.env.AO_SKIP_PROTOCOL_REGISTRATION === "1") return;
   // A dev build is launched as `electron <app dir>`; Windows ties the scheme to
   // that exact command, so every call below names it.
   const devApp: [path?: string, args?: string[]] =

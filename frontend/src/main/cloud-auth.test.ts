@@ -775,6 +775,15 @@ describe("registerCloudProtocol", () => {
     return { app, registerCloudProtocol };
   }
 
+  it("leaves the scheme alone when AO_SKIP_PROTOCOL_REGISTRATION=1 (isolated test instance)", async () => {
+    const { app, registerCloudProtocol } = await load({ isPackaged: true, ownsScheme: true });
+    vi.stubEnv("AO_SKIP_PROTOCOL_REGISTRATION", "1");
+    registerCloudProtocol();
+    expect(app.setAsDefaultProtocolClient).not.toHaveBeenCalled();
+    expect(app.removeAsDefaultProtocolClient).not.toHaveBeenCalled();
+    expect(app.once).not.toHaveBeenCalled();
+  });
+
   it("claims ao-app:// for the packaged app, and keeps it", async () => {
     const { app, registerCloudProtocol } = await load({ isPackaged: true });
     registerCloudProtocol();

@@ -247,6 +247,7 @@ import { createWindowComposition, type WindowComposition } from "./main/window-c
 import { AgentBrowserRuntime } from "./main/agent-browser-runtime";
 import { sameBrowserRuntimeIdentity, type BrowserRuntimeIdentity } from "./main/browser-runtime-identity";
 import { connectSupervisor, type SupervisorLinkHandle } from "./main/supervisor-link";
+import { daemonHandshakeRunFile, supervisorPipeFromRunFile } from "./main/daemon-run-file";
 import {
 	BROWSER_RUNTIME_DISCONNECTED,
 	connectBrowserRuntime,
@@ -1515,6 +1516,19 @@ function runFilePath(): string | null {
 	return defaultRunFilePath(process.platform, process.env, os.homedir());
 }
 
+// Where the daemon's handshake file really is (see daemonHandshakeRunFile). runFilePath()
+// stays the anchor for the desktop's own state; use this one to find, adopt, restart or
+// supervise the daemon.
+function handshakeRunFilePath(): string | null {
+	return daemonHandshakeRunFile({
+		envRunFile: process.env.AO_RUN_FILE,
+		isDev,
+		stateRunFile: runFilePath(),
+		defaultRunFile: defaultRunFilePath(process.platform, process.env, os.homedir()),
+		installSource: installHome.source,
+	});
+}
+
 function editorStateDir(): string {
 	const runFile = runFilePath();
 	if (!runFile) throw new Error("Orchestrator state directory is not available.");
@@ -1965,13 +1979,6 @@ function daemonIdentityError(launch: DaemonLaunchSpec, probe: DaemonProbe): stri
  * headless `ao start` daemons stay unlinked so they remain persistent after
  * app quit.
  */
-function supervisorPipeFromRunFile(rfp: string | null): string {
-	if (!rfp) return "\\\\.\\pipe\\ao-supervise";
-	const dir = path.basename(path.dirname(rfp));
-	if (dir === ".ao" || dir === "." || dir === "") return "\\\\.\\pipe\\ao-supervise";
-	return "\\\\.\\pipe\\ao-supervise-" + dir.replace(/[^a-zA-Z0-9-]/g, "-");
-}
-
 function dropBrowserRuntimeLink(): void {
 	browserRuntimeLink?.dispose();
 	browserRuntimeLink = null;
@@ -1998,7 +2005,7 @@ function reconnectBrowserRuntimeLink(): void {
 
 function establishBrowserRuntimeLink(): void {
 	if (!browserViewHost) return;
-	const rfp = runFilePath();
+	const rfp = handshakeRunFilePath();
 	if (!rfp) {
 		console.warn("AO: browser runtime link skipped; run-file path unavailable");
 		return;
@@ -2122,7 +2129,7 @@ async function handleBrowserStreamControl(control: BrowserStreamControl): Promis
 
 function establishBrowserStreamLink(): void {
 	if (!browserViewHost) return;
-	const rfp = runFilePath();
+	const rfp = handshakeRunFilePath();
 	if (!rfp) return;
 	let runInfo: ReturnType<typeof parseRunFile> = null;
 	try {
@@ -2145,7 +2152,7 @@ function establishBrowserStreamLink(): void {
 }
 
 function establishSupervisorLink(): void {
-	const rfp = runFilePath();
+	const rfp = handshakeRunFilePath();
 	const addr =
 		process.platform === "win32"
 			? supervisorPipeFromRunFile(rfp)
@@ -2165,7 +2172,7 @@ function establishSupervisorLink(): void {
 async function inspectExistingDaemon(
 	launch: DaemonLaunchSpec,
 ): Promise<{ status: DaemonStatus; owner: string | undefined; appRunId: string | undefined } | null> {
-	const handshakePath = runFilePath();
+	const handshakePath = handshakeRunFilePath();
 	let runFileContents: string | null = null;
 	if (handshakePath) {
 		try {
@@ -2439,7 +2446,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 		// app-owned one in the gap. Acceptable: the window is tiny, the worst case is
 		// linking a headless daemon, and establishSupervisorLink disposes any prior
 		// link so nothing leaks.
-		const rfp = runFilePath();
+		const rfp = handshakeRunFilePath();
 		if (rfp) {
 			try {
 				const info = parseRunFile(await readFile(rfp, "utf8"));
@@ -2506,7 +2513,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 	// straight to spawn (the new daemon overwrites a stale run-file itself); a live
 	// process that is left alone is logged below.
 	const orphanProbe = await readDaemonProbe(resolvedDaemonPort(), "healthz");
-	const runFilePath_ = runFilePath();
+	const runFilePath_ = handshakeRunFilePath();
 	let runFile: ReturnType<typeof parseRunFile> = null;
 	if (runFilePath_) {
 		try {
@@ -2783,7 +2790,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 		});
 	}
 
-	const handshakePath = runFilePath();
+	const handshakePath = handshakeRunFilePath();
 	if (handshakePath) {
 		runFileTimer = setInterval(() => {
 			readFile(handshakePath, "utf8")
@@ -2977,7 +2984,7 @@ function killDaemon(child: ChildProcess): void {
 }
 
 async function readRunFileState(): Promise<{ present: boolean; pid: number | null }> {
-	const rfp = runFilePath();
+	const rfp = handshakeRunFilePath();
 	if (rfp === null) return { present: true, pid: null };
 	try {
 		return { present: true, pid: parseRunFile(await readFile(rfp, "utf8"))?.pid ?? null };
@@ -3055,7 +3062,7 @@ async function shutdownDaemonForDesktopQuit(): Promise<void> {
 		status: daemonStatus,
 		preserveAgents: () => preserveAgentsOnQuit || isUpdateRestartRequested(),
 		readRunInfo: async () => {
-			const handshakePath = runFilePath();
+			const handshakePath = handshakeRunFilePath();
 			if (!handshakePath) throw new Error("Daemon ownership record is unavailable");
 			return parseRunFile(await readFile(handshakePath, "utf8"));
 		},
@@ -3322,7 +3329,7 @@ async function triageEnv(): Promise<NodeJS.ProcessEnv> {
 		...env,
 		AO_DEV_DAEMON_BINARY: daemonLaunchEnv().AO_DEV_DAEMON_BINARY,
 		AO_DATA_DIR: path.resolve(desktopDataDir),
-		AO_RUN_FILE: path.resolve(runFilePath() ?? path.join(desktopDataDir, "running.json")),
+		AO_RUN_FILE: path.resolve(handshakeRunFilePath() ?? path.join(desktopDataDir, "running.json")),
 	};
 }
 ipcMain.handle("triage.launch", async () => launchTriageInTerminal(await triageEnv()));
