@@ -2,7 +2,8 @@
 name: Desktop build artifacts
 
 # Dispatchable unsigned desktop build for an external release conductor.
-# Builds the Electron app for all four platforms at a pinned ref with a
+# Builds the Electron app for the selected platforms (the first BlueAsh release
+# is Windows x64 only; see the `platforms` input) at a pinned ref with a
 # caller-supplied version, uploads each installer as a short-lived run
 # artifact, and emits a digests.json artifact (a flat JSON object mapping
 # each artifact filename to its sha256 hex string) that the conductor reads
@@ -22,6 +23,11 @@ on:
         description: "Version string to stamp into the app"
         type: string
         required: true
+      platforms:
+        description: 'Platforms to build: empty = win32-x64 (first release is Windows only), "all", or a comma list such as "win32-x64,linux-x64"'
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -34,29 +40,32 @@ env:
   VITE_AO_TEAMS: ${{ vars.VITE_AO_TEAMS }}
 
 jobs:
+  # Decides which platforms build. Every platform stays defined in
+  # frontend/scripts/select-release-platforms.mjs; the default is Windows only
+  # because macOS and Linux desktop testing is deferred for the first release.
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: frontend/scripts/select-release-platforms.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - id: pick
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+        run: node frontend/scripts/select-release-platforms.mjs "$PLATFORMS"
+
   build:
+    needs: select
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # `artifact` is the pinned upload-artifact name the downstream release
-          # conductor consumes; the contained filenames keep the existing stable
-          # alias names so the cask/updater/landing stay compatible. Do not
-          # rename either without updating the conductor.
-          - os: macos-latest
-            platform: darwin-arm64
-            artifact: mac-arm64
-          - os: macos-15-intel
-            platform: darwin-x64
-            artifact: mac-x64
-          - os: windows-latest
-            platform: win32-x64
-            artifact: win
-          # Linux tmux links glibc dynamically (#4616). Build on the oldest
-          # supported glibc baseline so the bundle also runs on Ubuntu 22.04.
-          - os: ubuntu-22.04
-            platform: linux-x64
-            artifact: linux
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:

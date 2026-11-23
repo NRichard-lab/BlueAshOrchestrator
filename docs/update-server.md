@@ -37,6 +37,28 @@ no feed and the app reports "no valid update server configured".
 `AO_RELEASE_REPO` is now only an **optional GitHub publisher target** (mirror);
 it never selects where clients update from and may not name an upstream owner.
 
+## First release scope: Windows x64 only
+
+The first BlueAsh release ships **Windows x64 only**. macOS and Linux **desktop**
+testing is deferred; their build definitions, makers, feed names (`latest-mac.yml`,
+`latest-linux.yml`) and the bootstrap asset names all remain, so nothing was removed.
+The existing Linux **self-host** harness evidence (21 of 21 modes, Ubuntu 24.04) is
+retained.
+
+- `build-artifacts.yml` has a `platforms` dispatch input. Empty (the default) builds
+  `win32-x64` only; `all` or a comma list (for example `win32-x64,linux-x64`) builds
+  the others. The catalog and selection logic live in
+  `frontend/scripts/select-release-platforms.mjs` (unit tested).
+- Publish only the Windows channel files (`latest.yml`, `nightly.yml`, `pr{N}.yml`)
+  and `agent-orchestrator-win32-x64.exe` for the first release. `ao start` on macOS
+  or Linux will find no bootstrap asset on the server and report a download error;
+  that is the intended, fail-closed behaviour until those platforms ship.
+- Windows installers for this release are **unsigned unless production signing
+  credentials are supplied** (`WIN_CSC_LINK` etc., see `makers/maker-nsis.ts`).
+  Local test builds are unsigned or test-signed only; electron-updater verifies the
+  sha512 in the feed manifest, and checks the installer signature only if the build
+  declares a publisher name, which it currently does not.
+
 ## Endpoint tree
 
 ```text

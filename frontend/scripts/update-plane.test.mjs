@@ -16,6 +16,7 @@ vi.mock("./blockmap.mjs", () => ({
 import { stageUpdateTree, channelLayout } from "./stage-update-tree.mjs";
 import { checkAppUpdateYml, scanApp, scanSource, RELEASE_CRITICAL_SOURCES } from "./verify-update-origin.mjs";
 import { parseUpdateOrigin } from "./update-origin-core.mjs";
+import { PLATFORM_CATALOG, selectPlatforms } from "./select-release-platforms.mjs";
 
 const ORIGIN = "https://updates.example.test";
 const repoRoot = resolve(import.meta.dirname, "..", "..");
@@ -134,5 +135,31 @@ describe("verify-update-origin", () => {
 	it("keeps every release-critical source path free of upstream update pointers", () => {
 		for (const rel of RELEASE_CRITICAL_SOURCES) expect(existsSync(join(repoRoot, rel)), rel).toBe(true);
 		expect(scanSource(repoRoot).problems).toEqual([]);
+	});
+});
+
+describe("release platform selection (first release is Windows only)", () => {
+	it("defaults to win32-x64 only", () => {
+		expect(selectPlatforms("").map((p) => p.platform)).toEqual(["win32-x64"]);
+		expect(selectPlatforms(undefined).map((p) => p.platform)).toEqual(["win32-x64"]);
+		expect(selectPlatforms("  ").map((p) => p.platform)).toEqual(["win32-x64"]);
+	});
+
+	it("keeps every other platform defined and selectable", () => {
+		expect(PLATFORM_CATALOG.map((p) => p.platform).sort()).toEqual(["darwin-arm64", "darwin-x64", "linux-x64", "win32-x64"]);
+		expect(selectPlatforms("all")).toHaveLength(4);
+		expect(selectPlatforms("linux-x64, win32-x64").map((p) => p.platform).sort()).toEqual(["linux-x64", "win32-x64"]);
+		expect(selectPlatforms("darwin-arm64")[0]).toMatchObject({ os: "macos-latest", artifact: "mac-arm64" });
+	});
+
+	it("rejects unknown platforms instead of silently building nothing", () => {
+		expect(() => selectPlatforms("freebsd-x64")).toThrow(/unknown platform/);
+	});
+
+	it("is wired into the workflow as a default-empty input feeding the build matrix", () => {
+		const wf = readFileSync(join(repoRoot, ".github/workflows/build-artifacts.yml"), "utf8");
+		expect(wf).toMatch(/platforms:[\s\S]*default: ""/);
+		expect(wf).toContain("matrix: ${{ fromJSON(needs.select.outputs.matrix) }}");
+		expect(wf).toContain("select-release-platforms.mjs");
 	});
 });
