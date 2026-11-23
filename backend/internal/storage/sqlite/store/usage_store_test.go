@@ -850,6 +850,83 @@ func tokenOrNil(value *int64) int64 {
 	return *value
 }
 
+// Cursor conversations that already have model_usage_events must not also
+// contribute a driver observation for the same session (no double-count).
+func TestListUsageReportEventsDedupesCursorDriverAgainstStoredEvents(t *testing.T) {
+	s := sqlitetest.MustOpen(t)
+	ctx := context.Background()
+	now := time.Date(2026, 11, 22, 12, 0, 0, 0, time.UTC)
+	day := time.Date(2026, 11, 22, 0, 0, 0, 0, time.UTC)
+
+	// Stored events for a Cursor session use the anthropic vocabulary Cursor's
+	// ACP turns report into when a certified source exists; ProviderID "cursor"
+	// is not a usage vocabulary.
+	withEvents := seedUsageSession(t, s, domain.HarnessCursor)
+	binding := mustUpsertUsageBinding(t, s, withEvents, now, domain.UsageBindingRecord{
+		NativeRootID: "cursor-root", InitialModelID: "composer", State: domain.UsageBindingActive,
+	})
+	source := mustInsertUsageSource(t, s, now, domain.UsageSourceRecord{
+		BindingID: binding.ID, Kind: domain.UsageSourceClaudeMain, NativeSessionID: "cursor-native",
+		ArtifactPath: "/tmp/cursor/synthetic.jsonl", FileIdentity: "dev:ino", State: domain.UsageSourcePending,
+	})
+	mustNoError(t, s.ApplyUsageChunk(ctx, source.ID, 0, source.UpdatedAt, domain.SourceCursorState{
+		ByteOffset: 10, State: domain.UsageSourceActive, UpdatedAt: now,
+	}, []domain.ModelUsageEvent{{
+		ProviderID: domain.UsageProviderAnthropic, ModelID: "composer", MeasurementKind: domain.UsageMeasurementNativeReported,
+		Tokens: canonicalUsageTokens(40, 0, 40, 10), CreatedAt: day.Add(time.Hour), SourceEventKey: "cursor-file-1",
+	}}))
+	conversationWithEvents, err := s.CreateConversation(ctx, "cursor-dup", domain.ConversationScopeSession, withEvents.ProjectID, withEvents.ID, now)
+	mustNoError(t, err)
+	mustNoError(t, s.RecordUsage(ctx, conversationWithEvents.ID, domain.ConversationUsage{
+		InputTokens: 40, OutputTokens: 10, TotalTokens: 50,
+	}))
+
+	driverOnly := seedUsageSession(t, s, domain.HarnessCursor)
+	conversationOnly, err := s.CreateConversation(ctx, "cursor-only", domain.ConversationScopeSession, driverOnly.ProjectID, driverOnly.ID, now)
+	mustNoError(t, err)
+	mustNoError(t, s.RecordUsage(ctx, conversationOnly.ID, domain.ConversationUsage{
+		InputTokens: 20, OutputTokens: 5, CachedTokens: 3, TotalTokens: 28,
+	}))
+
+	// Context-meter-only Cursor conversation must not invent token totals.
+	contextOnly := seedUsageSession(t, s, domain.HarnessCursor)
+	conversationContext, err := s.CreateConversation(ctx, "cursor-context", domain.ConversationScopeSession, contextOnly.ProjectID, contextOnly.ID, now)
+	mustNoError(t, err)
+	mustNoError(t, s.RecordUsage(ctx, conversationContext.ID, domain.ConversationUsage{
+		ContextUsed: 12000, ContextWindow: 200000,
+	}))
+
+	events, err := s.ListUsageReportEvents(ctx, day, day.Add(24*time.Hour))
+	mustNoError(t, err)
+
+	var fromStored, fromDriver, fromContext int
+	for _, event := range events {
+		switch event.SessionID {
+		case withEvents.ID:
+			fromStored++
+		case driverOnly.ID:
+			fromDriver++
+			if tokenOrNil(event.Tokens.UncachedInputTokens) != 20 || tokenOrNil(event.Tokens.OutputTokens) != 5 {
+				t.Fatalf("driver-only event = %+v", event)
+			}
+			if event.Costs.EstimatedCostNanos != nil {
+				t.Fatalf("cursor driver observation invented a cost: %+v", event.Costs)
+			}
+		case contextOnly.ID:
+			fromContext++
+		}
+	}
+	if fromStored != 1 {
+		t.Fatalf("session with stored events contributed %d rows, want 1 (deduped)", fromStored)
+	}
+	if fromDriver != 1 {
+		t.Fatalf("driver-only cursor session contributed %d rows, want 1", fromDriver)
+	}
+	if fromContext != 0 {
+		t.Fatalf("context-meter-only cursor session contributed %d rows, want 0", fromContext)
+	}
+}
+
 // Break caught: per-row enrichment transactions would emit duplicate CDC
 // invalidations for one binding, while a partial transaction could expose only
 // some estimates from one bounded batch.

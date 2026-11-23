@@ -68,12 +68,20 @@ use addresses on a network you trust.
 ## What discovery does and does not do
 
 Discovery is read-only: it asks an endpoint what it serves and never sends a
-prompt. Orchestrator does not call these endpoints to run a turn — the harness
-does — so what discovery gives you is a base URL you can point a harness at,
-plus confirmation that it is up and what it can run.
+prompt. The only HTTP requests Orchestrator makes are:
 
-To make a harness use one, set the variable that harness reads, as a project
-environment variable (Project settings → Environment) or in the harness's own
-configuration. For example Aider reads `OLLAMA_API_BASE`, and most
-OpenAI-compatible CLIs read `OPENAI_BASE_URL`; check the harness's own
-documentation for the name it expects.
+| Kind | Probe |
+| --- | --- |
+| `ollama` | `GET <base-url>/api/tags` |
+| `openai-compatible` | `GET <base-url>/v1/models` |
+
+Orchestrator does **not** call `/v1/chat/completions`, `/api/chat`, or any other
+generation route. A turn still goes harness → endpoint. Settings → Local models
+copies `OLLAMA_API_BASE=<base>` or `OPENAI_BASE_URL=<base>` so you can paste it
+into Project settings → Environment (or the harness's own config). Until that
+variable is set for a worker, discovery alone changes nothing about which model
+answers.
+
+To make a harness use one, set the variable that harness reads. For example
+Aider reads `OLLAMA_API_BASE`, and most OpenAI-compatible CLIs read
+`OPENAI_BASE_URL`; check the harness's own documentation for the name it expects.
