@@ -254,13 +254,17 @@ func TestIsUsableBundle_RegularFileVsDir(t *testing.T) {
 	}
 }
 
-func TestDownloadURLUsesReleaseRepo(t *testing.T) {
-	orig := releaseRepo
-	releaseRepo = "owner/repo"
-	t.Cleanup(func() { releaseRepo = orig })
+func TestDownloadURLUsesStampedUpdateOrigin(t *testing.T) {
+	orig := updateOrigin
+	updateOrigin = "https://updates.example.test"
+	t.Cleanup(func() { updateOrigin = orig })
+	t.Setenv(updateOriginEnv, "https://other.example.test")
 
-	got := downloadURL("agent-orchestrator-darwin-arm64.zip")
-	want := "https://github.com/owner/repo/releases/latest/download/agent-orchestrator-darwin-arm64.zip"
+	got, err := downloadURL("agent-orchestrator-darwin-arm64.zip")
+	if err != nil {
+		t.Fatalf("downloadURL error: %v", err)
+	}
+	want := "https://updates.example.test/bootstrap/latest/agent-orchestrator-darwin-arm64.zip"
 	if got != want {
 		t.Fatalf("downloadURL = %q, want %q", got, want)
 	}
@@ -427,10 +431,6 @@ func TestDownload_NonTTYProgress(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	orig := releaseRepo
-	releaseRepo = "owner/repo"
-	t.Cleanup(func() { releaseRepo = orig })
-
 	c := &commandContext{deps: Deps{}.withDefaults()}
 	dst := filepath.Join(t.TempDir(), "out.zip")
 
@@ -452,12 +452,12 @@ func TestDownload_NonTTYProgress(t *testing.T) {
 	if strings.Contains(out, "\r") {
 		t.Fatalf("non-TTY progress must not emit carriage returns, got %q", out)
 	}
-	// Start line: asset name, size, and repo are all present.
+	// Start line: asset name, size, and the host being downloaded from are present.
 	if !strings.Contains(out, "Downloading Agent Orchestrator (agent-orchestrator.zip, ") {
 		t.Fatalf("missing start line in %q", out)
 	}
-	if !strings.Contains(out, "from owner/repo...") {
-		t.Fatalf("start line missing repo in %q", out)
+	if !strings.Contains(out, "from "+strings.TrimPrefix(srv.URL, "http://")+"...") {
+		t.Fatalf("start line missing host in %q", out)
 	}
 	// Done line is present (the only per-copy line off a TTY).
 	if !strings.Contains(out, "Downloaded ") {

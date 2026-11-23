@@ -16,20 +16,6 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 )
 
-// releaseRepo is the GitHub "owner/repo" that `ao start` fetches the desktop app
-// from. It defaults to the production target and is overridable at build time so
-// a test binary fetches from the fork without a source edit:
-//
-//	go build -ldflags "-X github.com/aoagents/agent-orchestrator/backend/internal/cli.releaseRepo=harshitsinghbhandari/agent-orchestrator" ./cmd/ao
-//
-// Mirrors how version.go's Version var is stamped by release tooling.
-//
-// Untrivial-ai is the org the repo was transferred to in July 2026. The old
-// AgentWrapper URLs still resolve only through GitHub's rename redirect, which
-// is not a contract: the same staleness that stranded the baked update feed
-// (#3523) would strand every `ao start` download the day that redirect stops.
-var releaseRepo = "Untrivial-ai/agent-orchestrator"
-
 // appBundleName is the macOS bundle directory name produced by electron-forge
 // (spaced, per frontend/forge.config.ts).
 const appBundleName = "Agent Orchestrator.app"
@@ -388,7 +374,10 @@ func (c *commandContext) fetchAppDarwin(ctx context.Context, w io.Writer) (strin
 	if err != nil {
 		return "", err
 	}
-	url := downloadURL(asset)
+	url, err := downloadURL(asset)
+	if err != nil {
+		return "", err
+	}
 
 	stateDir, err := aoStateDir()
 	if err != nil {
@@ -436,7 +425,10 @@ func (c *commandContext) fetchAppWindows(ctx context.Context, w io.Writer) (stri
 	if err != nil {
 		return "", err
 	}
-	url := downloadURL(asset)
+	url, err := downloadURL(asset)
+	if err != nil {
+		return "", err
+	}
 
 	stateDir, err := aoStateDir()
 	if err != nil {
@@ -484,7 +476,10 @@ func (c *commandContext) fetchAppLinux(ctx context.Context, w io.Writer) (string
 	if err != nil {
 		return "", err
 	}
-	url := downloadURL(asset)
+	url, err := downloadURL(asset)
+	if err != nil {
+		return "", err
+	}
 
 	appPath := linuxAppImagePath()
 	if err := os.MkdirAll(filepath.Dir(appPath), 0o750); err != nil {
@@ -529,6 +524,15 @@ func (c *commandContext) download(ctx context.Context, w io.Writer, url, asset, 
 	// tests still reach their httptest server.
 	client := *c.deps.HTTPClient
 	client.Timeout = 0
+	// A bootstrap download must stay on the update server it was requested from;
+	// a redirect to another host would be a silent fallback to a different plane.
+	origin := req.URL
+	client.CheckRedirect = func(next *http.Request, _ []*http.Request) error {
+		if next.URL.Scheme != origin.Scheme || next.URL.Host != origin.Host {
+			return fmt.Errorf("refusing redirect from %s to %s", origin.Host, next.URL.Host)
+		}
+		return nil
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -542,9 +546,9 @@ func (c *commandContext) download(ctx context.Context, w io.Writer, url, asset, 
 	// percentage is unknown and we report transferred bytes instead.
 	total := resp.ContentLength
 	if total > 0 {
-		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s, ~%s) from %s...\n", asset, humanBytes(total), releaseRepo)
+		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s, ~%s) from %s...\n", asset, humanBytes(total), req.URL.Host)
 	} else {
-		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s) from %s...\n", asset, releaseRepo)
+		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s) from %s...\n", asset, req.URL.Host)
 	}
 
 	f, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
@@ -677,11 +681,6 @@ func assetArch(goarch string) (string, error) {
 	}
 }
 
-// downloadURL builds the constant releases/latest/download URL for asset.
-func downloadURL(asset string) string {
-	return fmt.Sprintf("https://github.com/%s/releases/latest/download/%s", releaseRepo, asset)
-}
-
 // openApp launches the resolved bundle detached and reports whether it launched
 // (spec §6.5). It passes --installed-via=npm-bootstrap so the app can record the
 // install source in its marker. It never waits on the app. A launch failure
@@ -721,7 +720,7 @@ func (c *commandContext) openApp(ctx context.Context, appPath string) (bool, err
 // honest: Track B (live auto-update) is not done, so it does not promise it.
 func (c *commandContext) printDeprecationNotice(w io.Writer) {
 	_, _ = fmt.Fprint(w, "Agent Orchestrator is now a desktop app, and the npm `ao` is just its launcher.\n"+
-		"The app is distributed from the website and GitHub Releases; it owns the daemon and updates itself.\n"+
+		"The app is distributed from your BlueAsh download page; it owns the daemon and updates itself.\n"+
 		"You can keep running `ao start` to fetch (if needed) and open it.\n")
 }
 
