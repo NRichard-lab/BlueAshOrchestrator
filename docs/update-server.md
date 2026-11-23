@@ -59,6 +59,39 @@ retained.
   sha512 in the feed manifest, and checks the installer signature only if the build
   declares a publisher name, which it currently does not.
 
+## Local real-installer update test (Windows)
+
+`frontend/scripts/update-nsis-harness.mjs` exercises the real NSIS update path on this machine,
+against a loopback HTTPS feed, without touching an installed Orchestrator:
+
+```bash
+# Node 22 + Go on PATH. Builds two REAL NSIS installers under a test identity (own exe name,
+# appId, product name, updater cache, no shortcuts; unsigned). Restores package.json afterwards.
+AO_TEST_IDENTITY=updt1a node scripts/build-test-installers.mjs --id updt1a \
+  --origin https://updates.blueash-test.example --versions 0.99.1,0.99.2 --out <installers dir>
+# Install 0.99.1 into a temp folder, update it to 0.99.2 through the app, verify, clean up.
+node scripts/update-nsis-harness.mjs --installers <installers dir> --baseline 0.99.1 --update 0.99.2 \
+  --id updt1a --out <report dir>            # add --corrupt to serve a tampered installer
+```
+
+What makes it safe, and what it asserts, is described at the top of the harness. Points that
+matter for the real release:
+
+- The app calls `quitAndInstall(false, true)`: the update is **not silent**. The NSIS wizard
+  ("Choose Installation Options", Installing, Finish) appears and the app is relaunched through
+  the shell, which does **not** inherit environment variables (verified with a probe installer).
+  Test builds therefore compile their identity in and read an `ao-instance.json` written only by
+  the test installer (`src/main/instance-pin.ts`); release builds compile an empty identity and
+  never read that file.
+- Updates reuse the folder recorded by the install (a wizard install appends the app folder
+  name to the chosen directory). A first install made with a bare `/D=<dir>` is re-nested one
+  level deeper by a later wizard update, so test baselines install to `<dir>\<app folder>`.
+- The updater verified the manifest's sha512 for the downloaded installer; a tampered payload is
+  rejected (`sha512 checksum mismatch`) and nothing is staged.
+- Test installers are **unsigned**; electron-updater does not check an installer signature
+  unless the build declares a publisher name. Production releases need real Authenticode
+  signing (`WIN_CSC_LINK`, etc.) and a decision on whether to declare a publisher name.
+
 ## Endpoint tree
 
 ```text
