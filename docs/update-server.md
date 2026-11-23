@@ -37,6 +37,46 @@ no feed and the app reports "no valid update server configured".
 `AO_RELEASE_REPO` is now only an **optional GitHub publisher target** (mirror);
 it never selects where clients update from and may not name an upstream owner.
 
+## BlueAshAI product profile and local preview build
+
+BlueAshAI is its own product and must run next to an installed Orchestrator. Every identity value
+that could collide is in one build-time profile, `frontend/src/shared/brands.json` (selected by
+`AO_BRAND=blueashai`, the production build setting; unset keeps the legacy Orchestrator values so
+existing tests and builds are unchanged):
+
+| | Orchestrator (legacy) | BlueAshAI |
+| --- | --- | --- |
+| Visible name / exe / installer | Orchestrator.inc / `agent-orchestrator.exe` / `Agent Orchestrator Setup <v>.exe` | BlueAshAI / `BlueAshAI.exe` / `BlueAshAI Setup <v>.exe` |
+| Windows asset alias (`ao start`, conductor) | `agent-orchestrator-win32-x64.exe` | `BlueAshAI-win32-x64.exe` |
+| NSIS appId (install key GUID) | `dev.agent-orchestrator.desktop` (`d06535a3-…`) | `ai.blueash.desktop` (`7ebb2fd8-9d4d-5b06-b9b3-8cce0c92e0db`) |
+| AppUserModelID | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |
+| Per-user state dir (run file, daemon data, sign-in) | `~/.ao` | `~/.blueashai` |
+| Default daemon port | 3001 | 3101 |
+| Windows pipes (derived from the state dir name) | `ao-supervise`, `ao-browser`, … | `ao-supervise--blueashai`, `ao-browser--blueashai`, … |
+| URL scheme | `ao-app` | `blueashai` (never `ao-app`) |
+| Updater cache dir | `agent-orchestrator-updater` | `blueashai-updater` |
+
+The Go daemon/CLI get the same values through ldflags (`frontend/scripts/build-daemon.mjs` →
+`backend/internal/brand`). `AO_PORT`, `AO_RUN_FILE` and `AO_DATA_DIR` still override. The mobile
+LAN bridge default (3011) is not rebranded; a second daemon falls back to another port.
+
+**Local unsigned preview** (no production origin or signing credentials exist yet):
+
+```bash
+# Node 22 + Go on PATH; from frontend/. Updates fail closed: the baked app-update.yml has no feed.
+AO_BRAND=blueashai AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN=1 npm run make -- --platform win32 --arch x64
+node scripts/verify-update-origin.mjs app "out/BlueAshAI-win32-x64" --no-feed
+node scripts/brand-smoke.mjs --installer "out/make/BlueAshAI Setup <version>.exe" --out <report dir>
+```
+
+Still missing for a real release: a production update origin (`AO_UPDATE_ORIGIN`, hosting, TLS),
+Windows Authenticode signing (`WIN_CSC_LINK`/`WIN_CSC_KEY_PASSWORD` or a store certificate) and a
+publisher-name decision, a BlueAsh-owned auth/Cloud endpoint (the `blueashai://` deep-link flows
+the upstream sign-in uses will not work against the upstream service), rebranded visible strings
+inside the renderer UI and i18n catalogs (the window, installer, shortcuts and About use the new
+name; many in-app strings still say "Orchestrator"), the macOS/Linux packagers, and a store/brew
+story (all deferred; Windows only).
+
 ## First release scope: Windows x64 only
 
 The first BlueAsh release ships **Windows x64 only**. macOS and Linux **desktop**

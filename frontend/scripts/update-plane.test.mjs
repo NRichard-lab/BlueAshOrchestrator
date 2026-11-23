@@ -14,7 +14,7 @@ vi.mock("./blockmap.mjs", () => ({
 }));
 
 import { stageUpdateTree, channelLayout } from "./stage-update-tree.mjs";
-import { checkAppUpdateYml, scanApp, scanSource, RELEASE_CRITICAL_SOURCES } from "./verify-update-origin.mjs";
+import { checkAppUpdateYml, checkFeedlessAppUpdateYml, scanApp, scanSource, RELEASE_CRITICAL_SOURCES } from "./verify-update-origin.mjs";
 import { parseUpdateOrigin } from "./update-origin-core.mjs";
 import { PLATFORM_CATALOG, selectPlatforms } from "./select-release-platforms.mjs";
 
@@ -161,5 +161,35 @@ describe("release platform selection (first release is Windows only)", () => {
 		expect(wf).toMatch(/platforms:[\s\S]*default: ""/);
 		expect(wf).toContain("matrix: ${{ fromJSON(needs.select.outputs.matrix) }}");
 		expect(wf).toContain("select-release-platforms.mjs");
+	});
+});
+
+describe("feed-less (fail-closed) preview builds", () => {
+	const feedless = "# No update origin configured at build time; updates are disabled.\nupdaterCacheDirName: blueashai-updater\n";
+
+	it("accepts only a yml with no feed of any kind", () => {
+		expect(checkFeedlessAppUpdateYml(feedless)).toEqual([]);
+		expect(checkAppUpdateYml(feedless, undefined, { feedless: true })).toEqual([]);
+		for (const bad of [
+			"provider: generic\nurl: https://updates.example.test/desktop/stable/\nupdaterCacheDirName: x\n",
+			"provider: github\nowner: a\nrepo: b\nupdaterCacheDirName: x\n",
+			"url: https://updates.example.test/\nupdaterCacheDirName: x\n",
+			"token: abc\nupdaterCacheDirName: x\n",
+			"# nothing\n",
+		]) {
+			expect(checkFeedlessAppUpdateYml(bad).length, bad).toBeGreaterThan(0);
+		}
+	});
+
+	it("a normal scan still demands a valid feed, and --no-feed scans still deny upstream strings", () => {
+		expect(checkAppUpdateYml(feedless).length).toBeGreaterThan(0);
+		const app = join(dir, "app");
+		mkdirSync(join(app, "Resources"), { recursive: true });
+		writeFileSync(join(app, "Resources/app-update.yml"), feedless);
+		writeFileSync(join(app, "Resources/app.asar"), Buffer.from("fine"));
+		expect(scanApp(app, undefined, { feedless: true }).problems).toEqual([]);
+		expect(scanApp(app, undefined).problems.length).toBeGreaterThan(0);
+		writeFileSync(join(app, "Resources/daemon"), Buffer.from("https://raw.githubusercontent.com/Untrivial-ai/agent-orchestrator/main/x"));
+		expect(scanApp(app, undefined, { feedless: true }).problems.join()).toMatch(/denied upstream pattern/);
 	});
 });

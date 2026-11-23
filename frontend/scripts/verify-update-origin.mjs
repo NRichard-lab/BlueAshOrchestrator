@@ -8,6 +8,7 @@
 //       are scanned without unpacking.
 //   node scripts/verify-update-origin.mjs origin <https://host>
 //       Validate a candidate AO_UPDATE_ORIGIN value.
+//   (add --no-feed to `app` or `yml` to accept ONLY a deliberately feed-less app-update.yml)
 //   node scripts/verify-update-origin.mjs yml <app-update.yml> [--origin https://<host>]
 //       Just the baked feed file (cheap pre-package/post-package check).
 //   node scripts/verify-update-origin.mjs source <repoRoot>
@@ -83,7 +84,20 @@ function* walk(dir) {
 	}
 }
 
-export function checkAppUpdateYml(yml, expectedOrigin) {
+// A deliberately feed-less app-update.yml (local preview builds, AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN=1):
+// no provider, url, owner, repo or token of any kind, so the packaged app fails closed ("no valid update
+// server configured") and can never reach any host. Anything else is rejected, including a half-written feed.
+export function checkFeedlessAppUpdateYml(yml) {
+	const problems = [];
+	for (const key of ["provider", "url", "owner", "repo", "token", "private", "channel", "host", "publisherName"]) {
+		if (new RegExp(`^${key}:`, "m").test(yml)) problems.push(`feed-less app-update.yml must not declare "${key}"`);
+	}
+	if (!/^updaterCacheDirName:\s*\S+/m.test(yml)) problems.push("feed-less app-update.yml has no updaterCacheDirName");
+	return problems;
+}
+
+export function checkAppUpdateYml(yml, expectedOrigin, { feedless = false } = {}) {
+	if (feedless) return checkFeedlessAppUpdateYml(yml);
 	const problems = [];
 	const provider = /^provider:\s*(.+)$/m.exec(yml)?.[1]?.trim();
 	if (provider !== "generic") problems.push(`app-update.yml provider is "${provider ?? "missing"}", expected "generic"`);
@@ -108,12 +122,12 @@ export function checkAppUpdateYml(yml, expectedOrigin) {
 	return problems;
 }
 
-export function scanApp(dir, expectedOrigin) {
+export function scanApp(dir, expectedOrigin, options = {}) {
 	const problems = [];
 	const ymls = [...walk(dir)].filter((f) => f.endsWith("app-update.yml"));
 	if (ymls.length === 0) problems.push(`no app-update.yml found under ${dir}`);
 	for (const yml of ymls) {
-		for (const p of checkAppUpdateYml(readFileSync(yml, "utf8"), expectedOrigin)) problems.push(`${relative(dir, yml)}: ${p}`);
+		for (const p of checkAppUpdateYml(readFileSync(yml, "utf8"), expectedOrigin, options)) problems.push(`${relative(dir, yml)}: ${p}`);
 	}
 	const needles = ARTIFACT_DENY.map((p) => [p, Buffer.from(p)]);
 	let scanned = 0;
@@ -162,7 +176,7 @@ function main(argv) {
 	if (mode === "app") {
 		const i = rest.indexOf("--origin");
 		const origin = (i >= 0 ? rest[i + 1] : undefined) ?? process.env.AO_UPDATE_ORIGIN;
-		const result = scanApp(target, origin);
+		const result = scanApp(target, origin, { feedless: rest.includes("--no-feed") });
 		problems = result.problems;
 		process.stdout.write(`scanned ${result.scanned} files\n`);
 		for (const e of result.evidence) process.stdout.write(`evidence ${e.file} sha256=${e.sha256}\n`);
@@ -172,7 +186,7 @@ function main(argv) {
 	} else if (mode === "yml") {
 		const i = rest.indexOf("--origin");
 		const origin = (i >= 0 ? rest[i + 1] : undefined) ?? process.env.AO_UPDATE_ORIGIN;
-		problems = checkAppUpdateYml(readFileSync(target, "utf8"), origin);
+		problems = checkAppUpdateYml(readFileSync(target, "utf8"), origin, { feedless: rest.includes("--no-feed") });
 	} else if (mode === "source") {
 		problems = scanSource(target).problems;
 	} else {
