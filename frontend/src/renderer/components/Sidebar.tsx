@@ -24,6 +24,7 @@ import {
 	GitMerge,
 	GitPullRequest,
 	LoaderCircle,
+	LayoutDashboard,
 	LayoutGrid,
 	Package,
 	Gauge,
@@ -546,6 +547,7 @@ function useSelection() {
 	const goAutomations = useCallback(() => void navigate({ to: "/automations" }), [navigate]);
 	const goArtifacts = useCallback(() => void navigate({ to: "/artifacts" }), [navigate]);
 	const goUsage = useCallback(() => void navigate({ to: "/usage" }), [navigate]);
+	const goDashboard = useCallback(() => void navigate({ to: "/dashboard" }), [navigate]);
 	const goStandaloneBoard = useCallback(() => void navigate({ to: "/sessions" }), [navigate]);
 	const goGlobalSettings = useCallback(() => openGlobalSettings(), [openGlobalSettings]);
 	// Asking to connect a phone is the consent to turn Connect Mobile on, so the code starts preparing at once.
@@ -573,6 +575,7 @@ function useSelection() {
 		isAutomations: pathname === "/automations",
 		isArtifacts: pathname === "/artifacts",
 		isUsage: pathname === "/usage",
+		isDashboard: pathname === "/dashboard",
 		activeRemoteHostId: params.hostId,
 		activeRemoteProjectId: params.hostId ? params.projectId : undefined,
 		activeRemoteSessionId: params.hostId ? params.sessionId : undefined,
@@ -582,6 +585,7 @@ function useSelection() {
 		goAutomations,
 		goArtifacts,
 		goUsage,
+		goDashboard,
 		goStandaloneBoard,
 		// Settings is a modal — open it in place so the current page (session
 		// terminal, board, etc.) stays underneath.
@@ -590,7 +594,7 @@ function useSelection() {
 		goSettings,
 		goProject,
 		goSession,
-	}), [goArtifacts, goAutomations, goUsage, goConnectMobile, goGlobalSettings, goHome, goProject, goSession, goSettings, goStandaloneBoard, params.hostId, params.projectId, params.sessionId, pathname]);
+	}), [goArtifacts, goAutomations, goUsage, goDashboard, goConnectMobile, goGlobalSettings, goHome, goProject, goSession, goSettings, goStandaloneBoard, params.hostId, params.projectId, params.sessionId, pathname]);
 }
 
 // Rows showing the red alert sit above the rest, but only in the default
@@ -1183,6 +1187,16 @@ export const Sidebar = memo(function Sidebar({
 							/>
 						</SidebarMenuItem>
 					) : null}
+					{/* Under Usage: both answer "how is the fleet doing", one in tokens and one in work. */}
+					<SidebarMenuItem>
+						<SidebarTopNavRow
+							active={selection.isDashboard}
+							icon={<LayoutDashboard aria-hidden="true" />}
+							label={t("dashboard.title")}
+							onClick={selection.goDashboard}
+							tooltip={isCollapsed ? t("dashboard.title") : undefined}
+						/>
+					</SidebarMenuItem>
 				</SidebarMenu>
 
 				{/* Pinned — collapsible; hidden when empty. */}

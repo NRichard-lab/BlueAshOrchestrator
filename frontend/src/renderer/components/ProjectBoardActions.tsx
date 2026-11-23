@@ -1,3 +1,5 @@
+import { useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard } from "lucide-react";
 import { type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/app-icons";
@@ -18,6 +20,7 @@ export function ProjectBoardActions({ actions, placement, quiet = false, cloud =
 	style?: CSSProperties;
 }) {
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 	const { projectId, hostId, orchestrator, isSpawning, isProjectRestarting, isProvisioning, spawnError, canCreateAsTui,
 		openNewTask, openOrchestrator } = actions;
 	const header = placement === "header";
@@ -57,6 +60,30 @@ export function ProjectBoardActions({ actions, placement, quiet = false, cloud =
 			<TooltipContent side="bottom">{busyLabel ?? orchestratorReplyLabel(actionLabel, orchestratorReply, t)}</TooltipContent>
 		</Tooltip>
 	);
+	// This board shows one project; the dashboard shows every project's workers
+	// by stage. It sits between the board behind it and the Task button, in the
+	// header only: the empty board's body stays a single call to action.
+	const dashboardButton = header ? (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span className="inline-flex" style={style}>
+					<Button type="button" size="sm"
+						aria-label={t("dashboard.title")}
+						data-priority="secondary"
+						onClick={() => {
+							captureTopbarAction("open_dashboard", "board");
+							void navigate({ to: "/dashboard" });
+						}}
+						variant="quiet"
+					>
+						<LayoutDashboard className="size-icon-md" aria-hidden="true" />
+						<span data-compact-label="">{t("dashboard.title")}</span>
+					</Button>
+				</span>
+			</TooltipTrigger>
+			<TooltipContent side="bottom">{t("dashboard.openHint")}</TooltipContent>
+		</Tooltip>
+	) : null;
 	const newTaskButton = (
 		<Tooltip>
 			<TooltipTrigger asChild>
@@ -88,7 +115,7 @@ export function ProjectBoardActions({ actions, placement, quiet = false, cloud =
 			{canCreateAsTui ? <Button type="button" size="sm" disabled={busy} onClick={() => openOrchestrator("tui")} style={style} variant="primary">{t("newTask.createAsTui")}</Button> : null}
 		</div>
 	) : null;
-	return header ? <>{feedback}{orchestratorButton}{newTaskButton}</> : <>
+	return header ? <>{feedback}{orchestratorButton}{dashboardButton}{newTaskButton}</> : <>
 		<div className="mt-5 flex items-center gap-2">{orchestratorButton}{newTaskButton}</div>
 		{feedback}
 	</>;

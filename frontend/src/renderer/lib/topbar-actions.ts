@@ -2,6 +2,7 @@
 export const TOPBAR_ACTIONS = [
 	"new_task",
 	"open_board",
+	"open_dashboard",
 	"open_orchestrator",
 	"open_editor",
 	"editor_menu",
