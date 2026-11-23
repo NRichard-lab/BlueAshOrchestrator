@@ -20,11 +20,18 @@ var claudeAliasPattern = regexp.MustCompile(`^(fable|opus|sonnet|haiku)(\[[^\]]+
 // as "Claude Opus 5.5".
 var claudeDisplayVersionPattern = regexp.MustCompile(`\b(\d{1,2}(?:\.\d{1,2})?)\b`)
 
-// LabelClaudeAliasVersions adds the resolved version to Claude Code family
-// aliases ("Opus" becomes "Opus 5.5") using the newest model of that family in
-// reference, which must be a catalog the provider itself reported. Aliases
-// whose family is absent from reference, or whose label already names a
-// version, keep their label: a guessed version is worse than none.
+// LabelClaudeAliasVersions marks Claude Code family aliases as floating
+// ("opus" becomes "Opus (latest)") when reference, a catalog the provider
+// itself reported, contains that family. Aliases whose family is absent from
+// reference, or whose label already names a version, keep their label.
+//
+// A family alias is resolved by the CLI, not by AO: `--model opus` runs
+// whichever Opus the installed Claude Code picks, which is not necessarily the
+// newest Opus in the provider's list. Labelling the alias with a version read
+// off that list therefore promised a specific model AO was not asking for, and
+// a user who chose "Opus 5.5" could be served another model entirely. Only
+// concrete IDs carry a version in their label now, so every version a picker
+// shows is one the launch argument actually requests.
 func LabelClaudeAliasVersions(models, reference []ports.AgentModelInfo) []ports.AgentModelInfo {
 	if len(models) == 0 || len(reference) == 0 {
 		return models
@@ -52,26 +59,21 @@ func LabelClaudeAliasVersions(models, reference []ports.AgentModelInfo) []ports.
 		if match == nil {
 			continue
 		}
-		version, ok := newest[match[1]]
-		if !ok || claudeDisplayVersionPattern.MatchString(item.Label) {
+		if _, ok := newest[match[1]]; !ok {
 			continue
 		}
-		label := strings.TrimSpace(item.Label)
-		if label == "" || strings.EqualFold(label, item.ID) {
-			label = strings.ToUpper(match[1][:1]) + match[1][1:]
-			// A configured alias arrives labeled with its own ID. Keep its
-			// context variant ("opus[1m]") apart from the family's plain
-			// model, or the picker lists "Opus 5.5" twice.
-			if window := strings.Trim(match[2], "[]"); window != "" {
-				label += " (" + strings.ToUpper(window) + " context)"
-			}
+		// The ID matched claudeAliasPattern, so it is floating by construction.
+		// Any version in the incoming label — the provider's or an earlier
+		// guess — is dropped rather than carried on a label whose ID does not
+		// request it.
+		base := strings.ToUpper(match[1][:1]) + match[1][1:]
+		// Keep a context variant ("opus[1m]") apart from the family's plain
+		// model, or the picker lists the same name twice.
+		if window := strings.Trim(match[2], "[]"); window != "" {
+			out[i].Label = base + " (latest, " + strings.ToUpper(window) + " context)"
+			continue
 		}
-		versionText := formatVersion(version)
-		if base, suffix, found := strings.Cut(label, " ("); found {
-			out[i].Label = base + " " + versionText + " (" + suffix
-		} else {
-			out[i].Label = label + " " + versionText
-		}
+		out[i].Label = base + " (latest)"
 	}
 	return out
 }
@@ -118,12 +120,4 @@ func parseVersion(parts []string) []int {
 		version = append(version, n)
 	}
 	return version
-}
-
-func formatVersion(version []int) string {
-	parts := make([]string, len(version))
-	for i, n := range version {
-		parts[i] = strconv.Itoa(n)
-	}
-	return strings.Join(parts, ".")
 }
