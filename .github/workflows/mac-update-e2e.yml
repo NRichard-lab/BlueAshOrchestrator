@@ -11,7 +11,7 @@ name: macOS update e2e
 # THIS IS POST-RELEASE MONITORING, NOT A PROMOTION GATE. Read that literally
 # before wiring it anywhere.
 #
-# The app resolves the update through the REAL published GitHub feed, so this
+# The app resolves the update through the REAL published BlueAsh update feed, so this
 # job cannot start until version N's release and its latest-mac.yml are already
 # public. By then every real stable client can already see and take that update,
 # and the run takes tens of minutes. A check that finishes after the thing it
@@ -23,8 +23,8 @@ name: macOS update e2e
 # What it would take to make it a real pre-promotion gate: an isolated candidate
 # feed that real clients never see, with the public feed promoted only after the
 # check passes. The mechanism for that already exists in principle (the
-# AO_RELEASE_REPO build-time override, #3267 decision 8 step 3, which publishes
-# to a non-production repo), but pointing this job at one requires the private
+# AO_UPDATE_ORIGIN build-time origin, which can point a candidate build at a
+# non-production update server), but pointing this job at one requires the private
 # signing/release pipeline to build and publish a candidate there. That pipeline
 # is a separate repo and out of scope here, so the honest description today is
 # monitoring. Do not re-label this without that isolated feed existing.
@@ -165,24 +165,16 @@ jobs:
         run: frontend/scripts/verify-mac-artifact.sh "/Applications/Agent Orchestrator.app"
 
       - name: Verify the updated app's baked update feed
-        # The update above already proved the REAL published feed resolves (the
-        # app follows GitHub's actual redirect chain to fetch the manifest and
-        # asset). This step closes the remaining gap from #3523: the freshly
-        # installed version N must bake an app-update.yml whose owner/repo is
-        # the repo the release was published from. A stale baked owner (as after
-        # the AgentWrapper -> Untrivial-ai transfer) keeps working only through
-        # GitHub's rename redirect, so nothing else fails until that redirect
-        # dies. This assertion turns the drift into a red run instead.
+        # The update above already proved the REAL published feed resolves. This
+        # step closes the remaining gap: the freshly installed version N must bake
+        # a generic-provider app-update.yml on exactly the BlueAsh update origin
+        # (repository variable AO_UPDATE_ORIGIN), never a GitHub owner/repo.
+        env:
+          AO_UPDATE_ORIGIN: ${{ vars.AO_UPDATE_ORIGIN }}
         run: |
           set -euo pipefail
-          yml="/Applications/Agent Orchestrator.app/Contents/Resources/app-update.yml"
-          owner="$(sed -n 's/^owner:[[:space:]]*//p' "$yml")"
-          repo="$(sed -n 's/^repo:[[:space:]]*//p' "$yml")"
-          echo "updated app bakes feed: $owner/$repo (expected $GITHUB_REPOSITORY)"
-          if [ "$owner/$repo" != "$GITHUB_REPOSITORY" ]; then
-            echo "::error::updated app bakes $owner/$repo but releases publish from $GITHUB_REPOSITORY" >&2
-            exit 1
-          fi
+          [ -n "${AO_UPDATE_ORIGIN:-}" ] || { echo "::error::AO_UPDATE_ORIGIN repository variable is not set" >&2; exit 1; }
+          node frontend/scripts/verify-update-origin.mjs yml "/Applications/Agent Orchestrator.app/Contents/Resources/app-update.yml" --origin "$AO_UPDATE_ORIGIN"
 
       - name: Report runner cost
         if: always()

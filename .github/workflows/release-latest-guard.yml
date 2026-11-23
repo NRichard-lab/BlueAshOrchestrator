@@ -1,7 +1,9 @@
 name: Release latest guard
 
-# Guard against accidental non-stable GitHub releases taking over
-# /releases/latest and breaking electron-updater's stable channel.
+# Guards the optional GitHub Releases MIRROR of this repository (the one it runs
+# in) against accidental non-stable releases taking over /releases/latest. The
+# desktop update plane is the BlueAsh update server (docs/update-server.md), not
+# GitHub Releases, so this guard protects the mirror's download links only.
 on:
   release:
     types: [published, edited, released]

@@ -109,37 +109,45 @@ jobs:
         run: |
           command -v clang++-15
           echo "CXX=clang++-15" >> "$GITHUB_ENV"
+      - name: Require the BlueAsh update origin
+        # There is no default update origin and no upstream fallback: forge.config.ts
+        # refuses to package without a valid AO_UPDATE_ORIGIN. Fail here with a
+        # clear message instead of deep inside the package step.
+        shell: bash
+        env:
+          AO_UPDATE_ORIGIN: ${{ vars.AO_UPDATE_ORIGIN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AO_UPDATE_ORIGIN:-}" ]; then
+            echo "::error::Repository variable AO_UPDATE_ORIGIN is not set. Set it to the BlueAsh update server origin (https://<host>) before building." >&2
+            exit 1
+          fi
+          node scripts/verify-update-origin.mjs origin "$AO_UPDATE_ORIGIN"
       - name: Build (unsigned, no publish)
         shell: bash
         env:
-          # Bake the update feed's owner/repo from the repo this build runs in.
-          # Without this, forge.config.ts falls back to DEFAULT_RELEASE_REPO,
-          # which went stale across the AgentWrapper -> Untrivial-ai transfer and
-          # left every published build pointing its updater at the old owner,
-          # alive only through GitHub's rename redirect (#3523).
-          AO_RELEASE_REPO: ${{ github.repository }}
+          # Baked into app-update.yml as the generic-provider feed
+          # ({origin}/desktop/stable/). AO_RELEASE_REPO is intentionally unset:
+          # it only selects an optional GitHub publisher and never the feed.
+          AO_UPDATE_ORIGIN: ${{ vars.AO_UPDATE_ORIGIN }}
           # Marks a published build: Electron main may initialize Sentry, and
           # Vite emits hidden source maps with Sentry debug IDs (vite.sentry.ts).
           # The maps are left out of the package and uploaded below.
           AO_PUBLISHED_BUILD: "1"
         run: npm run make
-      - name: Verify baked update feed repo
-        # app-update.yml is what electron-updater reads at runtime to build the
-        # feed URL; forge's prePackage hook writes it to the working dir and
-        # ships it via extraResource. If the baked owner/repo ever diverges from
-        # the repo publishing the release (org rename, fork misconfig), fail the
-        # build here instead of stranding installed clients on a redirect
-        # GitHub may some day stop honoring (#3523).
+      - name: Verify baked update feed
+        # app-update.yml is what electron-updater reads at runtime; forge's
+        # prePackage hook writes it to the working dir and ships it via
+        # extraResource. Assert it is the generic provider on exactly the
+        # configured BlueAsh origin, then scan the packaged output for any
+        # upstream release/update URL (plan checkpoints C8/C9).
         shell: bash
+        env:
+          AO_UPDATE_ORIGIN: ${{ vars.AO_UPDATE_ORIGIN }}
         run: |
           set -euo pipefail
-          owner="$(sed -n 's/^owner:[[:space:]]*//p' app-update.yml)"
-          repo="$(sed -n 's/^repo:[[:space:]]*//p' app-update.yml)"
-          echo "baked feed: $owner/$repo (expected $GITHUB_REPOSITORY)"
-          if [ "$owner/$repo" != "$GITHUB_REPOSITORY" ]; then
-            echo "::error::app-update.yml bakes $owner/$repo but this build publishes from $GITHUB_REPOSITORY" >&2
-            exit 1
-          fi
+          node scripts/verify-update-origin.mjs yml app-update.yml --origin "$AO_UPDATE_ORIGIN"
+          node scripts/verify-update-origin.mjs app out --origin "$AO_UPDATE_ORIGIN"
       - name: Collect artifact and compute digest
         shell: bash
         env:

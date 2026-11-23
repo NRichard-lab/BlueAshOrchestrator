@@ -1,0 +1,50 @@
+name: Update plane guard
+
+# Keeps the desktop/CLI/self-host update plane on the BlueAsh update server.
+# Fails when a release-critical source path names the upstream Orchestrator
+# release plane, and runs the focused tests that pin the fail-closed behavior.
+# Never touches the network beyond installing dependencies. See docs/update-server.md.
+on:
+  pull_request:
+    paths:
+      - "frontend/forge.config.ts"
+      - "frontend/makers/update-feed*"
+      - "frontend/src/main/auto-updater*"
+      - "frontend/src/main/feature-builds*"
+      - "frontend/src/main/desktop-version-floor*"
+      - "frontend/src/main/update-origin*"
+      - "frontend/scripts/update-origin-core*"
+      - "frontend/scripts/stage-update-tree*"
+      - "frontend/scripts/verify-update-origin*"
+      - "frontend/scripts/update-plane.test.mjs"
+      - "backend/internal/cli/start.go"
+      - "backend/internal/cli/update_origin*"
+      - "scripts/*self-hosted*"
+      - "desktop-version-floor.json"
+      - "README.md"
+      - "packages/mobile/app.json"
+      - "packages/mobile/app.config*"
+      - ".github/workflows/update-plane-guard.yml"
+      - ".github/workflows/build-artifacts.yml"
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  deny-list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Release-critical paths name no upstream update plane
+        run: node frontend/scripts/verify-update-origin.mjs source .
+      - name: Self-host origin validation
+        run: bash scripts/setup-self-hosted.test.sh origin-validation

@@ -40,6 +40,18 @@ jobs:
               }
             }
 
+            // downloadUrl is only honoured by the app when it is an https URL on the
+            // BlueAsh update origin, so an upstream or non-https URL is a mistake.
+            if (floor.downloadUrl) {
+              let u;
+              try { u = new URL(floor.downloadUrl); } catch { u = null; }
+              const upstream = /(^|\.)(github\.com|githubusercontent\.com|github\.io|orchestrator\.inc|orchestratorusercontent\.com|expo\.dev)$/i;
+              if (!u || u.protocol !== 'https:' || upstream.test(u.hostname)) {
+                console.error('ERROR: downloadUrl must be an https URL on the BlueAsh update origin, got', floor.downloadUrl);
+                process.exit(1);
+              }
+            }
+
             if (floor.min && floor.min !== '') {
               console.log('');
               console.log('========================================');
