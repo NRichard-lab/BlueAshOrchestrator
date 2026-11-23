@@ -60,22 +60,53 @@ The Go daemon/CLI get the same values through ldflags (`frontend/scripts/build-d
 `backend/internal/brand`). `AO_PORT`, `AO_RUN_FILE` and `AO_DATA_DIR` still override. The mobile
 LAN bridge default (3011) is not rebranded; a second daemon falls back to another port.
 
-**Local unsigned preview** (no production origin or signing credentials exist yet):
+**BlueAshAI has no update plane at all (compiled out).** `brands.json` carries three separate
+compile-time switches, all `false` for BlueAshAI and `true` for the legacy profile; they are
+compiled into the app (Vite `define` of `AO_BRAND`) and stamped into the Go daemon with ldflags
+(`brand.UpdatesEnabled`, `brand.RemoteTelemetryEnabled`, `brand.PricingCatalogSyncEnabled`).
+No environment variable or settings file can turn them back on.
+
+| Switch | What it removes |
+| --- | --- |
+| `updatesEnabled` | the first-run "Keep Orchestrator up to date automatically?" prompt, the Electron updater and every timer, the version-floor check, feature builds, the Updates settings page, the sidebar update row, the restart-to-update dialog, and the daemon's harness/agent-CLI "newer version" advisory with all its remote lookups (npm, PyPI, Homebrew, vendor release feeds, GitHub). The `update-advisory` route stays and answers `unknown / disabled`; a harness `update` operation is refused with `UPDATES_DISABLED`. Install and verify are unchanged. |
+| `remoteTelemetryEnabled` | PostHog export, the renderer analytics client and both Sentry DSNs. Local event recording is unchanged. |
+| `pricingCatalogSyncEnabled` | the LiteLLM model price download. Usage cost then comes only from a catalog already on disk and from the user's own price overrides. |
+
+Build consequences: the profile always bakes a feed-less `app-update.yml`, and `forge.config.ts` /
+`makers/update-feed.ts` refuse `AO_UPDATE_ORIGIN` and `AO_RELEASE_REPO` for it. `build-artifacts.yml`
+no longer needs an origin variable. Guards: `node scripts/verify-update-origin.mjs brand src/shared/brands.json blueashai`
+and `... app <dir> --no-feed --require-updates-off` (daemon stamps present, no update manifest shipped).
+
+Agent CLIs are asked, not forced: with updates compiled out AO launches Claude Code with
+`DISABLE_AUTOUPDATER=1`, Cursor with `--disable-auto-update`, and Codex already gets
+`-c check_for_update_on_startup=false`. AO cannot control the vendors' own programs, so this is not a
+guarantee of zero vendor traffic; a CLI run outside AO, or one without a documented switch, can still
+check for updates by itself.
+
+A previously enabled `update-settings.json` (a profile that pressed "Enable auto-updates" in an
+earlier preview) is rewritten to disabled on the first launch, and a missing one is created disabled.
+
+**Local unsigned preview** (no signing credentials exist yet):
 
 ```bash
-# Node 22 + Go on PATH; from frontend/. Updates fail closed: the baked app-update.yml has no feed.
-AO_BRAND=blueashai AO_ALLOW_UNCONFIGURED_UPDATE_ORIGIN=1 npm run make -- --platform win32 --arch x64
-node scripts/verify-update-origin.mjs app "out/BlueAshAI-win32-x64" --no-feed
+# Node 22 + Go on PATH; from frontend/. No update origin, no opt-out variable: updates are compiled out.
+AO_BRAND=blueashai npm run make -- --platform win32 --arch x64
+node scripts/verify-update-origin.mjs app "out/BlueAshAI-win32-x64" --no-feed --require-updates-off
 node scripts/brand-smoke.mjs --installer "out/make/BlueAshAI Setup <version>.exe" --out <report dir>
 ```
 
-Still missing for a real release: a production update origin (`AO_UPDATE_ORIGIN`, hosting, TLS),
-Windows Authenticode signing (`WIN_CSC_LINK`/`WIN_CSC_KEY_PASSWORD` or a store certificate) and a
-publisher-name decision, a BlueAsh-owned auth/Cloud endpoint (the `blueashai://` deep-link flows
-the upstream sign-in uses will not work against the upstream service), rebranded visible strings
-inside the renderer UI and i18n catalogs (the window, installer, shortcuts and About use the new
-name; many in-app strings still say "Orchestrator"), the macOS/Linux packagers, and a store/brew
-story (all deferred; Windows only).
+`brand-smoke.mjs` refuses to run while any BlueAshAI install is registered for the user: the installer
+keeps one NSIS GUID, so installing it (even silently into a temp folder) first runs the uninstaller of
+an existing install and would remove it. Pass `--control-prompt` with an older installer to prove the
+first-run dialog detector sees the prompt that this build no longer shows.
+
+Still missing for a real release: Windows Authenticode signing (`WIN_CSC_LINK`/`WIN_CSC_KEY_PASSWORD`
+or a store certificate) and a publisher-name decision, a BlueAsh-owned auth/Cloud endpoint (the
+`blueashai://` deep-link flows the upstream sign-in uses will not work against the upstream service),
+rebranded visible strings inside the renderer UI and i18n catalogs (the window, installer, shortcuts
+and About use the new name; many in-app strings still say "Orchestrator"), the macOS/Linux packagers,
+and a store/brew story (all deferred; Windows only). If BlueAshAI ever needs to update itself, that
+is a new, deliberate build profile with a production `AO_UPDATE_ORIGIN`, not a flag flip here.
 
 ## First release scope: Windows x64 only
 

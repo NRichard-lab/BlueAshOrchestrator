@@ -1,7 +1,7 @@
 {
 	"name": "agent-orchestrator",
 	"productName": "BlueAshAI",
-	"version": "0.15.4-blueash.3",
+	"version": "0.15.4-blueash.4",
 	"private": true,
 	"description": "BlueAshAI desktop app (fork of the agent-orchestrator desktop)",
 	"author": "BlueAshAI",
