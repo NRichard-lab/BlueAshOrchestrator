@@ -53,11 +53,17 @@ this rather than claiming support:
 - one that answers with something else is listed as unreachable, quoting what it
   actually said, which is how a wrong `--kind` or a wrong URL shows up.
 
-**Bionic** is supported only in this generic sense: it is a name you can give an
-OpenAI-compatible address. Its API has not been tested against this route, and
-nothing in Orchestrator is special-cased for it. If `ao local-provider ls` shows
-it up with models, the route works; if it reports something else, that is the
-server's own answer and the endpoint needs a different base URL or kind.
+**Bionic** (the LM Studio agent app) is supported only in this generic sense: it
+is a name you can give an OpenAI-compatible address, typically
+`http://127.0.0.1:1234` after enabling its Local Model API. Its protocol has
+not been specially verified against Orchestrator, and nothing is hard-coded for
+it beyond a Settings preset. If `ao local-provider ls` (or Settings → Local
+models) shows it up with models, the `/v1/models` route works; if it reports
+something else, that is the server's own answer and the endpoint needs a
+different base URL or kind.
+
+LAN and other non-loopback addresses are never probed until you add them. Only
+use addresses on a network you trust.
 
 ## What discovery does and does not do
 

@@ -182,8 +182,9 @@ type API struct {
 	panes         *controllers.PanesController
 	system        *controllers.SystemController
 	identity      *controllers.IdentityController
-	endpoints     *controllers.EndpointsController
-	telemetryID   *controllers.TelemetryIdentityController
+	endpoints      *controllers.EndpointsController
+	localProviders *controllers.LocalProvidersController
+	telemetryID    *controllers.TelemetryIdentityController
 	systemInstall *controllers.SystemInstallController
 	computerUse   *controllers.ComputerUseController
 	agentAuth     *controllers.AgentAuthController
@@ -251,8 +252,9 @@ func newAPIWithLogger(cfg config.Config, deps APIDeps, log *slog.Logger) *API {
 		panes:         &controllers.PanesController{Svc: deps.Panes, Terminals: deps.PaneTerminals, Sessions: deps.Sessions, Capabilities: deps.SessionCapabilities},
 		system:        &controllers.SystemController{Checks: deps.SystemChecks},
 		identity:      &controllers.IdentityController{HostID: deps.HostID},
-		endpoints:     &controllers.EndpointsController{Source: deps.Endpoints},
-		telemetryID:   &controllers.TelemetryIdentityController{Source: deps.TelemetryIdentity, LifetimeSessions: deps.LifetimeSessions},
+		endpoints:      &controllers.EndpointsController{Source: deps.Endpoints},
+		localProviders: &controllers.LocalProvidersController{DataDir: cfg.DataDir},
+		telemetryID:    &controllers.TelemetryIdentityController{Source: deps.TelemetryIdentity, LifetimeSessions: deps.LifetimeSessions},
 		systemInstall: &controllers.SystemInstallController{Installer: deps.Installer},
 		computerUse:   &controllers.ComputerUseController{Svc: deps.ComputerUse},
 		agentAuth:     &controllers.AgentAuthController{Svc: deps.AgentAuth},
@@ -403,6 +405,7 @@ func (a *API) Register(root chi.Router) {
 			a.system.Register(r)
 			a.identity.Register(r)
 			a.endpoints.Register(r)
+			a.localProviders.Register(r)
 			a.telemetryID.Register(r)
 			a.systemInstall.Register(r)
 			a.computerUse.Register(r)

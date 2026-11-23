@@ -1350,6 +1350,10 @@ func int64PtrWhen(v int64, ok bool) *int64 {
 }
 
 // ListUsageReportEvents reads every timestamped usage event in [since, until).
+// Cursor has no native usage artifact, so driver-reported conversation totals
+// (one row per Cursor conversation that actually received TotalsKnown) are
+// appended once each. Context-meter-only readings are ignored so AO never
+// invents token totals from a fill percentage.
 func (s *Store) ListUsageReportEvents(ctx context.Context, since, until time.Time) ([]domain.UsageReportEvent, error) {
 	const layout = "2006-01-02 15:04:05"
 	rows, err := s.qr.ListUsageReportEvents(ctx, gen.ListUsageReportEventsParams{
@@ -1366,6 +1370,7 @@ func (s *Store) ListUsageReportEvents(ctx context.Context, since, until time.Tim
 		return &value
 	}
 	out := make([]domain.UsageReportEvent, 0, len(rows))
+	seenSessions := map[domain.SessionID]struct{}{}
 	for _, row := range rows {
 		event := domain.UsageReportEvent{
 			CreatedAt:         row.CreatedAt.Time,
@@ -1393,7 +1398,83 @@ func (s *Store) ListUsageReportEvents(ctx context.Context, since, until time.Tim
 		if row.ProjectID != nil {
 			event.ProjectID = *row.ProjectID
 		}
+		seenSessions[row.SessionID] = struct{}{}
+		out = append(out, event)
+	}
+	cursorEvents, err := s.listCursorDriverUsageObservations(ctx, since, until)
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range cursorEvents {
+		if _, exists := seenSessions[event.SessionID]; exists {
+			continue
+		}
 		out = append(out, event)
 	}
 	return out, nil
+}
+
+// listCursorDriverUsageObservations returns one observed-token event per Cursor
+// conversation that recorded TotalsKnown in the window. Costs stay empty: AO
+// does not invent an API-equivalent price for Cursor subscription turns.
+func (s *Store) listCursorDriverUsageObservations(ctx context.Context, since, until time.Time) ([]domain.UsageReportEvent, error) {
+	const query = `
+SELECT
+    conversations.updated_at,
+    COALESCE(NULLIF(trim(conversations.model), ''), 'cursor'),
+    conversations.usage_input_tokens,
+    conversations.usage_cached_tokens,
+    conversations.usage_output_tokens,
+    sessions.id,
+    sessions.project_id,
+    CAST(COALESCE(NULLIF(trim(sessions.display_name), ''), NULLIF(trim(sessions.issue_id), ''), sessions.id) AS TEXT)
+FROM conversations
+JOIN sessions ON sessions.id = conversations.current_session_id
+WHERE sessions.harness = 'cursor'
+  AND conversations.usage_total_tokens IS NOT NULL
+  AND conversations.usage_total_tokens > 0
+  AND conversations.updated_at IS NOT NULL
+  AND substr(conversations.updated_at, 1, 19) >= ?
+  AND substr(conversations.updated_at, 1, 19) < ?
+`
+	const layout = "2006-01-02 15:04:05"
+	rows, err := s.readDB.QueryContext(ctx, query, since.UTC().Format(layout), until.UTC().Format(layout))
+	if err != nil {
+		return nil, fmt.Errorf("list cursor driver usage: %w", err)
+	}
+	defer rows.Close()
+	var out []domain.UsageReportEvent
+	for rows.Next() {
+		var (
+			updatedAt                              time.Time
+			modelID                                string
+			inputTokens, cachedTokens, outputTokens sql.NullInt64
+			sessionID                              domain.SessionID
+			projectID                              sql.NullString
+			title                                  string
+		)
+		if err := rows.Scan(&updatedAt, &modelID, &inputTokens, &cachedTokens, &outputTokens, &sessionID, &projectID, &title); err != nil {
+			return nil, fmt.Errorf("scan cursor driver usage: %w", err)
+		}
+		event := domain.UsageReportEvent{
+			CreatedAt:  updatedAt,
+			ProviderID: "cursor",
+			ModelID:    modelID,
+			Tokens: domain.UsageTokenMetrics{
+				// Report sums cached + uncached + output; leave Costs empty so
+				// no API-equivalent price is invented for Cursor subscription turns.
+				CachedInputTokens:   nullInt64Ptr(cachedTokens),
+				UncachedInputTokens: nullInt64Ptr(inputTokens),
+				OutputTokens:        nullInt64Ptr(outputTokens),
+			},
+			Harness:      domain.HarnessCursor,
+			SessionID:    sessionID,
+			SessionTitle: title,
+		}
+		if projectID.Valid {
+			event.ProjectID = domain.ProjectID(projectID.String)
+		}
+		out = append(out, event)
+	}
+	return out, rows.Err()
 }

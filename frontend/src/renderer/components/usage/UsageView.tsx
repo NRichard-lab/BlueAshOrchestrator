@@ -211,6 +211,7 @@ export function UsageView() {
 								accounts.data ? (
 									<>
 										{staleError(accounts.error)}
+										<p className="mb-3 text-xs text-muted-foreground">{t("usage.subscriptionSummary")}</p>
 										<UsageLimits accounts={accounts.data} now={now} />
 									</>
 								) : accounts.isLoading ? (
@@ -224,6 +225,7 @@ export function UsageView() {
 								<>
 									{staleError(report.error)}
 									<div className={cn("transition-opacity", report.isPlaceholderData && "opacity-60")}>
+										<p className="mb-3 text-xs text-muted-foreground">{t("usage.cursorNote")}</p>
 										<UsageTokens report={report.data} unit={unit} onUnitChange={setUnit} projectNames={projectNames} />
 									</div>
 								</>

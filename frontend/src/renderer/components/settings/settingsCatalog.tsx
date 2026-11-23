@@ -12,6 +12,7 @@ import { ComputerUseSection } from "./ComputerUseSection";
 import { ConnectMobileContent } from "./ConnectMobileContent";
 import { GeneralSettingsSection } from "./GeneralSettingsSection";
 import { HarnessSettingsSection } from "./HarnessSettingsSection";
+import { LocalProvidersSection } from "./LocalProvidersSection";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { MobileDevicesSection } from "./MobileDevicesSection";
 import { ReportProblemContent } from "./ReportProblemContent";
@@ -99,6 +100,12 @@ const globalSettingsCatalog: SettingsCatalogItem[] = [
 		icon: Bot,
 		label: (t) => t("settings.harness"),
 		render: (_t, titleHidden, { focusAgentId, hostId, harnessView, startLogin, showDiagnostics }) => <HarnessSettingsSection focusAgentId={focusAgentId} {...(hostId ? { hostId } : {})} {...(harnessView ? { initialView: harnessView } : {})} {...(startLogin ? { startLogin } : {})} {...(showDiagnostics ? { showDiagnostics } : {})} titleHidden={titleHidden} />,
+	},
+	{
+		id: "localProviders",
+		icon: Server,
+		label: (t) => t("settings.localProviders"),
+		render: (_t, titleHidden) => <LocalProvidersSection titleHidden={titleHidden} />,
 	},
 	{
 		id: "teams",
