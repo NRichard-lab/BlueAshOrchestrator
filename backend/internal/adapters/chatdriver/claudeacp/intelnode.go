@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -290,5 +291,5 @@ func defaultJITRepairRoot() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolve Orchestrator data dir: %w", err)
 	}
-	return filepath.Join(home, ".ao", "data", "acp-runtime", "node-jit"), nil
+	return filepath.Join(home, brand.StateDirName, "data", "acp-runtime", "node-jit"), nil
 }

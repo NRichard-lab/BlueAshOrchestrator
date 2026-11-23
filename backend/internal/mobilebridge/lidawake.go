@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -95,7 +96,7 @@ func NewLidAwake(pid int, binary, dataDir string) *LidAwake {
 	}
 	// Host power is global. Scratch/custom data roots must not install or
 	// join the production coordinator; independent roots cannot own that bit.
-	if filepath.Clean(dataDir) != filepath.Join(home, ".ao", "data") {
+	if filepath.Clean(dataDir) != filepath.Join(home, brand.StateDirName, "data") {
 		l.reason = "isolated_data_dir"
 		return l
 	}

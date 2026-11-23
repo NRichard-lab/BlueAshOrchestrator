@@ -26,6 +26,7 @@ const BOOTSTRAP_ASSETS = [
 	"agent-orchestrator-darwin-arm64.zip",
 	"agent-orchestrator-darwin-x64.zip",
 	"agent-orchestrator-win32-x64.exe",
+	"BlueAshAI-win32-x64.exe",
 	"agent-orchestrator-linux-x64.AppImage",
 ];
 

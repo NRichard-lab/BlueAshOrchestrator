@@ -58,6 +58,18 @@ const ldflags = [
 	`-X ${cliPackage}.Version=${process.argv.includes("--dev") ? `${appVersion}-dev` : appVersion}`,
 	`-X ${cliPackage}.Date=${new Date().toISOString().replace(/\.\d+Z$/, "Z")}`,
 ];
+// Product identity profile (frontend/src/shared/brands.json). AO_BRAND=blueashai is the production
+// build setting; unset keeps the legacy Orchestrator defaults compiled into the Go packages.
+if (process.env.AO_BRAND === "blueashai") {
+	const brands = JSON.parse(readFileSync(new URL("../src/shared/brands.json", import.meta.url), "utf8"));
+	const b = brands.blueashai;
+	const brandPackage = "github.com/aoagents/agent-orchestrator/backend/internal/brand";
+	ldflags.push(`-X ${brandPackage}.StateDirName=${b.stateDirName}`);
+	ldflags.push(`-X ${brandPackage}.Port=${b.defaultPort}`);
+	ldflags.push(`-X ${brandPackage}.WindowsAssetName=${b.windowsAssetName}`);
+	ldflags.push(`-X ${brandPackage}.WindowsInstallDirName=${b.windowsInstallDirName}`);
+	ldflags.push(`-X ${brandPackage}.WindowsExeName=${b.executableName}.exe`);
+}
 const commit = spawnSync("git", ["rev-parse", "--short=12", "HEAD"], {
 	cwd: repoRoot,
 	encoding: "utf8",

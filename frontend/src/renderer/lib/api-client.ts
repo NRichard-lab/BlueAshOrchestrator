@@ -5,13 +5,14 @@ import { daemonFailureMessage } from "./daemon-failure";
 import { captureRendererEvent } from "./telemetry";
 import { captureApiErrorToSentry } from "./sentry";
 import { markApiError, withApiErrorOwnership } from "./reported-errors";
+import { BRAND } from "../../shared/brand";
 
 function devApiBaseUrl(): string {
-	return typeof window === "undefined" ? "http://127.0.0.1:3001" : window.location.origin;
+	return typeof window === "undefined" ? `http://127.0.0.1:${BRAND.defaultPort}` : window.location.origin;
 }
 
 const explicitApiBaseUrl = import.meta.env.VITE_AO_API_BASE_URL;
-const initialApiBaseUrl = explicitApiBaseUrl ?? (import.meta.env.DEV ? devApiBaseUrl() : "http://127.0.0.1:3001");
+const initialApiBaseUrl = explicitApiBaseUrl ?? (import.meta.env.DEV ? devApiBaseUrl() : `http://127.0.0.1:${BRAND.defaultPort}`);
 
 let runtimeApiBaseUrl: string | null = explicitApiBaseUrl ?? null;
 let daemonStatus: DaemonStatus = { state: "stopped" };

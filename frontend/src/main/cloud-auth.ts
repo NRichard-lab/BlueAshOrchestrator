@@ -17,6 +17,7 @@ import { isWebDistinctId, type CloudAccount, type CloudSignInContext } from "../
 // functions, so the static ES cycle is safe at module-init time.
 import { revokeLocalSession } from "./cloud-auth-local";
 import { providerAuthFlow } from "./provider-auth-flow";
+import { BRAND } from "../shared/brand";
 
 // persistLocalClaudeOAuthToken writes a captured Claude setup-token under the AO
 // data dir so local claude sessions can authenticate with the SAME credential
@@ -192,7 +193,7 @@ export function resolveCloudAuthDir(
 ): string {
   const configured = env.AO_DATA_DIR?.trim();
   if (configured) return path.resolve(launchWorkingDirectory, configured);
-  return isPackaged ? path.join(homeDir, ".ao") : path.join(homeDir, ".ao", "dev");
+  return isPackaged ? path.join(homeDir, BRAND.stateDirName) : path.join(homeDir, BRAND.stateDirName, "dev");
 }
 
 function storePath(dataDir: string): string {
@@ -578,7 +579,7 @@ export async function handleCloudDeepLink(
 ): Promise<CloudDeepLinkSignIn | null> {
   if (!workos) throw new Error("WorkOS is not configured.");
   const url = new URL(rawURL);
-  if (url.protocol !== "ao-app:" || url.hostname !== "callback") return null;
+  if (url.protocol !== `${BRAND.protocolScheme}:` || url.hostname !== "callback") return null;
   const error = url.searchParams.get("error");
   if (error) {
     throw new Error(
@@ -736,15 +737,15 @@ export function registerCloudProtocol(): void {
       : [];
   const canRelease = process.platform !== "linux";
   if (!app.isPackaged && useLoopbackRedirect) {
-    if (canRelease && app.isDefaultProtocolClient("ao-app", ...devApp)) {
-      app.removeAsDefaultProtocolClient("ao-app", ...devApp);
+    if (canRelease && app.isDefaultProtocolClient(BRAND.protocolScheme, ...devApp)) {
+      app.removeAsDefaultProtocolClient(BRAND.protocolScheme, ...devApp);
     }
     return;
   }
-  app.setAsDefaultProtocolClient("ao-app", ...devApp);
+  app.setAsDefaultProtocolClient(BRAND.protocolScheme, ...devApp);
   if (!app.isPackaged && canRelease) {
     app.once("will-quit", () => {
-      app.removeAsDefaultProtocolClient("ao-app", ...devApp);
+      app.removeAsDefaultProtocolClient(BRAND.protocolScheme, ...devApp);
     });
   }
 }

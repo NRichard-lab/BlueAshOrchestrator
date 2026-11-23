@@ -294,6 +294,7 @@ import { createLocalHostIdentity } from "./main/remote-request";
 import { RemoteRegistry } from "./main/remote-registry";
 import { startRemoteProxy } from "./main/remote-proxy";
 import { captureMainError, reportDaemonFailure, ExpectedIpcError, installIpcErrorCapture, setMainErrorSink } from "./main/main-error-capture";
+import { BRAND } from "./shared/brand";
 
 // Every ipcMain.handle registered from here on reports unexpected throws.
 installIpcErrorCapture(ipcMain);
@@ -318,7 +319,7 @@ process.stderr.on("error", ignoreStdStreamError);
 
 // The name shown in window titles, the menu bar, the dock, and the About panel.
 // Packaged bundle and installer filenames are unchanged.
-const APP_DISPLAY_NAME = "Orchestrator.inc";
+const APP_DISPLAY_NAME = BRAND.displayName;
 
 // Must run before app ready so the About panel and default-menu role labels use it.
 // Unpackaged runs get a distinct name so the dev window, dock menu, and About
@@ -336,7 +337,7 @@ if (!app.isPackaged && process.platform === "darwin") {
 // Notification.isSupported() still returns true but show() silently drops the
 // toast, so notifications never appear. No-op on macOS/Linux.
 if (process.platform === "win32") {
-	app.setAppUserModelId("dev.agent-orchestrator.desktop");
+	app.setAppUserModelId(BRAND.appUserModelId);
 }
 
 // Escape hatch for hosts whose GPU driver stack crashes Chromium on startup
@@ -383,7 +384,7 @@ const desktopDataDir =
 		: installHome.dataDir;
 const desktopElectronDir = app.isPackaged
 	? installHome.electronDir
-	: (process.env.AO_DEV_ELECTRON_DIR ?? path.join(os.homedir(), ".ao", "dev", "electron"));
+	: (process.env.AO_DEV_ELECTRON_DIR ?? path.join(os.homedir(), BRAND.stateDirName, "dev", "electron"));
 const desktopWorkspaceDir = installHome.workspaceDir;
 
 // Pin ALL Electron-owned state (Chromium cache, cookies, local/session storage,
@@ -647,8 +648,8 @@ function syncNativeWindowBackground(force = false): void {
 function resolvedDaemonDataDir(): string {
 	const override = process.env.AO_DATA_DIR?.trim();
 	if (override) return override;
-	if (isDev) return path.join(os.homedir(), ".ao", DEV_STATE_SUBDIR, "data");
-	return path.join(os.homedir(), ".ao", "data");
+	if (isDev) return path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "data");
+	return path.join(os.homedir(), BRAND.stateDirName, "data");
 }
 
 // Cursor Agent reads TERM_THEME at process start. The daemon applies it from
@@ -1038,7 +1039,7 @@ async function disposeBrowserViewHost(): Promise<void> {
 
 function browserProfileStateDir(): string {
 	const runFile = runFilePath();
-	return path.dirname(runFile ?? path.join(os.homedir(), ".ao", "running.json"));
+	return path.dirname(runFile ?? path.join(os.homedir(), BRAND.stateDirName, "running.json"));
 }
 
 // The person's own browser, for pages that refuse AO's Browser panel.
@@ -1070,7 +1071,7 @@ async function createWindowInternal(): Promise<void> {
 		// Agent Browser creates Unix sockets below each run root. Keep this base
 		// deliberately short so the namespace/session suffix stays below macOS's
 		// 103-byte sockaddr_un limit; all AO state remains under ~/.ao.
-		dataDir: path.join(os.homedir(), ".ao", ...(app.isPackaged ? ["br"] : ["dev", "br"])),
+		dataDir: path.join(os.homedir(), BRAND.stateDirName, ...(app.isPackaged ? ["br"] : ["dev", "br"])),
 		log: (message) => console.log(`AO: ${message}`),
 	});
 	await agentBrowserRuntime.prepare();
@@ -1521,7 +1522,7 @@ const DAEMON_PROBE_TIMEOUT_MS = 2_000;
 
 function runFilePath(): string | null {
 	if (process.env.AO_RUN_FILE) return process.env.AO_RUN_FILE;
-	if (isDev) return path.join(os.homedir(), ".ao", DEV_STATE_SUBDIR, "running.json");
+	if (isDev) return path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "running.json");
 	// Install-tied data keeps the handshake beside the data dir so CLI and the
 	// desktop agree when the profile is no longer under ~/.ao.
 	if (installHome.source !== "default") return path.join(desktopDataDir, "running.json");
@@ -1835,7 +1836,7 @@ async function ensureBundledTmuxStaged(): Promise<void> {
 	const source = bundledTmuxBinaryPath(app.isPackaged, process.resourcesPath, process.platform);
 	const destination = stableBundledTmuxBinaryPath(
 		app.isPackaged,
-		process.env.AO_DATA_DIR?.trim() || path.join(os.homedir(), ".ao"),
+		process.env.AO_DATA_DIR?.trim() || path.join(os.homedir(), BRAND.stateDirName),
 		app.getVersion(),
 		process.platform,
 		process.arch,
@@ -1912,7 +1913,7 @@ function daemonEnv(forceKeep = keepDaemonAlive(process.env)): NodeJS.ProcessEnv 
 	if (isDev) {
 		if (!process.env.AO_PORT) devExtras.AO_PORT = String(DEV_DAEMON_PORT);
 		if (!process.env.AO_RUN_FILE) devExtras.AO_RUN_FILE = runFilePath() ?? "";
-		if (!process.env.AO_DATA_DIR) devExtras.AO_DATA_DIR = path.join(os.homedir(), ".ao", DEV_STATE_SUBDIR, "data");
+		if (!process.env.AO_DATA_DIR) devExtras.AO_DATA_DIR = path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "data");
 		devExtras.AO_ALLOWED_ORIGINS = devDaemonAllowedOrigins(
 			process.env.AO_ALLOWED_ORIGINS,
 			rendererUrl(),
@@ -2655,7 +2656,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 	let keepDaemonLogFd: number | undefined;
 	let stdio: "pipe" | "ignore" | ["pipe", number | "ignore", number | "ignore"] = "pipe";
 	if (keep) {
-		const logPath = path.join(os.homedir(), ".ao", "daemon.log");
+		const logPath = path.join(os.homedir(), BRAND.stateDirName, "daemon.log");
 		try {
 			keepDaemonLogFd = openSync(logPath, "a");
 			stdio = ["pipe", keepDaemonLogFd, keepDaemonLogFd];
@@ -4475,7 +4476,7 @@ ipcMain.handle("cloud:takePendingShareLink", () => {
 function isShareDeepLink(raw: string): boolean {
 	try {
 		const url = new URL(raw);
-		return url.protocol === "ao-app:" && url.hostname === "share";
+		return url.protocol === `${BRAND.protocolScheme}:` && url.hostname === "share";
 	} catch {
 		return false;
 	}
@@ -4547,7 +4548,7 @@ async function handleCloudDeepLinkAndFocus(url: string): Promise<void> {
 function isBillingDeepLink(raw: string): boolean {
 	try {
 		const url = new URL(raw);
-		return url.protocol === "ao-app:" && url.hostname === "billing";
+		return url.protocol === `${BRAND.protocolScheme}:` && url.hostname === "billing";
 	} catch {
 		return false;
 	}
@@ -4562,7 +4563,7 @@ app.on("open-url", (event, url) => {
 });
 
 app.on("second-instance", (_event, argv) => {
-	const deepLink = argv.find((value) => value.startsWith("ao-app://"));
+	const deepLink = argv.find((value) => value.startsWith(`${BRAND.protocolScheme}://`));
 	if (deepLink) {
 		void handleCloudDeepLinkAndFocus(deepLink);
 		return;
@@ -4673,7 +4674,7 @@ app.whenReady().then(async () => {
 		// First launch into an install-tied data dir: copy existing ~/.ao/data
 		// when the new location is empty. Never deletes the profile copy.
 		if (installHome.source === "marker") {
-			const defaultData = path.join(os.homedir(), ".ao", "data");
+			const defaultData = path.join(os.homedir(), BRAND.stateDirName, "data");
 			const destHasDb = await pathExists(path.join(installHome.dataDir, "ao.db"));
 			const sourceHasDb = await pathExists(path.join(defaultData, "ao.db"));
 			if (!destHasDb && sourceHasDb && path.resolve(defaultData) !== path.resolve(installHome.dataDir)) {
@@ -4871,7 +4872,7 @@ app.whenReady().then(async () => {
 
 	// Windows/Linux: on first launch, the deep-link URL may arrive as a
 	// process.argv entry (e.g. ao-app://callback?token=...).
-	const deepLinkArg = process.argv.find((a) => a.startsWith("ao-app://"));
+	const deepLinkArg = process.argv.find((a) => a.startsWith(`${BRAND.protocolScheme}://`));
 	if (deepLinkArg) {
 		void handleCloudDeepLinkAndFocus(deepLinkArg);
 	}

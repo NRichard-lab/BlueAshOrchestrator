@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomInt, randomUUID } from "node:crypto";
 import type { TelemetryPolicySnapshot } from "./telemetry-policy";
 import { detectCiEnvironment, installDay, normalizeInstallSource, safeOsVersion } from "./install-environment";
+import { BRAND } from "./brand";
 
 /**
  * Segmentation the renderer cannot see for itself: CPU architecture, the real
@@ -118,7 +119,7 @@ export function defaultDataDir(
 	void platform;
 	if (env.AO_DATA_DIR) return env.AO_DATA_DIR;
 	if (!homeDir) return null;
-	return path.join(homeDir, ".ao", "data");
+	return path.join(homeDir, BRAND.stateDirName, "data");
 }
 
 export const EXPERIMENT_COHORT_BUCKETS = 100;

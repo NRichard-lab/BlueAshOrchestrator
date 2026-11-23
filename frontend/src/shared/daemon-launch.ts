@@ -1,3 +1,4 @@
+import { BRAND } from "./brand";
 export type DaemonLaunchSpec = {
 	command: string;
 	args: string[];
@@ -49,7 +50,7 @@ export function resolveDaemonLaunch(
 	return {
 		command: joinPath(resourcesPath, "daemon", bundledDaemonBinaryName(platform)),
 		args: ["daemon"],
-		cwd: joinPath(homeDir, ".ao"),
+		cwd: joinPath(homeDir, BRAND.stateDirName),
 		shell: false,
 		source: "bundled",
 	};

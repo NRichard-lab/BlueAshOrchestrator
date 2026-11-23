@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/gitdefault"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
@@ -678,7 +679,7 @@ func unsafeImportPath(path string) bool {
 			return true
 		}
 	}
-	aoState := comparableImportPath(filepath.Join(home, ".ao"))
+	aoState := comparableImportPath(filepath.Join(home, brand.StateDirName))
 	return sameImportPath(clean, aoState) || isImportDescendant(clean, aoState)
 }
 

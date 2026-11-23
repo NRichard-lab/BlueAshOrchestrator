@@ -115,6 +115,7 @@ import type {
 	BrowserDownloadActionInput,
 	BrowserDownloadsState,
 } from "./shared/browser-downloads";
+import { BRAND } from "./shared/brand";
 
 if (typeof document !== "undefined") {
 	const markNativeBrowserComposition = () => {
@@ -193,7 +194,7 @@ ipcRenderer.on("app:openFolderPath", (_event, path: string) => {
 let bufferedSessionDeepLink: string | null = null;
 let activeSessionDeepLinkListener: ((rawUrl: string) => void) | null = null;
 function isSessionDeepLinkUrl(value: unknown): value is string {
-	return typeof value === "string" && value.startsWith("ao-app://");
+	return typeof value === "string" && value.startsWith(`${BRAND.protocolScheme}://`);
 }
 ipcRenderer.on(OPEN_SESSION_DEEP_LINK_CHANNEL, (_event, target: unknown) => {
 	if (!isSessionDeepLinkUrl(target)) return;

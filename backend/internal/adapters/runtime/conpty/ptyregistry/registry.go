@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // Entry is one registered pty-host process.
@@ -82,7 +84,7 @@ func registryFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".ao", "windows-pty-hosts.json"), nil
+	return filepath.Join(home, brand.StateDirName, "windows-pty-hosts.json"), nil
 }
 
 // readRaw reads and strictly parses the registry. A missing file is a complete

@@ -11,6 +11,7 @@
 
 // Minimal join: "/" works for fs access on every platform Node supports,
 // including Windows paths that already contain backslashes (e.g. %APPDATA%).
+import { BRAND } from "./brand";
 function joinPath(...segments: string[]): string {
 	return segments.map((segment) => segment.replace(/[/\\]+$/, "")).join("/");
 }
@@ -124,5 +125,5 @@ export function defaultRunFilePath(
 ): string | null {
 	void platform;
 	if (!homeDir) return null;
-	return joinPath(homeDir, ".ao", "running.json");
+	return joinPath(homeDir, BRAND.stateDirName, "running.json");
 }

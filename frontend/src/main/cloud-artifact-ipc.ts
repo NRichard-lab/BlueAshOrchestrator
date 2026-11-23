@@ -16,6 +16,7 @@ import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import type { IpcMain, Session } from "electron";
 import { isBrowserArtifactPath } from "../shared/editor-handoff";
+import { BRAND } from "../shared/brand";
 
 /** The control plane refuses artifact files over 100 MiB. */
 export const MAX_CLOUD_ARTIFACT_BYTES = 100 * 1024 * 1024;
@@ -110,7 +111,7 @@ const SESSION_FOLDER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 
 /** The folder every cloud session's copied artifacts live under: under ~/.ao, never an OS app-data location. */
 function cloudArtifactsRoot(env: NodeJS.ProcessEnv): string {
-	return path.join(env.AO_DATA_DIR?.trim() || path.join(os.homedir(), ".ao"), "cloud-artifacts");
+	return path.join(env.AO_DATA_DIR?.trim() || path.join(os.homedir(), BRAND.stateDirName), "cloud-artifacts");
 }
 
 /**

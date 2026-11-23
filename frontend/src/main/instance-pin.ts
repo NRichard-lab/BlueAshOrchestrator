@@ -26,7 +26,7 @@ export type InstancePin = {
 	telemetryRemote: "off";
 };
 
-const RESERVED_RUN_DIR_NAMES = new Set([".ao", ".", "", "data", "dev"]);
+const RESERVED_RUN_DIR_NAMES = new Set([".ao", ".blueashai", ".", "", "data", "dev"]);
 
 export type PinParse = { ok: true; pin: InstancePin } | { ok: false; reason: string };
 

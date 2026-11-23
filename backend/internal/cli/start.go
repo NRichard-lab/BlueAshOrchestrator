@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 )
 
@@ -207,7 +208,7 @@ func knownAppLocations() []string {
 		}
 		// Per-machine fallback (if a user chose an all-users install).
 		if pf := os.Getenv("ProgramFiles"); pf != "" {
-			paths = append(paths, filepath.Join(pf, "Agent Orchestrator", "agent-orchestrator.exe"))
+			paths = append(paths, filepath.Join(pf, brand.WindowsInstallDirName, brand.WindowsExeName))
 		}
 		return paths
 	case "linux":
@@ -224,7 +225,7 @@ func knownAppLocations() []string {
 // windowsInstalledExe is the default per-user electron-builder NSIS install
 // target for the app exe under %LOCALAPPDATA%.
 func windowsInstalledExe(localAppData string) string {
-	return filepath.Join(localAppData, "Programs", "Agent Orchestrator", "agent-orchestrator.exe")
+	return filepath.Join(localAppData, "Programs", brand.WindowsInstallDirName, brand.WindowsExeName)
 }
 
 // linuxAppImagePath is the stable location `ao start` downloads the AppImage to
@@ -648,7 +649,7 @@ func assetName() (string, error) {
 		if _, err := requireAMD64(); err != nil {
 			return "", err
 		}
-		return "agent-orchestrator-win32-x64.exe", nil
+		return brand.WindowsAssetName, nil
 	case "linux":
 		if _, err := requireAMD64(); err != nil {
 			return "", err

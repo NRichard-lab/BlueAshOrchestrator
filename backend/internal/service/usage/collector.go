@@ -24,6 +24,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/pricing"
 )
@@ -104,7 +105,7 @@ func DefaultSourceRoots(ctx context.Context, dataDir string) (SourceRoots, error
 		claudeHome = filepath.Join(home, ".claude")
 	}
 	if strings.TrimSpace(dataDir) == "" {
-		dataDir = filepath.Join(home, ".ao", "data")
+		dataDir = filepath.Join(home, brand.StateDirName, "data")
 	}
 	qwenRuntime, err := qwenRuntimeBaseDir(ctx, home, "")
 	if err != nil {

@@ -12,6 +12,7 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { BRAND } from "../shared/brand";
 
 /** Marker the Windows installer (and settings) leave beside the packaged exe. */
 export const INSTALL_HOME_MARKER = "ao-home.json";
@@ -164,7 +165,7 @@ export function resolveInstallHomePaths(input: {
 		};
 	}
 
-	const root = path.resolve(input.homeDir, ".ao", input.isPackaged ? "" : "dev");
+	const root = path.resolve(input.homeDir, BRAND.stateDirName, input.isPackaged ? "" : "dev");
 	const dataDir = path.join(root, "data");
 	return {
 		dataDir,

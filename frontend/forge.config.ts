@@ -18,10 +18,15 @@ import { BUNDLED_TMUX_VERSION } from "./scripts/tmux-version.mjs";
 import { checkMacDmgLayout } from "./scripts/build-mac-dmg.mjs";
 import { parseReleaseRepo, resolveAppUpdateYml } from "./makers/update-feed";
 import { resolveTestIdentity, testInstallerInclude } from "./makers/test-identity";
+import { resolveBrand } from "./src/shared/brand";
 
 // Local update-test builds get their own executable name, appId, product name, installer
 // name and updater cache (see makers/test-identity.ts); production builds are unchanged.
 const TEST_IDENTITY = resolveTestIdentity(process.env);
+
+// Product profile (src/shared/brands.json). AO_BRAND=blueashai is the production build setting; unset
+// keeps the legacy Orchestrator identity. A test identity, when present, overrides the names below.
+const PRODUCT = resolveBrand(process.env.AO_BRAND);
 
 // The update plane is a BlueAsh-owned HTTPS origin (AO_UPDATE_ORIGIN, validated by
 // parseUpdateOrigin). There is deliberately NO default origin and no upstream
@@ -35,13 +40,13 @@ const TEST_IDENTITY = resolveTestIdentity(process.env);
 // names the exe/ELF from this, and the NSIS + deb makers must point their
 // shortcut/launcher at the SAME name. Drift here means a broken Start menu
 // shortcut on Windows (#2414) or "could not find the Electron app binary" on deb.
-const EXECUTABLE_NAME = TEST_IDENTITY?.executableName ?? "agent-orchestrator";
+const EXECUTABLE_NAME = TEST_IDENTITY?.executableName ?? PRODUCT.executableName;
 export const WINDOWS_DISPLAY_NAME = "Orchestrator.inc";
 const AUTH_PROTOCOL = {
 	name: "Orchestrator authentication callback",
-	schemes: ["ao-app"],
+	schemes: [PRODUCT.protocolScheme],
 };
-const AUTH_PROTOCOL_MIME_TYPE = "x-scheme-handler/ao-app";
+const AUTH_PROTOCOL_MIME_TYPE = `x-scheme-handler/${PRODUCT.protocolScheme}`;
 const PACKAGED_EXTERNAL_DEPENDENCIES = [
 	"/node_modules/better-sqlite3",
 	"/node_modules/bindings",
@@ -75,7 +80,7 @@ async function prepareNativeDependencies(platform: NodeJS.Platform, arch: string
 // Packager app name. It sets the bundle filename ("<name>.app"), which the
 // installed path, updater, and `ao start` keep using, so it is not the label
 // people see in Finder.
-const PACKAGER_NAME = TEST_IDENTITY?.packagerName ?? "Agent Orchestrator";
+const PACKAGER_NAME = TEST_IDENTITY?.packagerName ?? PRODUCT.packagerName;
 
 // Finder uses the localized label only when the base display name matches the
 // bundle filename, but the packager defaults it to the executable name. Set it,
@@ -198,14 +203,14 @@ const config: ForgeConfig = {
 		// runtime dependency tree explicitly; AutoUnpackNativesPlugin then places
 		// the .node binary outside app.asar.
 		ignore: ignoreFromVitePackage,
-		appBundleId: "dev.agent-orchestrator.desktop",
+		appBundleId: PRODUCT.appId,
 		name: PACKAGER_NAME,
 		executableName: EXECUTABLE_NAME,
 		// Match the Windows installer without changing the executable name.
 		win32metadata: {
-			FileDescription: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
-			InternalName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
-			ProductName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
+			FileDescription: TEST_IDENTITY?.productName ?? PRODUCT.displayName,
+			InternalName: TEST_IDENTITY?.productName ?? PRODUCT.displayName,
+			ProductName: TEST_IDENTITY?.productName ?? PRODUCT.displayName,
 		},
 		extendInfo: {
 			// macOS 26+ draws the Icon Composer icon from Resources/Assets.car;
@@ -400,10 +405,10 @@ const config: ForgeConfig = {
 		// custom install dir or proper uninstaller (issue #401).
 		new MakerNSIS(
 			{
-				appId: TEST_IDENTITY?.appId ?? "dev.agent-orchestrator.desktop",
+				appId: TEST_IDENTITY?.appId ?? PRODUCT.appId,
 				// The name shown in the installer, the updater, the shortcuts, and
 				// Windows Apps. It matches the app's display name in main.ts.
-				productName: TEST_IDENTITY?.productName ?? WINDOWS_DISPLAY_NAME,
+				productName: TEST_IDENTITY?.productName ?? PRODUCT.displayName,
 				// Match the packaged binary name so the Start menu shortcut targets
 				// the real "agent-orchestrator.exe" (not "Agent Orchestrator.exe").
 				executableName: EXECUTABLE_NAME,
@@ -419,7 +424,7 @@ const config: ForgeConfig = {
 							// Production include + the test-only ao-instance.json pin (see makers/test-identity.ts).
 							include: writeTestInstallerInclude(TEST_IDENTITY),
 						}
-					: { artifactName: "Agent Orchestrator Setup ${version}.${ext}" },
+					: { artifactName: PRODUCT.installerArtifactName },
 				...(TEST_IDENTITY ? { compression: "store" as const } : {}),
 			},
 			["win32"],

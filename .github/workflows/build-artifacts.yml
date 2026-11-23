@@ -139,6 +139,9 @@ jobs:
           # ({origin}/desktop/stable/). AO_RELEASE_REPO is intentionally unset:
           # it only selects an optional GitHub publisher and never the feed.
           AO_UPDATE_ORIGIN: ${{ vars.AO_UPDATE_ORIGIN }}
+          # Production product profile (frontend/src/shared/brands.json): BlueAshAI name, state dir,
+          # port, protocol scheme, installer and asset names. Compiled in; also stamps the Go daemon.
+          AO_BRAND: blueashai
           # Marks a published build: Electron main may initialize Sentry, and
           # Vite emits hidden source maps with Sentry debug IDs (vite.sentry.ts).
           # The maps are left out of the package and uploaded below.
@@ -172,7 +175,7 @@ jobs:
             win32-x64)
               # NSIS (electron-builder) output: out/make/<productName> Setup <version>.exe
               src="$(find out/make -maxdepth 1 -name '*Setup*.exe' | head -n1)"
-              name="agent-orchestrator-win32-x64.exe"
+              name="BlueAshAI-win32-x64.exe"
               ;;
             linux-x64)
               # AppImage (electron-builder) output: out/make/<productName>-<version>.AppImage
@@ -251,7 +254,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: frontend/dist-artifact/agent-orchestrator-${{ matrix.platform }}.*
+          path: frontend/dist-artifact/*-${{ matrix.platform }}.*
           retention-days: 1
           if-no-files-found: error
       # The conductor uploads these to the ao-electron Sentry project with

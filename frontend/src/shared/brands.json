@@ -1,0 +1,32 @@
+{
+	"legacy": {
+		"id": "legacy",
+		"displayName": "Orchestrator.inc",
+		"executableName": "agent-orchestrator",
+		"packagerName": "Agent Orchestrator",
+		"appId": "dev.agent-orchestrator.desktop",
+		"appUserModelId": "dev.agent-orchestrator.desktop",
+		"installerArtifactName": "Agent Orchestrator Setup ${version}.${ext}",
+		"windowsAssetName": "agent-orchestrator-win32-x64.exe",
+		"windowsInstallDirName": "Agent Orchestrator",
+		"updaterCacheDirName": "agent-orchestrator-updater",
+		"stateDirName": ".ao",
+		"defaultPort": 3001,
+		"protocolScheme": "ao-app"
+	},
+	"blueashai": {
+		"id": "blueashai",
+		"displayName": "BlueAshAI",
+		"executableName": "BlueAshAI",
+		"packagerName": "BlueAshAI",
+		"appId": "ai.blueash.desktop",
+		"appUserModelId": "ai.blueash.desktop",
+		"installerArtifactName": "BlueAshAI Setup ${version}.${ext}",
+		"windowsAssetName": "BlueAshAI-win32-x64.exe",
+		"windowsInstallDirName": "BlueAshAI",
+		"updaterCacheDirName": "blueashai-updater",
+		"stateDirName": ".blueashai",
+		"defaultPort": 3101,
+		"protocolScheme": "blueashai"
+	}
+}

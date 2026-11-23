@@ -384,7 +384,9 @@ describe("postMake artifact verification", () => {
 describe("Windows app labels", () => {
 	it("matches the installer display name without renaming the executable or bundle", async () => {
 		expect(WINDOWS_DISPLAY_NAME).toBe("Orchestrator.inc");
-		expect(appPackage.author).toBe(WINDOWS_DISPLAY_NAME);
+		// Package metadata is the BlueAshAI fork's; the packaged legacy profile (AO_BRAND unset) keeps the
+		// Orchestrator display name above.
+		expect(appPackage.author).toBe("BlueAshAI");
 		expect(config.packagerConfig?.win32metadata).toEqual({
 			FileDescription: WINDOWS_DISPLAY_NAME,
 			InternalName: WINDOWS_DISPLAY_NAME,
@@ -395,7 +397,7 @@ describe("Windows app labels", () => {
 		expect(windowsInstaller?.config.productName).toBe(WINDOWS_DISPLAY_NAME);
 		expect(windowsInstaller?.config.appId).toBe("dev.agent-orchestrator.desktop");
 		expect(appPackage.name).toBe("agent-orchestrator");
-		expect(appPackage.productName).toBe("Orchestrator");
+		expect(appPackage.productName).toBe("BlueAshAI");
 		expect(config.packagerConfig?.executableName).toBe("agent-orchestrator");
 		expect(config.packagerConfig?.name).toBe("Agent Orchestrator");
 		expect(config.packagerConfig?.appBundleId).toBe("dev.agent-orchestrator.desktop");

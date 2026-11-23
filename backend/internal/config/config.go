@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // EnvComputerUse is set to "1" on a chat session's `ao mcp` server when the
@@ -276,7 +278,7 @@ func (c Config) Addr() string {
 func Load() (Config, error) {
 	cfg := Config{
 		Host:            LoopbackHost,
-		Port:            DefaultPort,
+		Port:            brand.DefaultPort(DefaultPort),
 		RequestTimeout:  DefaultRequestTimeout,
 		ShutdownTimeout: DefaultShutdownTimeout,
 		Agent:           DefaultAgent,
@@ -743,7 +745,7 @@ func defaultStateDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolve state dir: %w", err)
 	}
-	return filepath.Join(homeDir, ".ao"), nil
+	return filepath.Join(homeDir, brand.StateDirName), nil
 }
 
 // absOverride resolves an explicit AO_DATA_DIR/AO_RUN_FILE override to an

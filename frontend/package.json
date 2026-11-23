@@ -1,12 +1,12 @@
 {
 	"name": "agent-orchestrator",
-	"productName": "Orchestrator",
-	"version": "0.15.4-blueash.2",
+	"productName": "BlueAshAI",
+	"version": "0.15.4-blueash.3",
 	"private": true,
-	"description": "Electron + TypeScript frontend for the agent-orchestrator rewrite",
-	"author": "Orchestrator.inc",
+	"description": "BlueAshAI desktop app (fork of the agent-orchestrator desktop)",
+	"author": "BlueAshAI",
 	"license": "MIT",
-	"homepage": "https://github.com/aoagents/agent-orchestrator",
+	"homepage": "https://github.com/NRichard-lab/BlueAshOrchestrator",
 	"main": ".vite/build/main.js",
 	"repository": {
 		"type": "git",

@@ -155,7 +155,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | :-- | :-- |
 | **macOS**（Apple 芯片） | `Orchestrator-darwin-arm64.dmg` |
 | **macOS**（Intel） | `Orchestrator-darwin-x64.dmg` |
-| **Windows** | `agent-orchestrator-win32-x64.exe` |
+| **Windows** | `BlueAshAI-win32-x64.exe` |
 | **Linux**（AppImage） | `agent-orchestrator-linux-x64.AppImage` |
 | **Linux**（Debian/Ubuntu） | `agent-orchestrator-linux-x64.deb` |
 | **Linux**（Fedora/RHEL） | `agent-orchestrator-linux-x64.rpm` |

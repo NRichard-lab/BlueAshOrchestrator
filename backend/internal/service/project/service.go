@@ -18,6 +18,7 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/gitdefault"
@@ -572,7 +573,7 @@ func validateRepositorySetupPathSafety(path string) error {
 		}
 	}
 
-	aoState := comparablePath(filepath.Join(home, ".ao"))
+	aoState := comparablePath(filepath.Join(home, brand.StateDirName))
 	if samePath(clean, aoState) || isDescendantPath(clean, aoState) {
 		return unsafeRepositorySetupPathError(path, "Orchestrator state directory")
 	}

@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { sentrySourceMaps } from "./vite.sentry";
 import { resolveTestIdentity } from "./makers/test-identity";
+import { brandDefine } from "./vite.brand";
 
 const sentry = sentrySourceMaps();
 
@@ -11,6 +12,7 @@ export default defineConfig({
 	// Set only by the release build (build-artifacts.yml). Without it a packaged
 	// copy never initializes Sentry (src/shared/sentry-config.ts).
 	define: {
+		...brandDefine(),
 		"process.env.AO_PUBLISHED_BUILD": JSON.stringify(process.env.AO_PUBLISHED_BUILD === "1" ? "1" : ""),
 		// Compile-time test identity (makers/test-identity.ts). Empty in every release build, which
 		// makes src/main/instance-pin.ts inert there; a runtime environment variable cannot set it.

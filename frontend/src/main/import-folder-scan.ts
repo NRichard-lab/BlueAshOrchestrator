@@ -3,6 +3,7 @@ import { readdir, stat } from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
+import { BRAND } from "../shared/brand";
 
 const execFileAsync = promisify(execFile);
 
@@ -80,7 +81,7 @@ function isDescendantPath(child: string, parent: string): boolean {
 function projectSetupSafetyReason(repoPath: string, options: ScanOptions = {}): string | undefined {
 	const home = options.homeDir?.trim();
 	if (!home) return undefined;
-	const aoState = path.join(home, ".ao");
+	const aoState = path.join(home, BRAND.stateDirName);
 	if (isDescendantPath(repoPath, aoState)) {
 		return "Selected folder is inside Orchestrator's internal data directory. Select a project folder outside ~/.ao.";
 	}

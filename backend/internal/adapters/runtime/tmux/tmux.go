@@ -20,6 +20,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/runtime/inputdelay"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/runtime/ptyexec"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -1782,7 +1783,7 @@ func (r *Runtime) launchEnvDir(cfg ports.RuntimeConfig) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("tmux runtime: resolve AO data directory: %w", err)
 		}
-		dataDir = filepath.Join(home, ".ao", "data")
+		dataDir = filepath.Join(home, brand.StateDirName, "data")
 	}
 	abs, err := filepath.Abs(dataDir)
 	if err != nil {

@@ -35,6 +35,7 @@ import os from "node:os";
 import path from "node:path";
 import type { ControlPlaneUrlResolver } from "./cloud-control-plane-url";
 import { parseCloudBaseUrl } from "./cloud-cp-proxy";
+import { BRAND } from "../shared/brand";
 
 export const CLOUD_PUSH_FOLDER_CHANNEL = "cloud:pushFolderToRepository";
 export const CLOUD_PREVIEW_FOLDER_CHANNEL = "cloud:previewFolderUpload";
@@ -1091,7 +1092,7 @@ export async function pushFolderToRepository(input: unknown, deps: PushFolderDep
 }
 
 function appStateDirs(deps: Pick<PushFolderDeps, "appStateDirs" | "homeDir">): string[] {
-	return deps.appStateDirs?.() ?? [path.join(deps.homeDir ?? os.homedir(), ".ao")];
+	return deps.appStateDirs?.() ?? [path.join(deps.homeDir ?? os.homedir(), BRAND.stateDirName)];
 }
 
 /**
