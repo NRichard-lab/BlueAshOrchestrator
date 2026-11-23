@@ -50,7 +50,9 @@ type AgentLaunchOptions struct {
 	FastModeOff bool `json:"fastModeOff,omitempty"`
 	// Ultracode starts Claude Code with Ultracode on.
 	Ultracode bool `json:"ultracode,omitempty"`
-	// AutoCompactWindow is where Claude Code compacts on its own: "200k" or "1m".
+	// AutoCompactWindow is where the harness compacts on its own: "200k" or
+	// "1m". Empty is Auto, which leaves the provider's own default alone. See
+	// CompactsOnItsOwn for which harnesses read it.
 	AutoCompactWindow string `json:"autoCompactWindow,omitempty"`
 	// HandoffNote is a terminal switch target's note, kept until the target has
 	// started. A relaunch that finds it follows a switch cut short by a daemon
@@ -60,6 +62,17 @@ type AgentLaunchOptions struct {
 
 // AutoCompactTokens is each compaction window choice as a token count.
 var AutoCompactTokens = map[string]int{"200k": 200_000, "1m": 1_000_000}
+
+// CompactsOnItsOwn reports whether the harness can be told to compact its own
+// conversation when the context reaches AutoCompactWindow.
+//
+// Claude Code reads the window from its environment; Codex app-server takes it
+// as a thread config override (model_auto_compact_token_limit). Every other
+// harness compacts only when the user asks, so offering them the setting would
+// promise something that never happens.
+func CompactsOnItsOwn(harness AgentHarness) bool {
+	return harness == HarnessClaudeCode || harness == HarnessCodex
+}
 
 // IsZero reports whether the config carries no settings, so storage can persist
 // SQL NULL and resolution can skip an empty config.

@@ -528,6 +528,44 @@ func TestGetLaunchCommandSetsTheFastTierEitherWay(t *testing.T) {
 	}
 }
 
+// A terminal Codex session that is never told where to compact fills its
+// context and then only moves again after a manual compaction.
+func TestGetLaunchCommandSetsTheAutoCompactLimit(t *testing.T) {
+	plugin := &Plugin{resolvedBinary: "codex"}
+	for _, tt := range []struct {
+		window string
+		want   string
+	}{
+		{"200k", "model_auto_compact_token_limit=200000"},
+		{"1m", "model_auto_compact_token_limit=1000000"},
+	} {
+		cmd, err := plugin.GetLaunchCommand(context.Background(), ports.LaunchConfig{
+			Config: ports.AgentConfig{Launch: domain.AgentLaunchOptions{AutoCompactWindow: tt.window}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// A TOML integer, so it is written bare rather than quoted.
+		if !containsSubsequence(cmd, []string{"-c", tt.want}) {
+			t.Fatalf("window %q: command %#v missing %s", tt.window, cmd, tt.want)
+		}
+	}
+	// Auto (empty) and an unknown value leave config.toml's own setting alone.
+	for _, window := range []string{"", "600k"} {
+		cmd, err := plugin.GetLaunchCommand(context.Background(), ports.LaunchConfig{
+			Config: ports.AgentConfig{Launch: domain.AgentLaunchOptions{AutoCompactWindow: window}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, arg := range cmd {
+			if strings.Contains(arg, "model_auto_compact_token_limit") {
+				t.Fatalf("window %q set a compaction limit nobody chose: %#v", window, cmd)
+			}
+		}
+	}
+}
+
 func TestGetLaunchCommandOmitsBlankConfiguredModel(t *testing.T) {
 	plugin := &Plugin{resolvedBinary: "codex"}
 

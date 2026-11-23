@@ -330,6 +330,15 @@ type ChatStartConfig struct {
 	// Effort is an optional provider-advertised model tuning value; empty
 	// defers to the provider's configured default.
 	Effort string
+	// AutoCompactTokens is the context size, in tokens, at which the provider
+	// should compact the conversation on its own. Zero leaves the provider's own
+	// default alone.
+	//
+	// Claude Code reads its window from the environment instead (see
+	// claudeAutoCompactWindowEnv); this field carries the same AO choice to a
+	// provider that takes it as a launch setting, such as Codex app-server's
+	// model_auto_compact_token_limit.
+	AutoCompactTokens int
 	// Permissions is AO's existing per-session approval policy. Drivers map it
 	// onto their provider's native approval and sandbox settings.
 	Permissions PermissionMode
@@ -382,9 +391,15 @@ type ChatResumeConfig struct {
 	// Model is optional; empty keeps the provider conversation's current model.
 	Model string
 	// Effort is optional; empty keeps the provider conversation's current effort.
-	Effort      string
-	Permissions PermissionMode
-	ReadOnly    bool
+	Effort string
+	// AutoCompactTokens is the context size, in tokens, at which the provider
+	// should compact on its own; zero leaves its default alone. See
+	// ChatStartConfig.AutoCompactTokens. Carried on resume too, because a
+	// provider that takes it as a launch setting forgets it when the process
+	// restarts.
+	AutoCompactTokens int
+	Permissions       PermissionMode
+	ReadOnly          bool
 	// SystemPrompt is recomputed by the session manager on restore and reapplied
 	// to the provider process. It is not persisted in the conversation transcript.
 	SystemPrompt string

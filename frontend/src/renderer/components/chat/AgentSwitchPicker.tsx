@@ -66,7 +66,7 @@ export interface PendingAgentSwitch {
 	thinking?: boolean;
 	/** Run Claude Code with Ultracode: set at launch in a terminal, asked per message in chat. */
 	ultracode?: boolean;
-	/** Terminal only: where Claude Code compacts on its own, "200k" or "1m". */
+	/** Terminal only: where the agent compacts on its own, "200k" or "1m". */
 	autoCompactWindow?: TurnSettings["autoCompactWindow"];
 	/** The permission mode picked for the agent. Unset starts it in the chat's, or its strictest. */
 	approvalMode?: ApprovalMode;
@@ -77,8 +77,16 @@ export function switchEffort(pending: PendingAgentSwitch): string | undefined {
 	return pending.effort ?? (listsModelVariants(pending.harness) ? undefined : pending.shownEffort);
 }
 
-/** Claude Code only compacts early on its larger-window models. */
+/**
+ * Which agents can be told to compact on their own, and on which models.
+ *
+ * Claude Code reads a window at startup but only compacts early on its
+ * larger-window models. Codex app-server takes the limit as a thread config
+ * override (model_auto_compact_token_limit), which it applies to whichever
+ * model the thread runs. Mirrors domain.CompactsOnItsOwn in the backend.
+ */
 export function compactsEarly(harness: string | undefined, model = ""): boolean {
+	if (harness === "codex") return true;
 	return harness === "claude-code" && !/haiku|opus-4-5/.test(model);
 }
 

@@ -781,11 +781,13 @@ func (s *Service) startLocked(ctx context.Context, cfg StartConfig) (*Controller
 				ports.ErrChatResumeFailed, activeBranch.ProviderConversationID, cfg.ProviderConversationID)
 		}
 	}
-	// A switch to Claude Code sets the window, Auto (empty) included.
-	if cfg.ProviderSwitch != nil && cfg.Harness == domain.HarnessClaudeCode {
+	// A switch to a harness that compacts on its own sets the window, Auto
+	// (empty) included.
+	if cfg.ProviderSwitch != nil && domain.CompactsOnItsOwn(cfg.Harness) {
 		// The switch's config is the source's, which may still carry the window
 		// AO set for an earlier Claude Code start. Drop that value so the new
 		// choice, Auto included, is what starts; a project's own value stays.
+		// Codex takes no environment value, so it has none to strand.
 		if previous := domain.AutoCompactTokens[conversation.Settings.AutoCompactWindow]; previous > 0 &&
 			cfg.Env[claudeAutoCompactWindowEnv] == fmt.Sprint(previous) {
 			cfg.Env = cloneStartConfig(cfg).Env
@@ -793,12 +795,23 @@ func (s *Service) startLocked(ctx context.Context, cfg StartConfig) (*Controller
 		}
 		conversation.Settings.AutoCompactWindow = cfg.ProviderSwitch.AutoCompactWindow
 	}
-	// Claude Code reads its compaction window when it starts. Auto leaves any
-	// window the project's environment sets. The map is copied because the
-	// caller's may be the one saved for later restarts.
-	if tokens := domain.AutoCompactTokens[conversation.Settings.AutoCompactWindow]; cfg.Harness == domain.HarnessClaudeCode && tokens > 0 {
+	// Both providers read their compaction window when they start, by different
+	// routes: Claude Code from the environment, Codex app-server as a thread
+	// config override (see threadConfig). Auto leaves whatever the provider or
+	// the project's environment already sets.
+	tokens := domain.AutoCompactTokens[conversation.Settings.AutoCompactWindow]
+	switch {
+	case cfg.Harness == domain.HarnessClaudeCode && tokens > 0:
+		// The map is copied because the caller's may be the one saved for
+		// later restarts. Auto needs no branch here: the switch above removes
+		// a window an earlier Claude Code start left in the environment.
 		cfg.Env = cloneStartConfig(cfg).Env
 		cfg.Env[claudeAutoCompactWindowEnv] = fmt.Sprint(tokens)
+	case cfg.Harness == domain.HarnessCodex:
+		// Assigned even on Auto, where it is zero: this config may be the one
+		// saved for an earlier start and still carry a window the user has
+		// since cleared.
+		cfg.AutoCompactTokens = tokens
 	}
 	// A fork's first start resumes the provider conversation copied for it,
 	// into a conversation with no settings saved yet: it starts with the
@@ -876,6 +889,7 @@ func (s *Service) startLocked(ctx context.Context, cfg StartConfig) (*Controller
 			PrepareEnv:             prepareEnv,
 			Model:                  cfg.Model,
 			Effort:                 cfg.Effort,
+			AutoCompactTokens:      cfg.AutoCompactTokens,
 			Permissions:            cfg.Permissions,
 			ReadOnly:               cfg.ReadOnly,
 			SystemPrompt:           providerSystemPrompt,
@@ -894,6 +908,7 @@ func (s *Service) startLocked(ctx context.Context, cfg StartConfig) (*Controller
 			PrepareEnv:            prepareEnv,
 			Model:                 cfg.Model,
 			Effort:                cfg.Effort,
+			AutoCompactTokens:     cfg.AutoCompactTokens,
 			Permissions:           cfg.Permissions,
 			ReadOnly:              cfg.ReadOnly,
 			SystemPrompt:          providerSystemPrompt,

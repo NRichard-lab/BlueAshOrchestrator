@@ -1,4 +1,4 @@
-// Package codex implements the Codex agent adapter: launching new sessions,
+﻿// Package codex implements the Codex agent adapter: launching new sessions,
 // resuming hook-tracked sessions, installing workspace-local hooks, and reading
 // hook-derived session info.
 //
@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -54,7 +55,7 @@ func (p *Plugin) EmitsSubmitActivity() bool { return true }
 func (p *Plugin) EmitsSemanticMessageAcceptance() bool { return true }
 
 // EmitsBlockedActivity is false: codex reports permission prompts as
-// waiting_input — it installs no post-tool-use hook, so a blocked state could
+// waiting_input â€” it installs no post-tool-use hook, so a blocked state could
 // never be cleared mid-turn. confirmActive must not nudge it (an Enter could
 // answer a pending decision it cannot report as blocked). See
 // ports.BlockedActivitySignaler.
@@ -130,6 +131,7 @@ func (p *Plugin) GetLaunchCommand(ctx context.Context, cfg ports.LaunchConfig) (
 	appendTerminalCompatibilityFlags(&providerArgs)
 	appendReasoningEffortFlag(&providerArgs, cfg.Config.Effort)
 	appendFastTierFlag(&providerArgs, cfg.Config.Launch)
+	appendAutoCompactFlag(&providerArgs, cfg.Config.Launch)
 	return agentruntime.BuildLaunchCommand(agentruntime.LaunchConfig{
 		Harness:          agentruntime.HarnessCodex,
 		Binary:           binary,
@@ -170,6 +172,7 @@ func (p *Plugin) GetRestoreCommand(ctx context.Context, cfg ports.RestoreConfig)
 	appendTerminalCompatibilityFlags(&providerArgs)
 	appendReasoningEffortFlag(&providerArgs, cfg.Config.Effort)
 	appendFastTierFlag(&providerArgs, cfg.Config.Launch)
+	appendAutoCompactFlag(&providerArgs, cfg.Config.Launch)
 	return agentruntime.BuildRestoreCommand(agentruntime.RestoreConfig{
 		Harness:          agentruntime.HarnessCodex,
 		Binary:           binary,
@@ -199,6 +202,20 @@ func appendFastTierFlag(args *[]string, launch domain.AgentLaunchOptions) {
 func appendReasoningEffortFlag(args *[]string, effort string) {
 	if effort = strings.TrimSpace(effort); effort != "" {
 		*args = append(*args, "-c", "model_reasoning_effort="+codexTOMLConfigString(effort))
+	}
+}
+
+// appendAutoCompactFlag tells Codex where to compact the conversation on its
+// own. Without it a long session keeps re-sending its history until a turn no
+// longer fits, and only a manual compaction gets it going again. Auto (empty)
+// leaves whatever config.toml sets.
+//
+// The limit is a TOML integer, so it is written bare rather than through
+// codexTOMLConfigString, which quotes its argument. The scope
+// (model_auto_compact_token_limit_scope) is left to Codex's own default.
+func appendAutoCompactFlag(args *[]string, launch domain.AgentLaunchOptions) {
+	if tokens := domain.AutoCompactTokens[launch.AutoCompactWindow]; tokens > 0 {
+		*args = append(*args, "-c", "model_auto_compact_token_limit="+strconv.Itoa(tokens))
 	}
 }
 

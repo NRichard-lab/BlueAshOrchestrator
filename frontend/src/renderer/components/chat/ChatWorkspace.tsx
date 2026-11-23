@@ -190,7 +190,7 @@ import { ChatLinkProvider, ChatOpeningRef } from "./ChatMarkdown";
 import { admitArrivals, ChatEntrance, createChatEntranceGate } from "./chat-entrance";
 import { pageHidden } from "../../lib/page-hidden";
 import { ChatImageSourceProvider } from "./chat-image-source";
-import type { AgentSwitchProps } from "./AgentSwitchPicker";
+import { compactsEarly, type AgentSwitchProps } from "./AgentSwitchPicker";
 import type { ComposerPromptSuggestion } from "./ComposerEditor";
 import { ChatTokenSkills } from "./sentComposerTokens";
 import { ChatComposer, type ChatComposerHandle, type StoredComposerAttachment } from "./ChatComposer";
@@ -1793,8 +1793,11 @@ function ChatWorkspaceContent({
 		[snapshot.items, turn],
 	);
 	const stableSettings = useStableValue(snapshot.settings);
-	// Claude Code compacts at the window picked for it, well before its model's full context.
-	const compactsAt = snapshot.harness === "claude-code" ? snapshot.settings?.autoCompactWindow : undefined;
+	// An agent that compacts on its own does so at the window picked for it,
+	// well before its model's full context.
+	const compactsAt = compactsEarly(snapshot.harness, snapshot.settings?.model)
+		? snapshot.settings?.autoCompactWindow
+		: undefined;
 	const stableUsage = useStableValue(snapshot.usage);
 	// The account's quota, for the meter's warning pill from 75%.
 	const stableRateLimits = useStableValue(snapshot.rateLimits);

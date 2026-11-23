@@ -31,8 +31,9 @@ type ProviderSwitchRequest struct {
 	// PermissionMode is the mode the user picked for the target. Empty keeps
 	// the chat's. A mode the target cannot run in gives way to its strictest.
 	PermissionMode PermissionMode
-	// Ultracode and AutoCompactWindow are Claude Code launch choices for a
-	// terminal target. See AgentLaunchOptions.
+	// Ultracode is a Claude Code launch choice for a terminal target.
+	// AutoCompactWindow applies to any harness that compacts on its own
+	// (CompactsOnItsOwn). See AgentLaunchOptions.
 	Ultracode         bool
 	AutoCompactWindow string
 	// HandoffNote is the note the target provider starts with. The switch
@@ -48,7 +49,8 @@ type ChatProviderSwitch struct {
 	SourceBranchID string
 	SourceSequence int64
 	Bootstrap      string
-	// AutoCompactWindow is the Claude Code compaction window the target starts with.
+	// AutoCompactWindow is the compaction window the target starts with, for a
+	// harness that compacts on its own.
 	AutoCompactWindow string
 }
 

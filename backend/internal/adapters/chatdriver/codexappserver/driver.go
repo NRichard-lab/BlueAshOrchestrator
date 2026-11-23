@@ -1,4 +1,4 @@
-package codexappserver
+﻿package codexappserver
 
 import (
 	"context"
@@ -323,7 +323,7 @@ func (d *Driver) Start(ctx context.Context, cfg ports.ChatStartConfig) (ports.Ch
 	// thread/start has no top-level effort field either; carry the durable AO
 	// choice as a config override like thread/resume does, so a fresh thread
 	// does not silently fall back to the provider default.
-	if config := threadConfig(cfg.Effort, cfg.MCPServers); len(config) > 0 {
+	if config := threadConfig(cfg.Effort, cfg.AutoCompactTokens, cfg.MCPServers); len(config) > 0 {
 		params["config"] = config
 	}
 	if cfg.SystemPrompt != "" {
@@ -406,7 +406,7 @@ func (d *Driver) Resume(ctx context.Context, cfg ports.ChatResumeConfig) (ports.
 	// thread/resume has no top-level effort field. Codex exposes persistent
 	// reasoning effort as a config override, so carry the durable AO choice into
 	// the resumed thread instead of silently falling back to the provider default.
-	if config := threadConfig(cfg.Effort, cfg.MCPServers); len(config) > 0 {
+	if config := threadConfig(cfg.Effort, cfg.AutoCompactTokens, cfg.MCPServers); len(config) > 0 {
 		params["config"] = config
 	}
 	// Developer instructions are launch context, not durable conversation
@@ -463,7 +463,7 @@ func (d *Driver) Resume(ctx context.Context, cfg ports.ChatResumeConfig) (ports.
 
 // codexThreadMissing reports a thread/resume refused because Codex has no
 // saved thread under that id: none at all, or the empty rollout a thread that
-// never had a turn leaves behind ("rollout at … is empty").
+// never had a turn leaves behind ("rollout at â€¦ is empty").
 func codexThreadMissing(err error) bool {
 	message := strings.ToLower(err.Error())
 	return strings.Contains(message, "no rollout found") ||
@@ -487,10 +487,21 @@ const aoToolTimeoutSec = 150
 // Codex gives an MCP tool call 60 s by default, under a computer-use
 // run_steps batch, which may run the driver's full 60 s before its report and
 // closing read; the daemon allows that call two minutes.
-func threadConfig(effort string, servers []ports.ChatMCPServerConfig) map[string]any {
+// autoCompactTokens sets model_auto_compact_token_limit, the context size at
+// which app-server compacts the thread on its own. Without it a long
+// conversation only compacts when the user asks, and a thread that fills up
+// cannot accept another turn until they do.
+//
+// The limit's scope (model_auto_compact_token_limit_scope) is deliberately left
+// unset so app-server keeps its own default: AO has no measured reason to
+// prefer charging the whole context over the body after the prefix.
+func threadConfig(effort string, autoCompactTokens int, servers []ports.ChatMCPServerConfig) map[string]any {
 	config := map[string]any{}
 	if effort != "" {
 		config["model_reasoning_effort"] = effort
+	}
+	if autoCompactTokens > 0 {
+		config["model_auto_compact_token_limit"] = autoCompactTokens
 	}
 	if len(servers) == 0 {
 		return config
@@ -850,7 +861,7 @@ func (d *Driver) ForkIntoHost(ctx context.Context, sourceProviderConversationID,
 	}
 	// Same overrides as thread/start and thread/resume: without the MCP servers
 	// a fresh fork has no AO tools until a restart resumes it.
-	if config := threadConfig(cfg.Effort, cfg.MCPServers); len(config) > 0 {
+	if config := threadConfig(cfg.Effort, cfg.AutoCompactTokens, cfg.MCPServers); len(config) > 0 {
 		params["config"] = config
 	}
 	if cfg.SystemPrompt != "" {

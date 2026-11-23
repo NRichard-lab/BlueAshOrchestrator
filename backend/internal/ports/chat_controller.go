@@ -36,7 +36,12 @@ type ChatControllerStart struct {
 	Env           map[string]string
 	Model         string
 	Effort        string
-	Permissions   PermissionMode
+	// AutoCompactTokens is the context size, in tokens, at which the provider
+	// compacts on its own; zero leaves its own default alone. Set from the
+	// conversation's AutoCompactWindow for a harness that takes it as a launch
+	// setting rather than from the environment. See ChatStartConfig.
+	AutoCompactTokens int
+	Permissions       PermissionMode
 	// ReadOnly forces the provider's native sandbox to reject workspace writes.
 	// Reviewer-owned conversations set this independently of approval behavior.
 	ReadOnly bool

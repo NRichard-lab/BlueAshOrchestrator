@@ -259,7 +259,7 @@
 	"agentSwitch.autoCompact": "Compactage automatique",
 	"agentSwitch.autoCompactAuto": "Auto",
 	"agentSwitch.checkingPermissionModes": "Vérification des modes d’autorisation de {{agent}}. Renvoyez dans un instant.",
-	"agentSwitch.autoCompactHint": "Quand Claude Code compacte la conversation de lui-même.",
+	"agentSwitch.autoCompactHint": "Quand l'agent compacte la conversation de lui-même.",
 	"agentSwitch.addFavourite": "Ajouter aux favoris",
 	"agentSwitch.removeFavourite": "Retirer des favoris",
 	"agentSwitch.favoriteAgent": ", {{agent}}",

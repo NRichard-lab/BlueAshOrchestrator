@@ -258,7 +258,7 @@
 	"agentSwitch.autoCompact": "Automatisch komprimieren",
 	"agentSwitch.autoCompactAuto": "Auto",
 	"agentSwitch.checkingPermissionModes": "Es wird geprüft, in welchen Berechtigungsmodi {{agent}} läuft. Gleich noch einmal senden.",
-	"agentSwitch.autoCompactHint": "Wann Claude Code die Unterhaltung selbst komprimiert.",
+	"agentSwitch.autoCompactHint": "Wann der Agent die Unterhaltung selbst komprimiert.",
 	"agentSwitch.addFavourite": "Zu Favoriten hinzufügen",
 	"agentSwitch.removeFavourite": "Aus Favoriten entfernen",
 	"agentSwitch.favoriteAgent": ", {{agent}}",

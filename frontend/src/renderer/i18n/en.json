@@ -258,7 +258,7 @@
 	"agentSwitch.autoCompact": "Auto-compact",
 	"agentSwitch.autoCompactAuto": "Auto",
 	"agentSwitch.checkingPermissionModes": "Checking which permission modes {{agent}} runs in. Send again in a moment.",
-	"agentSwitch.autoCompactHint": "When Claude Code compacts the conversation on its own.",
+	"agentSwitch.autoCompactHint": "When the agent compacts the conversation on its own.",
 	"agentSwitch.addFavourite": "Add to favourites",
 	"agentSwitch.removeFavourite": "Remove from favourites",
 	"agentSwitch.favoriteAgent": ", {{agent}}",

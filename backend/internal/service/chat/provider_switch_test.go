@@ -415,6 +415,54 @@ func TestProviderSwitchBackToClaudeOnAutoClearsTheSavedCompactionWindow(t *testi
 	}
 }
 
+// Codex app-server takes its compaction limit as a thread config override, not
+// an environment value, so the window has to reach the start config as tokens.
+func TestProviderSwitchToCodexCarriesTheCompactionWindow(t *testing.T) {
+	h, _, driver := newEditHarness(t, false)
+	ctx := context.Background()
+	// The harness session already runs Codex, so switching to it is refused
+	// until something else is active.
+	for _, req := range []domain.ProviderSwitchRequest{
+		{TargetHarness: domain.HarnessClaudeCode, IdempotencyKey: "to-claude"},
+		{TargetHarness: domain.HarnessCodex, IdempotencyKey: "to-codex", AutoCompactWindow: "200k"},
+	} {
+		if err := h.svc.SwitchProvider(ctx, testSession, req); err != nil {
+			t.Fatalf("switch to %s: %v", req.TargetHarness, err)
+		}
+	}
+	target := lastStart(driver)
+	if target.AutoCompactTokens != 200_000 {
+		t.Errorf("target compaction limit = %d, want the switch's 200k", target.AutoCompactTokens)
+	}
+	// Codex reads nothing from the Claude variable; setting it would be noise.
+	if got, ok := target.Env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]; ok {
+		t.Errorf("Codex start carried the Claude window variable = %q, want it unset", got)
+	}
+	if conversation, err := h.st.ConversationForSession(ctx, testSession); err != nil ||
+		conversation.Settings.AutoCompactWindow != "200k" {
+		t.Errorf("saved window = %q, %v; want 200k", conversation.Settings.AutoCompactWindow, err)
+	}
+}
+
+func TestProviderSwitchToCodexOnAutoLeavesTheProviderDefault(t *testing.T) {
+	h, _, driver := newEditHarness(t, false)
+	ctx := context.Background()
+	for _, req := range []domain.ProviderSwitchRequest{
+		// Codex is already active on the harness session; move away first.
+		{TargetHarness: domain.HarnessClaudeCode, IdempotencyKey: "to-claude-first"},
+		{TargetHarness: domain.HarnessCodex, IdempotencyKey: "to-codex", AutoCompactWindow: "1m"},
+		{TargetHarness: domain.HarnessClaudeCode, IdempotencyKey: "to-claude"},
+		{TargetHarness: domain.HarnessCodex, IdempotencyKey: "back-on-auto"},
+	} {
+		if err := h.svc.SwitchProvider(ctx, testSession, req); err != nil {
+			t.Fatalf("switch to %s: %v", req.TargetHarness, err)
+		}
+	}
+	if got := lastStart(driver).AutoCompactTokens; got != 0 {
+		t.Errorf("compaction limit after switching back on Auto = %d, want it unset", got)
+	}
+}
+
 func TestProviderSwitchTargetPermissionMode(t *testing.T) {
 	for _, tt := range []struct {
 		name    string

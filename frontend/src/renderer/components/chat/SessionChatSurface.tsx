@@ -303,7 +303,7 @@ export const SessionChatSurface = memo(function SessionChatSurface({
 	const ultracode = useMemo(() => ({ on: ultracodeOn, onChange: setUltracodeOn }), [ultracodeOn]);
 	const autoCompactWindow = snapshot?.settings.autoCompactWindow;
 	const [applyingAutoCompact, setApplyingAutoCompact] = useState(false);
-	// Claude Code reads this when it starts, so saving it restarts the agent.
+	// The agent reads this when it starts, so saving it restarts the agent.
 	const saveAutoCompact = useLatestCallback((value: TurnSettings["autoCompactWindow"]) => {
 		if (!snapshot) return;
 		setApplyingAutoCompact(true);

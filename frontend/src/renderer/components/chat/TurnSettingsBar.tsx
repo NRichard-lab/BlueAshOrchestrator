@@ -470,7 +470,7 @@ export function TurnSettingsBar({
 			{offersAutoCompact && autoCompact ? (
 				<AutoCompactRow
 					{...autoCompact}
-					title="When Claude Code compacts the conversation on its own. Changing it restarts the agent; the conversation is kept."
+					title="When the agent compacts the conversation on its own. Changing it restarts the agent; the conversation is kept."
 				/>
 			) : null}
 			{nativeModelMenu ? null : grouped.model.slice(1).map((option) => (

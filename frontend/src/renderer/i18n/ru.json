@@ -252,7 +252,7 @@
 	"agentSwitch.autoCompact": "Автосжатие",
 	"agentSwitch.autoCompactAuto": "Авто",
 	"agentSwitch.checkingPermissionModes": "Проверяется, в каких режимах разрешений работает {{agent}}. Отправьте сообщение ещё раз чуть позже.",
-	"agentSwitch.autoCompactHint": "Когда Claude Code автоматически сжимает переписку.",
+	"agentSwitch.autoCompactHint": "Когда агент автоматически сжимает переписку.",
 	"agentSwitch.addFavourite": "Добавить в избранное",
 	"agentSwitch.removeFavourite": "Убрать из избранного",
 	"agentSwitch.favoriteAgent": ", {{agent}}",
