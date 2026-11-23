@@ -265,7 +265,10 @@ import { coercePrivacyGuideRequest, CUA_DRIVER_APP_PATH, isPrivacyGuideTarget, P
 import { appBundlePath, readAppPrivacy, requestAppPrivacy, type AppPrivacyGrants } from "./main/app-privacy";
 import { watchSettingsWindow } from "./main/settings-window-watch";
 import {
+	alreadyLooking,
 	dockBounceType,
+	shouldFlashFrame,
+	shouldPlaySound,
 	shouldReplaceBounce,
 	shouldSignalAttention,
 	shouldToast,
@@ -4105,17 +4108,8 @@ ipcMain.handle(
 	"notifications:show",
 	(_event, notification: { id: string; title: string; body?: string; type?: string; watched?: boolean }) => {
 		if (!notification.id || !mainWindow) return;
-		// "Already looking" = the window has focus, or the renderer reports the
-		// prompt itself is on screen (`watched`). Visual signals are skipped then.
-		const looking = mainWindow.isFocused() || notification.watched === true;
-		// On Linux the sound ignores that guess: Wayland gives apps no reliable
-		// visibility, so a window parked on another workspace still reports
-		// focused/visible and would otherwise stay silent. macOS and Windows
-		// report focus accurately and keep the quieter behaviour.
-		const playsSound =
-			shouldSignalAttention(notification.type) &&
-			soundNotificationsEnabled &&
-			(process.platform === "linux" || !looking);
+		const looking = alreadyLooking(notification);
+		const playsSound = shouldPlaySound(process.platform, notification.type, soundNotificationsEnabled, looking);
 		if (playsSound) playNotificationSound();
 		if (looking) return;
 		// OS toast: a native banner the user can click to jump straight back to the
@@ -4166,7 +4160,7 @@ ipcMain.handle(
 					if (!hadPendingBounce) mainWindow.once("focus", cancelDockBounce);
 				}
 			}
-		} else if ((process.platform === "win32" || process.platform === "linux") && shouldSignalAttention(notification.type)) {
+		} else if (shouldFlashFrame(process.platform, notification.type, mainWindow.isFocused())) {
 			if (!isFlashing) {
 				isFlashing = true;
 				mainWindow.flashFrame(true);

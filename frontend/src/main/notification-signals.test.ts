@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+	alreadyLooking,
 	dockBounceType,
 	osToastChimeControllable,
+	shouldFlashFrame,
+	shouldPlaySound,
 	shouldReplaceBounce,
 	shouldSignalAttention,
 	shouldToast,
@@ -23,6 +26,63 @@ describe("shouldToast", () => {
 		expect(shouldToast({ title: "" }, true)).toBe(false);
 		expect(shouldToast({}, true)).toBe(false);
 		expect(shouldToast({ title: "needs input" }, false)).toBe(false);
+	});
+});
+
+describe("alreadyLooking", () => {
+	it("only counts the renderer's watched report", () => {
+		expect(alreadyLooking({ watched: true })).toBe(true);
+		expect(alreadyLooking({ watched: false })).toBe(false);
+		expect(alreadyLooking({})).toBe(false);
+	});
+});
+
+describe("shouldPlaySound", () => {
+	// The regression: working in Orchestrator on one session while another
+	// blocks on input left the waiting agent with no sound at all, because any
+	// window focus counted as "already looking".
+	it("plays for an unwatched actionable notification", () => {
+		for (const platform of ["win32", "darwin"] as NodeJS.Platform[]) {
+			expect(shouldPlaySound(platform, "needs_input", true, false)).toBe(true);
+			expect(shouldPlaySound(platform, "ready_to_merge", true, false)).toBe(true);
+		}
+	});
+
+	it("stays quiet only for the prompt the user is actually watching", () => {
+		expect(shouldPlaySound("win32", "needs_input", true, true)).toBe(false);
+		expect(shouldPlaySound("darwin", "needs_input", true, true)).toBe(false);
+	});
+
+	it("ignores the looking guess on Linux, where focus is unreliable", () => {
+		expect(shouldPlaySound("linux", "needs_input", true, true)).toBe(true);
+	});
+
+	it("respects the preference and the actionable-type allowlist", () => {
+		expect(shouldPlaySound("win32", "needs_input", false, false)).toBe(false);
+		expect(shouldPlaySound("linux", "needs_input", false, true)).toBe(false);
+		expect(shouldPlaySound("win32", "pr_merged", true, false)).toBe(false);
+		expect(shouldPlaySound("win32", undefined, true, false)).toBe(false);
+	});
+});
+
+describe("shouldFlashFrame", () => {
+	it("flashes an unfocused window for the actionable types", () => {
+		for (const platform of ["win32", "linux"] as NodeJS.Platform[]) {
+			expect(shouldFlashFrame(platform, "needs_input", false)).toBe(true);
+			expect(shouldFlashFrame(platform, "ready_to_merge", false)).toBe(true);
+			expect(shouldFlashFrame(platform, "pr_merged", false)).toBe(false);
+		}
+	});
+
+	// Flashing a focused window is a no-op on Windows, and the clearing
+	// listener fires only on the next focus, so the flag would latch.
+	it("does not flash a focused window", () => {
+		expect(shouldFlashFrame("win32", "needs_input", true)).toBe(false);
+		expect(shouldFlashFrame("linux", "needs_input", true)).toBe(false);
+	});
+
+	it("leaves macOS to the dock bounce", () => {
+		expect(shouldFlashFrame("darwin", "needs_input", false)).toBe(false);
 	});
 });
 

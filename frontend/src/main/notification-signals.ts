@@ -27,6 +27,51 @@ export function shouldSignalAttention(type: string | undefined): boolean {
 }
 
 /**
+ * Whether the user is already looking at the very prompt this notification is
+ * about, the one reason to withhold its signals.
+ *
+ * The renderer computes `watched` narrowly: the notification's own session is
+ * the current route, the document is visible AND focused, and the worker
+ * terminal is the one on screen. Window focus alone is deliberately not
+ * consulted here. Working inside Orchestrator on one session while a different
+ * one blocks on input is the ordinary case, and counting any focus as "looking"
+ * silenced both the sound and the toast for it, so a waiting agent produced no
+ * signal at all.
+ */
+export function alreadyLooking(notification: { watched?: boolean }): boolean {
+	return notification.watched === true;
+}
+
+/**
+ * Whether AO plays its own notification sound.
+ *
+ * On Linux the "looking" guess is ignored: Wayland gives apps no reliable
+ * visibility or focus, so a window parked on another workspace still reports
+ * itself visible and focused and would otherwise stay silent. macOS and Windows
+ * report both accurately and keep the quieter behaviour.
+ */
+export function shouldPlaySound(
+	platform: NodeJS.Platform,
+	type: string | undefined,
+	soundNotificationsEnabled: boolean,
+	looking: boolean,
+): boolean {
+	if (!shouldSignalAttention(type) || !soundNotificationsEnabled) return false;
+	return platform === "linux" || !looking;
+}
+
+/**
+ * Whether to flash the Windows/Linux taskbar. A focused window is excluded
+ * because flashing one is a no-op on Windows while the clearing listener fires
+ * only on the next focus, which would latch the "already flashing" flag and
+ * swallow the next real flash.
+ */
+export function shouldFlashFrame(platform: NodeJS.Platform, type: string | undefined, windowFocused: boolean): boolean {
+	if (platform !== "win32" && platform !== "linux") return false;
+	return shouldSignalAttention(type) && !windowFocused;
+}
+
+/**
  * Whether a new macOS dock bounce should replace the pending one. A pending
  * "critical" bounce (agent blocked on the user) is never replaced: a later
  * informational notification must not downgrade it to a one-shot bounce, or
