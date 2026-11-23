@@ -21,6 +21,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/agentbase"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/termtheme"
 	"github.com/aoagents/agent-orchestrator/backend/pkg/agentruntime"
@@ -102,13 +103,27 @@ func (p *Plugin) GetLaunchCommand(ctx context.Context, cfg ports.LaunchConfig) (
 		return nil, err
 	}
 
-	return agentruntime.BuildLaunchCommand(agentruntime.LaunchConfig{
+	cmd, err = agentruntime.BuildLaunchCommand(agentruntime.LaunchConfig{
 		Harness:    agentruntime.HarnessCursor,
 		Binary:     binary,
 		Model:      cfg.Config.Model,
 		Prompt:     cfg.Prompt,
 		Permission: agentruntime.PermissionPolicy(cfg.Permissions),
 	})
+	return withoutAutoUpdate(cmd), err
+}
+
+// withoutAutoUpdate adds cursor-agent's own --disable-auto-update flag, only in a build with updates compiled
+// out (brand.UpdatesEnabled=false). The flag is a hidden root option in the cursor-agent builds checked
+// (2026.11.19 and 2026.11.22: the background update check at startup is skipped when it is set); it is not
+// in the public docs, so legacy builds, which have never passed it, keep their exact argv.
+func withoutAutoUpdate(cmd []string) []string {
+	if brand.UpdatesAllowed() || len(cmd) == 0 {
+		return cmd
+	}
+	out := make([]string, 0, len(cmd)+1)
+	out = append(out, cmd[0], "--disable-auto-update")
+	return append(out, cmd[1:]...)
 }
 
 // GetRestoreCommand rebuilds the argv that continues an existing Cursor CLI
@@ -135,7 +150,7 @@ func (p *Plugin) GetRestoreCommand(ctx context.Context, cfg ports.RestoreConfig)
 		return nil, false, err
 	}
 
-	return agentruntime.BuildRestoreCommand(agentruntime.RestoreConfig{
+	cmd, ok, err = agentruntime.BuildRestoreCommand(agentruntime.RestoreConfig{
 		Harness:    agentruntime.HarnessCursor,
 		Binary:     binary,
 		SessionID:  cfg.Session.ID,
@@ -143,6 +158,7 @@ func (p *Plugin) GetRestoreCommand(ctx context.Context, cfg ports.RestoreConfig)
 		Model:      cfg.Config.Model,
 		Permission: agentruntime.PermissionPolicy(cfg.Permissions),
 	})
+	return withoutAutoUpdate(cmd), ok, err
 }
 
 // SessionInfo surfaces Cursor hook-derived metadata. Metadata is intentionally

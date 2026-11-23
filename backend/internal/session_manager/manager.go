@@ -6868,6 +6868,10 @@ func (m *Manager) runtimeEnvChecked(id domain.SessionID, project domain.ProjectI
 		env[EnvAgentBrowserURL] = m.agentBrowserURL
 		env[EnvAgentBrowserToken] = m.agentBrowserToken
 	}
+	// Compile-time brand switch: ask agent CLIs not to self-update (see harnessUpdateSuppressionEnv).
+	for key, value := range harnessUpdateSuppressionEnv(harness) {
+		setProtectedEnv(env, key, value, caseInsensitive)
+	}
 	accountErr := m.applyAgentAccountEnv(id, accountID, env, caseInsensitive)
 	path, err := hookPATHForOS(m.executable, os.Getenv, projectEnv, m.dataDir, caseInsensitive)
 	if err != nil {
