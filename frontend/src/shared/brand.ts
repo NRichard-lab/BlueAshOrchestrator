@@ -23,6 +23,11 @@ export type Brand = {
 	id: "legacy" | "blueashai";
 	/** Visible product name (window title, About, installer, shortcuts, Apps & Features). */
 	displayName: string;
+	/**
+	 * Product name as written in UI text (see brand-text.ts). Separate from displayName, which is also the
+	 * exe ProductName and the NSIS product name: changing that one changes the installed identity.
+	 */
+	visibleName: string;
 	/** Packaged binary name without .exe; NSIS closes running apps by this name. */
 	executableName: string;
 	/** electron-packager app name (output folder). */

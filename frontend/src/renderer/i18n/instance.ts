@@ -1,5 +1,6 @@
 import { createInstance, type BackendModule, type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
+import { brandCatalog } from "../../shared/brand-text";
 import { APP_LOCALES, DEFAULT_LOCALE, type AppLocale } from "./locales";
 import { enMessages } from "./messages";
 
@@ -7,6 +8,9 @@ export type TranslationCatalogs = Record<AppLocale, Record<string, string | stri
 
 type Catalog = Record<string, string | string[]>;
 
+// Every catalog passes through brandCatalog on its way in, so a build with another product profile
+// shows its own product name (shared/brand-text.ts). The legacy profile gets the catalog unchanged.
+//
 // One lazy chunk per locale. English ships in the startup bundle as the
 // fallback; the rest load only when the user's saved locale asks for them.
 const localeLoaders: Record<Exclude<AppLocale, "en">, () => Promise<{ default: Catalog }>> = {
@@ -36,7 +40,7 @@ const lazyLocaleBackend: BackendModule = {
 			return;
 		}
 		load().then(
-			(module) => callback(null, module.default),
+			(module) => callback(null, brandCatalog(module.default, language)),
 			() => callback(null, {}),
 		);
 	},
@@ -54,7 +58,7 @@ function initializeI18n(instance: i18n, locale: AppLocale, catalogs: Partial<Tra
 	// Only locales actually supplied are registered: an empty placeholder bundle
 	// would count as loaded and stop the lazy backend from fetching the real one.
 	const resources = Object.fromEntries(
-		APP_LOCALES.filter((lng) => catalogs[lng] !== undefined || !lazy).map((lng) => [lng, { translation: catalogs[lng] ?? {} }]),
+		APP_LOCALES.filter((lng) => catalogs[lng] !== undefined || !lazy).map((lng) => [lng, { translation: brandCatalog(catalogs[lng] ?? {}, lng) }]),
 	);
 	void instance.init({
 		lng: locale,
@@ -100,7 +104,7 @@ export function loadLocaleCatalog(locale: AppLocale, instance: i18n = appI18n): 
 	const load = localeLoaders[locale];
 	return load()
 		.then((module) => {
-			instance.addResourceBundle(locale, "translation", module.default, true, true);
+			instance.addResourceBundle(locale, "translation", brandCatalog(module.default, locale), true, true);
 		})
 		.catch(() => undefined);
 }

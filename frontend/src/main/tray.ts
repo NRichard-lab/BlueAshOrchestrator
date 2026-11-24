@@ -5,6 +5,7 @@ import { app, Menu, nativeImage, Tray, type MenuItemConstructorOptions } from "e
 // (1.3 MB) into main.js. Regenerate with `node scripts/sync-tray-catalog.mjs`.
 import { trayCatalogs, type TrayMessageKey } from "./tray-catalog.generated";
 import type { AppLocale } from "../shared/ui-locale";
+import { brandCatalog } from "../shared/brand-text";
 
 type MessageKey = TrayMessageKey;
 type PluralMessageKey = TrayMessageKey extends infer Key extends string
@@ -14,7 +15,7 @@ type PluralMessageKey = TrayMessageKey extends infer Key extends string
 	: never;
 
 function catalogFor(locale: AppLocale): Record<TrayMessageKey, string> & Partial<Record<string, string>> {
-	return trayCatalogs[locale] ?? trayCatalogs.en;
+	return brandCatalog(trayCatalogs[locale] ?? trayCatalogs.en, locale);
 }
 import type { TrayAttentionState, TrayAttentionZone, TrayOpenSessionTarget, TraySessionEntry } from "../shared/tray";
 

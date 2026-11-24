@@ -2,6 +2,7 @@
 	"legacy": {
 		"id": "legacy",
 		"displayName": "Orchestrator.inc",
+		"visibleName": "Orchestrator",
 		"executableName": "agent-orchestrator",
 		"packagerName": "Agent Orchestrator",
 		"appId": "dev.agent-orchestrator.desktop",
@@ -20,6 +21,7 @@
 	"blueashai": {
 		"id": "blueashai",
 		"displayName": "BlueAshAI",
+		"visibleName": "Blue Ash AI",
 		"executableName": "BlueAshAI",
 		"packagerName": "BlueAshAI",
 		"appId": "ai.blueash.desktop",
