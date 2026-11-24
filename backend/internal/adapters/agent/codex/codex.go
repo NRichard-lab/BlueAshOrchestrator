@@ -1,4 +1,4 @@
-﻿// Package codex implements the Codex agent adapter: launching new sessions,
+// Package codex implements the Codex agent adapter: launching new sessions,
 // resuming hook-tracked sessions, installing workspace-local hooks, and reading
 // hook-derived session info.
 //
@@ -28,6 +28,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 	"github.com/aoagents/agent-orchestrator/backend/pkg/agentruntime"
@@ -352,7 +353,7 @@ func (p *Plugin) AuthStatus(ctx context.Context) (ports.AgentAuthStatus, error) 
 	defer cancel()
 
 	started := time.Now()
-	cmd := aoprocess.CommandContext(probeCtx, binary, "login", "status")
+	cmd := aoprocess.CommandContext(probeCtx, binary, loginStatusArgs()...)
 	// The probe sees what Codex sessions see, without a key AO holds back.
 	cmd.Env = authprobe.Environ(ctx, agentlaunch.ProcessEnvForLaunchBinary(probeCtx, binary))
 	out, err := cmd.CombinedOutput()
@@ -650,7 +651,7 @@ func DoctorLaunchProbes() [][]string {
 }
 
 func appendNoUpdateCheckFlag(cmd *[]string) {
-	*cmd = append(*cmd, "-c", "check_for_update_on_startup=false")
+	*cmd = append(*cmd, harnessupdate.CodexNoUpdateCheckArgs()...)
 }
 
 func appendHideRateLimitNudgeFlag(cmd *[]string) {
@@ -687,3 +688,9 @@ var fileExists = func(path string) bool {
 func (*Plugin) SupportsTerminalVersionRefresh() bool { return true }
 
 var _ ports.AgentTerminalVersionRefresher = (*Plugin)(nil)
+
+// loginStatusArgs are the arguments after the binary for the `codex login status` readiness probe; it
+// carries the same update-check switch as agent sessions (empty only where sessions do not add it).
+func loginStatusArgs() []string {
+	return harnessupdate.Prefix(harnessupdate.CodexArgs(), []string{"login", "status"})
+}

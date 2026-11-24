@@ -10,6 +10,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/authprobe"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -38,7 +39,7 @@ func (p *Plugin) AuthStatusWithDiagnostics(ctx context.Context) (ports.AgentAuth
 		unconfirmed = cursorAccountUnconfirmed(out)
 		return ports.AgentAuthStatusUnknown, false // the shared classifier decides
 	}
-	status, steps, err := authprobe.CLIStatusWithDiagnostics(ctx, binary, [][]string{{"status"}}, 3*time.Second, noteUnconfirmed)
+	status, steps, err := authprobe.CLIStatusWithDiagnostics(ctx, binary, [][]string{statusArgs()}, 3*time.Second, noteUnconfirmed)
 	if err != nil && ctx.Err() != nil {
 		return ports.AgentAuthStatusUnknown, domain.AgentAccountIdentity{}, steps, err
 	}
@@ -96,4 +97,10 @@ func cursorLoginAccount(ctx context.Context, path string) domain.AgentAccountIde
 		identity.Method = domain.AgentAccountMethodAccount
 	}
 	return identity
+}
+
+// statusArgs are the arguments after the binary for the `cursor-agent status` readiness probe; it carries
+// the same --disable-auto-update switch as agent sessions (BlueAshAI builds only).
+func statusArgs() []string {
+	return harnessupdate.Prefix(harnessupdate.CursorArgs(), []string{"status"})
 }

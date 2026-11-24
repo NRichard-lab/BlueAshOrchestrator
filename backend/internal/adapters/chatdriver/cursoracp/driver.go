@@ -17,6 +17,7 @@ import (
 	acpdriver "github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/acp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/nativeacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -79,7 +80,7 @@ func cursorProcessPermissionMode(mode ports.PermissionMode) bool {
 }
 
 func configure(ctx context.Context, cfg acpdriver.LaunchConfig) ([]string, map[string]string, error) {
-	args := make([]string, 0, 4)
+	args := append(make([]string, 0, 5), harnessupdate.CursorArgs()...)
 	switch ports.NormalizePermissionMode(cfg.Permissions) {
 	case ports.PermissionModeAuto:
 		args = append(args, "--auto-review")

@@ -18,6 +18,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/codexappserver/codexproto"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
@@ -85,10 +86,7 @@ func (f *AccountFactory) Open(ctx context.Context, account ports.CodexAccountCon
 	if err != nil {
 		return nil, fmt.Errorf("resolve Codex binary: %w", err)
 	}
-	args := []string{"app-server"}
-	if account.Managed {
-		args = []string{"-c", `cli_auth_credentials_store="file"`, "app-server"}
-	}
+	args := appServerArgs(account.Managed)
 	proc, err := f.spawn(ctx, bin, account.Home, envSlice(map[string]string{"CODEX_HOME": account.Home}), args)
 	if err != nil {
 		return nil, fmt.Errorf("launch Codex account client: %w", err)
@@ -163,7 +161,7 @@ func (f *AccountFactory) detectCapabilities(ctx context.Context, bin string) dom
 		return unknownCodexCapabilities("Codex capability detection is unavailable.")
 	}
 	defer func() { _ = os.RemoveAll(dir) }()
-	cmd := aoprocess.CommandContext(probeCtx, bin, "app-server", "generate-json-schema", "--experimental", "--out", dir)
+	cmd := aoprocess.CommandContext(probeCtx, bin, schemaProbeArgs(dir)...)
 	if err := cmd.Run(); err != nil {
 		return unknownCodexCapabilities("Codex capability detection did not complete.")
 	}
@@ -173,7 +171,7 @@ func (f *AccountFactory) detectCapabilities(ctx context.Context, bin string) dom
 }
 
 func probeCodexCLISurface(ctx context.Context, bin string, args []string, supportedReason string) domain.CodexCapabilityObservation {
-	cmd := aoprocess.CommandContext(ctx, bin, args...)
+	cmd := aoprocess.CommandContext(ctx, bin, probeCLIArgs(args)...)
 	cmd.Env = codexProcessEnv(ctx, bin, nil)
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
@@ -403,4 +401,25 @@ func spawnAccountAppServer(_ context.Context, bin, workdir string, env, args []s
 		})
 		return nil
 	}}, nil
+}
+
+// The helpers below are the only places the Codex probe and chat launch paths build their arguments, so
+// each carries harnessupdate's update-check switch (empty in the legacy profile) exactly once.
+
+// appServerArgs are the arguments after the binary for `codex app-server`; managed accounts also keep
+// their credentials in a file store.
+func appServerArgs(managed bool) []string {
+	args := []string{"app-server"}
+	if managed {
+		args = []string{"-c", `cli_auth_credentials_store="file"`, "app-server"}
+	}
+	return harnessupdate.Prefix(harnessupdate.CodexArgs(), args)
+}
+
+func schemaProbeArgs(dir string) []string {
+	return harnessupdate.Prefix(harnessupdate.CodexArgs(), []string{"app-server", "generate-json-schema", "--experimental", "--out", dir})
+}
+
+func probeCLIArgs(args []string) []string {
+	return harnessupdate.Prefix(harnessupdate.CodexArgs(), args)
 }

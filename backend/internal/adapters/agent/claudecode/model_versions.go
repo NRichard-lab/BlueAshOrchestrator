@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
@@ -294,7 +296,7 @@ var (
 
 // claudeVersionCommand is replaced in tests.
 var claudeVersionCommand = func(ctx context.Context, binary string) ([]byte, error) {
-	return aoprocess.CommandContext(ctx, binary, "--version").Output()
+	return newClaudeVersionCmd(ctx, binary).Output()
 }
 
 // InstalledVersion returns the semantic version of the Claude Code binary.
@@ -341,4 +343,11 @@ func InstalledVersion(ctx context.Context, binary string) (string, bool) {
 	installedVersionCache[resolved] = installedVersionEntry{fingerprint: fingerprint, version: version}
 	installedVersionMu.Unlock()
 	return version, version != ""
+}
+
+// newClaudeVersionCmd builds the `claude --version` probe with the same updater-off environment as agent sessions.
+func newClaudeVersionCmd(ctx context.Context, binary string) *exec.Cmd {
+	cmd := aoprocess.CommandContext(ctx, binary, "--version")
+	harnessupdate.ApplyEnv(cmd, domain.HarnessClaudeCode)
+	return cmd
 }

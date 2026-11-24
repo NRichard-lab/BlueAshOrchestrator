@@ -1,4 +1,4 @@
-﻿package codexappserver
+package codexappserver
 
 import (
 	"context"
@@ -592,7 +592,7 @@ func (d *Driver) connectSession(
 		DataDir:       dataDir,
 		Workdir:       workdir,
 		Env:           envSlice(env),
-		Argv:          []string{bin, "app-server"},
+		Argv:          append([]string{bin}, appServerArgs(false)...),
 	}
 	if prepareEnv != nil {
 		hostConfig.Prepare = func(prepareCtx context.Context) (persistenthost.PreparedProvider, error) {
@@ -601,7 +601,7 @@ func (d *Driver) connectSession(
 				return persistenthost.PreparedProvider{}, prepareErr
 			}
 			return persistenthost.PreparedProvider{
-				Env: envSlice(preparedEnv), Argv: []string{bin, "app-server"},
+				Env: envSlice(preparedEnv), Argv: append([]string{bin}, appServerArgs(false)...),
 			}, nil
 		}
 	}
@@ -741,7 +741,7 @@ func launchApprovalSettings(mode ports.PermissionMode, readOnly bool) (policy, s
 
 // spawnAppServer is the real launcher.
 func spawnAppServer(ctx context.Context, bin, workdir string, env []string) (*process, error) {
-	args := []string{"app-server"}
+	args := appServerArgs(false)
 	cmd := aoprocess.Command(bin, args...)
 	cmd.Dir = workdir
 	if len(env) > 0 {

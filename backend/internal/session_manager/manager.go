@@ -25,6 +25,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
 	"github.com/aoagents/agent-orchestrator/backend/internal/attachmentstore"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 	"github.com/aoagents/agent-orchestrator/backend/internal/providerkeys"
@@ -6869,7 +6870,7 @@ func (m *Manager) runtimeEnvChecked(id domain.SessionID, project domain.ProjectI
 		env[EnvAgentBrowserToken] = m.agentBrowserToken
 	}
 	// Compile-time brand switch: ask agent CLIs not to self-update (see harnessUpdateSuppressionEnv).
-	for key, value := range harnessUpdateSuppressionEnv(harness) {
+	for key, value := range harnessupdate.Env(harness) {
 		setProtectedEnv(env, key, value, caseInsensitive)
 	}
 	accountErr := m.applyAgentAccountEnv(id, accountID, env, caseInsensitive)

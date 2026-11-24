@@ -10,33 +10,8 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
-func TestHarnessUpdateSuppressionEnvOnlyWhenUpdatesAreCompiledOut(t *testing.T) {
-	if got := harnessUpdateSuppressionEnv(domain.HarnessClaudeCode); got != nil {
-		t.Fatalf("legacy build must add nothing, got %v", got)
-	}
-	old := brand.UpdatesEnabled
-	brand.UpdatesEnabled = "false"
-	t.Cleanup(func() { brand.UpdatesEnabled = old })
-
-	if got := harnessUpdateSuppressionEnv(domain.HarnessClaudeCode); got["DISABLE_AUTOUPDATER"] != "1" {
-		t.Fatalf("claude-code env = %v, want DISABLE_AUTOUPDATER=1", got)
-	}
-	if got := harnessUpdateSuppressionEnv(""); got["DISABLE_AUTOUPDATER"] != "1" {
-		t.Fatalf("admission preflight env = %v, want the union", got)
-	}
-	if got := harnessUpdateSuppressionEnv(domain.HarnessCodex); len(got) != 0 {
-		t.Fatalf("codex is handled by a launch flag, not env; got %v", got)
-	}
-	// Variables that could not be verified must not creep in.
-	for _, h := range []domain.AgentHarness{domain.HarnessClaudeCode, ""} {
-		for _, unverified := range []string{"NO_UPDATE_NOTIFIER", "npm_config_update_notifier", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"} {
-			if _, present := harnessUpdateSuppressionEnv(h)[unverified]; present {
-				t.Fatalf("%s must not be set (unverified or out of scope)", unverified)
-			}
-		}
-	}
-}
-
+// The suppression values themselves live in internal/harnessupdate (one shared helper for sessions and
+// probes); this test pins that a launched session actually receives them, and only when compiled out.
 func TestRuntimeEnvCarriesUpdateSuppressionOnlyWhenCompiledOut(t *testing.T) {
 	dir := t.TempDir()
 	manager := &Manager{

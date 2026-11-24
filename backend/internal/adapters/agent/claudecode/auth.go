@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -17,6 +18,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/authprobe"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/processenv"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 	"github.com/aoagents/agent-orchestrator/backend/pkg/agentcreds"
@@ -478,11 +480,7 @@ type claudeCommandOutput struct {
 }
 
 var claudeAuthCommand = func(ctx context.Context, binary, workingDir string, env map[string]string) (claudeCommandOutput, error) {
-	cmd := aoprocess.CommandContext(ctx, binary, "auth", "status")
-	if strings.TrimSpace(workingDir) != "" {
-		cmd.Dir = workingDir
-	}
-	cmd.Env = processenv.Merge(env)
+	cmd := newClaudeAuthStatusCmd(ctx, binary, workingDir, env)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -673,4 +671,15 @@ func providerModelsFor(probeCtx context.Context, resolved claudeProviderContext)
 		})
 	}
 	return models, nil
+}
+
+// newClaudeAuthStatusCmd builds the `claude auth status` probe with the same updater-off environment as
+// agent sessions (harnessupdate.AppendEnv; unchanged in the legacy profile).
+func newClaudeAuthStatusCmd(ctx context.Context, binary, workingDir string, env map[string]string) *exec.Cmd {
+	cmd := aoprocess.CommandContext(ctx, binary, "auth", "status")
+	if strings.TrimSpace(workingDir) != "" {
+		cmd.Dir = workingDir
+	}
+	cmd.Env = harnessupdate.AppendEnv(processenv.Merge(env), domain.HarnessClaudeCode)
+	return cmd
 }
