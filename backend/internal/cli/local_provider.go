@@ -53,6 +53,13 @@ func newLocalProviderListCommand(_ *commandContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// A mistyped AO_LLAMACPP_URL or AO_LLAMACPP_PORT is skipped rather
+			// than fatal; say so on stderr, where it cannot corrupt --json.
+			if problem := localproviders.LlamaCppOverrideProblem(); problem != nil {
+				for _, line := range strings.Split(problem.Error(), "\n") {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s\n", line)
+				}
+			}
 			client := &http.Client{Timeout: localproviders.DefaultTimeout}
 			results := localproviders.ProbeAll(cmd.Context(), client, localproviders.All(dataDir))
 			if asJSON {
@@ -61,14 +68,14 @@ func newLocalProviderListCommand(_ *commandContext) *cobra.Command {
 				return encoder.Encode(results)
 			}
 			writer := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			fmt.Fprintln(writer, "NAME\tURL\tKIND\tSTATUS\tMODELS")
+			_, _ = fmt.Fprintln(writer, "NAME\tURL\tKIND\tSTATUS\tMODELS")
 			for _, result := range results {
 				status := "unreachable"
 				if result.Reachable {
 					status = "up"
 				}
 				models := summarizeModels(result)
-				fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", result.Name, result.BaseURL, result.Kind, status, models)
+				_, _ = fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", result.Name, result.BaseURL, result.Kind, status, models)
 			}
 			if err := writer.Flush(); err != nil {
 				return err
@@ -136,10 +143,10 @@ func newLocalProviderAddCommand() *cobra.Command {
 			// wants to know whether the address was right.
 			result := localproviders.Probe(cmd.Context(), &http.Client{Timeout: localproviders.DefaultTimeout}, added)
 			if result.Reachable {
-				fmt.Fprintf(cmd.OutOrStdout(), "Added %s (%s): up, %s\n", added.Name, added.BaseURL, summarizeModels(result))
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Added %s (%s): up, %s\n", added.Name, added.BaseURL, summarizeModels(result))
 				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Added %s (%s): not reachable yet (%s)\n", added.Name, added.BaseURL, result.Error)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Added %s (%s): not reachable yet (%s)\n", added.Name, added.BaseURL, result.Error)
 			return nil
 		},
 	}
@@ -171,7 +178,7 @@ func newLocalProviderRemoveCommand() *cobra.Command {
 			if err := localproviders.Remove(dataDir, args[0]); err != nil {
 				return usageError{err}
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Removed %s\n", args[0])
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removed %s\n", args[0])
 			return nil
 		},
 	}

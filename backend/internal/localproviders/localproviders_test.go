@@ -7,27 +7,193 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
+// clearLlamaCppOverrides makes a test see the defaults whatever the developer's
+// own shell exports.
+func clearLlamaCppOverrides(t *testing.T) {
+	t.Helper()
+	t.Setenv(EnvLlamaCppURL, "")
+	t.Setenv(EnvLlamaCppPort, "")
+}
+
 func TestBuiltinCoversOllamaAndLlamaCpp(t *testing.T) {
+	clearLlamaCppOverrides(t)
 	byName := map[string]Endpoint{}
 	for _, endpoint := range Builtin() {
 		byName[endpoint.Name] = endpoint
 	}
 	ollama, ok := byName["ollama"]
-	if !ok || ollama.Kind != KindOllama || ollama.BaseURL != "http://127.0.0.1:11434" {
+	if !ok || ollama.Kind != KindOllama || ollama.BaseURL != DefaultOllamaBaseURL {
 		t.Errorf("ollama built-in = %+v, want its native shape on 11434", ollama)
 	}
 	llama, ok := byName["llama.cpp"]
-	if !ok || llama.Kind != KindOpenAICompatible || llama.BaseURL != "http://127.0.0.1:8080" {
-		t.Errorf("llama.cpp built-in = %+v, want the OpenAI-compatible shape on 8080", llama)
+	if !ok || llama.Kind != KindOpenAICompatible || llama.BaseURL != DefaultLlamaCppBaseURL() {
+		t.Errorf("llama.cpp built-in = %+v, want the OpenAI-compatible shape on %s", llama, DefaultLlamaCppBaseURL())
 	}
 	// Loopback only: probing anything else unasked would reach across the network.
 	for _, endpoint := range Builtin() {
 		if !endpoint.Builtin {
 			t.Errorf("%s is not marked built-in", endpoint.Name)
 		}
+	}
+}
+
+// The one place the shipped defaults are spelled out: every other test, the
+// HTTP presets and the built-ins derive them, so changing a default is a change
+// here and to its constant, and nowhere else.
+func TestDefaultAddressesAreTheEnginesOwnDefaults(t *testing.T) {
+	if DefaultOllamaBaseURL != "http://127.0.0.1:11434" {
+		t.Errorf("DefaultOllamaBaseURL = %q", DefaultOllamaBaseURL)
+	}
+	if got := DefaultLlamaCppBaseURL(); got != "http://127.0.0.1:8080" {
+		t.Errorf("DefaultLlamaCppBaseURL() = %q", got)
+	}
+}
+
+func TestResolveLlamaCppBaseURL(t *testing.T) {
+	def := DefaultLlamaCppBaseURL()
+	cases := []struct {
+		name, url, port string
+		want            string
+		// problems are substrings the reported problem must contain; none
+		// means the overrides must be accepted silently.
+		problems []string
+	}{
+		{name: "nothing set", want: def},
+		{name: "blank values are unset", url: "  ", port: "\t", want: def},
+		{name: "port moves loopback", port: "9090", want: "http://127.0.0.1:9090"},
+		{name: "port is trimmed", port: " 9090 ", want: "http://127.0.0.1:9090"},
+		{name: "url replaces the address", url: "http://localhost:9191", want: "http://localhost:9191"},
+		{name: "url is normalised like an added endpoint", url: " http://127.0.0.1:9191/ ", want: "http://127.0.0.1:9191"},
+		{name: "url may name another host and a path", url: "https://gpu-box.lan:8443/llama", want: "https://gpu-box.lan:8443/llama"},
+		{name: "url wins over port", url: "http://127.0.0.1:9191", port: "9090", want: "http://127.0.0.1:9191"},
+		{name: "url wins even over a bad port", url: "http://127.0.0.1:9191", port: "nope", want: "http://127.0.0.1:9191"},
+		{name: "bad url falls back to port", url: "127.0.0.1:9191", port: "9090", want: "http://127.0.0.1:9090", problems: []string{EnvLlamaCppURL}},
+		{name: "bad url falls back to default", url: "ftp://127.0.0.1:9191", want: def, problems: []string{EnvLlamaCppURL}},
+		{name: "url with a query is refused", url: "http://127.0.0.1:9191/?key=x", want: def, problems: []string{EnvLlamaCppURL}},
+		{name: "non-numeric port", port: "eighty", want: def, problems: []string{EnvLlamaCppPort}},
+		{name: "port zero", port: "0", want: def, problems: []string{EnvLlamaCppPort}},
+		{name: "port out of range", port: "65536", want: def, problems: []string{EnvLlamaCppPort}},
+		{name: "negative port", port: "-1", want: def, problems: []string{EnvLlamaCppPort}},
+		{name: "both bad reports both", url: "nope", port: "nope", want: def, problems: []string{EnvLlamaCppURL, EnvLlamaCppPort}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := map[string]string{EnvLlamaCppURL: tc.url, EnvLlamaCppPort: tc.port}
+			got, err := resolveLlamaCppBaseURL(func(name string) string { return env[name] })
+			if got != tc.want {
+				t.Errorf("base URL = %q, want %q", got, tc.want)
+			}
+			if len(tc.problems) == 0 {
+				if err != nil {
+					t.Errorf("unexpected problem: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("no problem reported, want one naming %v", tc.problems)
+			}
+			for _, want := range tc.problems {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("problem %q does not name %s", err, want)
+				}
+			}
+		})
+	}
+}
+
+// The override has to reach everything that names the llama.cpp address: the
+// probed built-in, the Settings preset, and the endpoint list a link resolves
+// against.
+func TestLlamaCppOverrideReachesBuiltinPresetAndAll(t *testing.T) {
+	llamaIn := func(endpoints []Endpoint) string {
+		for _, endpoint := range endpoints {
+			if endpoint.Name == "llama.cpp" {
+				return endpoint.BaseURL
+			}
+		}
+		return ""
+	}
+	check := func(t *testing.T, want string) {
+		t.Helper()
+		if got := LlamaCppBaseURL(); got != want {
+			t.Errorf("LlamaCppBaseURL() = %q, want %q", got, want)
+		}
+		if got := llamaIn(Builtin()); got != want {
+			t.Errorf("built-in = %q, want %q", got, want)
+		}
+		if got := llamaIn(Presets()); got != want {
+			t.Errorf("preset = %q, want %q", got, want)
+		}
+		if got := llamaIn(All(t.TempDir())); got != want {
+			t.Errorf("All = %q, want %q", got, want)
+		}
+	}
+
+	t.Run("port", func(t *testing.T) {
+		clearLlamaCppOverrides(t)
+		t.Setenv(EnvLlamaCppPort, "9090")
+		check(t, "http://127.0.0.1:9090")
+		if err := LlamaCppOverrideProblem(); err != nil {
+			t.Errorf("problem = %v", err)
+		}
+	})
+	t.Run("url", func(t *testing.T) {
+		clearLlamaCppOverrides(t)
+		t.Setenv(EnvLlamaCppPort, "9090")
+		t.Setenv(EnvLlamaCppURL, "http://localhost:9191/")
+		check(t, "http://localhost:9191")
+	})
+	t.Run("unusable override keeps the default and is reported", func(t *testing.T) {
+		clearLlamaCppOverrides(t)
+		t.Setenv(EnvLlamaCppPort, "not-a-port")
+		check(t, DefaultLlamaCppBaseURL())
+		if err := LlamaCppOverrideProblem(); err == nil {
+			t.Error("an unusable port was not reported")
+		}
+	})
+}
+
+// A stored endpoint at the overridden address is the built-in under another
+// name, and is listed once, exactly as one at the default address is.
+func TestAllDropsStoredEndpointAtOverriddenLlamaCppAddress(t *testing.T) {
+	clearLlamaCppOverrides(t)
+	dir := t.TempDir()
+	if _, err := Add(dir, Endpoint{Name: "mine", BaseURL: "http://127.0.0.1:9090"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(All(dir)); got != 3 {
+		t.Fatalf("endpoints before override = %d, want the 2 built-ins and the stored one", got)
+	}
+	t.Setenv(EnvLlamaCppPort, "9090")
+	all := All(dir)
+	if len(all) != 2 {
+		t.Fatalf("endpoints after override = %+v, want the stored duplicate dropped", all)
+	}
+	for _, endpoint := range all {
+		if !endpoint.Builtin {
+			t.Errorf("%s survived as a duplicate of the built-in", endpoint.Name)
+		}
+	}
+}
+
+func TestPresetsAreTheBuiltinsPlusBionic(t *testing.T) {
+	clearLlamaCppOverrides(t)
+	presets := Presets()
+	builtin := Builtin()
+	if len(presets) != len(builtin)+1 {
+		t.Fatalf("presets = %+v", presets)
+	}
+	for i, endpoint := range builtin {
+		if presets[i].Name != endpoint.Name || presets[i].BaseURL != endpoint.BaseURL || presets[i].Kind != endpoint.Kind {
+			t.Errorf("preset %d = %+v, want built-in %+v", i, presets[i], endpoint)
+		}
+	}
+	if last := presets[len(presets)-1]; last.Name != "bionic" || last.Kind != KindOpenAICompatible || last.BaseURL != "http://127.0.0.1:1234" {
+		t.Errorf("last preset = %+v, want bionic on 1234", last)
 	}
 }
 

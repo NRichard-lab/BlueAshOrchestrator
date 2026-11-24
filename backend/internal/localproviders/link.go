@@ -73,7 +73,9 @@ func SaveLink(dataDir string, link Link) (Link, error) {
 	if err := os.MkdirAll(dataDir, 0o700); err != nil {
 		return Link{}, fmt.Errorf("local harness link: %w", err)
 	}
-	data, err := json.MarshalIndent(link, "", "  ")
+	// The key is written on purpose: this 0600 file under the data directory
+	// is where it is kept, and nothing else serialises a Link.
+	data, err := json.MarshalIndent(link, "", "  ") //nolint:gosec // G117: the link store is the API key's home
 	if err != nil {
 		return Link{}, err
 	}

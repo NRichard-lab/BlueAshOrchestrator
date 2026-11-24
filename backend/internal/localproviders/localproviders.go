@@ -21,11 +21,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -47,7 +49,7 @@ var Kinds = []Kind{KindOpenAICompatible, KindOllama}
 type Endpoint struct {
 	// Name identifies the endpoint to the user and in commands. Unique.
 	Name string `json:"name"`
-	// BaseURL is the server's root, without a trailing path ("http://127.0.0.1:8080").
+	// BaseURL is the server's root, without a trailing path ("http://127.0.0.1:1234").
 	BaseURL string `json:"baseUrl"`
 	Kind    Kind   `json:"kind"`
 	// Builtin marks an address AO probes without being told about it. Builtin
@@ -67,21 +69,104 @@ type Result struct {
 	Error string `json:"error,omitempty"`
 }
 
-// builtins are the addresses AO probes with no configuration: the defaults
-// Ollama and llama.cpp's server listen on.
-//
-// Loopback only. A local engine usually binds 127.0.0.1, and probing anything
-// else by default would have AO reaching across the network unasked.
-var builtins = []Endpoint{
-	{Name: "ollama", BaseURL: "http://127.0.0.1:11434", Kind: KindOllama, Builtin: true},
-	{Name: "llama.cpp", BaseURL: "http://127.0.0.1:8080", Kind: KindOpenAICompatible, Builtin: true},
+// DefaultOllamaBaseURL is where Ollama listens unless told otherwise.
+const DefaultOllamaBaseURL = "http://127.0.0.1:11434"
+
+// DefaultLlamaCppPort is the loopback port llama.cpp's server listens on unless
+// told otherwise. It is the only place that number is written down: the
+// built-in endpoint, the Settings preset and the tests all derive from it.
+const DefaultLlamaCppPort = 8080
+
+// bionicPresetBaseURL is the address LM Studio's Local Model API usually has.
+// A Settings preset only: it is not probed until the user adds it.
+const bionicPresetBaseURL = "http://127.0.0.1:1234"
+
+// The environment can move the built-in llama.cpp endpoint, for a server that
+// shares the machine with something else on its usual port.
+const (
+	// EnvLlamaCppURL replaces the whole address ("http://127.0.0.1:9090"). It
+	// takes the same form `ao local-provider add` does and wins over
+	// EnvLlamaCppPort.
+	EnvLlamaCppURL = "AO_LLAMACPP_URL"
+	// EnvLlamaCppPort keeps the loopback host and changes only the port.
+	EnvLlamaCppPort = "AO_LLAMACPP_PORT"
+)
+
+// DefaultLlamaCppBaseURL is the llama.cpp address used when the environment
+// names no other.
+func DefaultLlamaCppBaseURL() string {
+	return loopbackURL(DefaultLlamaCppPort)
 }
 
-// Builtin returns the endpoints AO probes without being configured.
+func loopbackURL(port int) string {
+	return "http://" + net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+}
+
+// LlamaCppBaseURL is the address the built-in llama.cpp endpoint is probed at:
+// EnvLlamaCppURL if set, else loopback on EnvLlamaCppPort if set, else
+// DefaultLlamaCppBaseURL. An override that cannot be used is skipped, so a typo
+// leaves discovery working on the next choice; LlamaCppOverrideProblem says
+// what was wrong with it.
+func LlamaCppBaseURL() string {
+	base, _ := resolveLlamaCppBaseURL(os.Getenv)
+	return base
+}
+
+// LlamaCppOverrideProblem reports an EnvLlamaCppURL or EnvLlamaCppPort value
+// that was set but skipped, or nil when both are unset or usable.
+func LlamaCppOverrideProblem() error {
+	_, err := resolveLlamaCppBaseURL(os.Getenv)
+	return err
+}
+
+// resolveLlamaCppBaseURL always returns a usable address. The error, when
+// there is one, describes every override that was set and skipped.
+func resolveLlamaCppBaseURL(getenv func(string) string) (string, error) {
+	var problems []error
+	if raw := strings.TrimSpace(getenv(EnvLlamaCppURL)); raw != "" {
+		base, err := ValidateBaseURL(raw)
+		if err == nil {
+			return base, nil
+		}
+		problems = append(problems, fmt.Errorf("%s ignored: %w", EnvLlamaCppURL, err))
+	}
+	if raw := strings.TrimSpace(getenv(EnvLlamaCppPort)); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err == nil && port >= 1 && port <= 65535 {
+			return loopbackURL(port), errors.Join(problems...)
+		}
+		problems = append(problems, fmt.Errorf("%s ignored: %q is not a port between 1 and 65535", EnvLlamaCppPort, raw))
+	}
+	return DefaultLlamaCppBaseURL(), errors.Join(problems...)
+}
+
+// builtinEndpoints are the addresses AO probes with no configuration: the
+// defaults Ollama and llama.cpp's server listen on, the latter movable through
+// the environment (see LlamaCppBaseURL).
+//
+// Loopback unless the user says otherwise. A local engine usually binds
+// 127.0.0.1, and probing anything else by default would have AO reaching across
+// the network unasked; EnvLlamaCppURL naming another host is the user asking.
+func builtinEndpoints() []Endpoint {
+	return []Endpoint{
+		{Name: "ollama", BaseURL: DefaultOllamaBaseURL, Kind: KindOllama, Builtin: true},
+		{Name: "llama.cpp", BaseURL: LlamaCppBaseURL(), Kind: KindOpenAICompatible, Builtin: true},
+	}
+}
+
+// Builtin returns the endpoints AO probes without being configured. The slice
+// is the caller's own.
 func Builtin() []Endpoint {
-	out := make([]Endpoint, len(builtins))
-	copy(out, builtins)
-	return out
+	return builtinEndpoints()
+}
+
+// Presets are the addresses the Settings UI offers to fill its "add endpoint"
+// form with. The first two are the built-ins, at the addresses they are probed
+// at; the rest are common servers that are not probed until added.
+func Presets() []Endpoint {
+	return append(builtinEndpoints(),
+		Endpoint{Name: "bionic", BaseURL: bionicPresetBaseURL, Kind: KindOpenAICompatible},
+	)
 }
 
 // storeName is the file under the data directory holding user-named endpoints.
@@ -97,7 +182,7 @@ func ValidateName(name string) error {
 	if strings.ContainsAny(trimmed, " \t\n/\\") {
 		return fmt.Errorf("endpoint name %q cannot contain spaces or slashes", name)
 	}
-	for _, builtin := range builtins {
+	for _, builtin := range builtinEndpoints() {
 		if strings.EqualFold(trimmed, builtin.Name) {
 			return fmt.Errorf("%q is a built-in endpoint and is probed already", trimmed)
 		}
@@ -297,7 +382,7 @@ func Probe(ctx context.Context, client *http.Client, endpoint Endpoint) Result {
 	if client == nil {
 		client = &http.Client{Timeout: DefaultTimeout}
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.BaseURL+modelsPath(endpoint.Kind), nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.BaseURL+modelsPath(endpoint.Kind), http.NoBody)
 	if err != nil {
 		result.Error = err.Error()
 		return result

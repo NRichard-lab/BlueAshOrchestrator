@@ -24,6 +24,40 @@ anything else by default would have Orchestrator reaching across your network
 without being asked. An engine that is not running is reported as unreachable
 with the reason — that is the ordinary case, not an error.
 
+### Moving the built-in llama.cpp address
+
+Port 8080 is a popular one, so llama.cpp's server often ends up somewhere else.
+Two environment variables move the built-in `llama.cpp` endpoint without adding
+a second, differently named one:
+
+| Variable           | Value                                         | Result                          |
+| ------------------ | --------------------------------------------- | ------------------------------- |
+| `AO_LLAMACPP_PORT` | a port, `1`–`65535`                           | `http://127.0.0.1:<port>`       |
+| `AO_LLAMACPP_URL`  | a base URL, as given to `local-provider add`  | that URL, trailing `/` removed  |
+
+```bash
+AO_LLAMACPP_PORT=9090 ao local-provider ls
+AO_LLAMACPP_URL=http://localhost:9090 ao local-provider ls
+```
+
+- `AO_LLAMACPP_URL` wins when both are set. With neither, the address is
+  `http://127.0.0.1:8080`.
+- `AO_LLAMACPP_URL` may name another host or an `https://` gateway. Setting it
+  is you asking for that address to be probed, so the loopback-only default no
+  longer applies to it; use it only for a network you trust.
+- A value that cannot be used (a port out of range, a URL without `http://`, a
+  URL with a query) is skipped: the next choice in the list above is used and
+  `ao local-provider ls` prints a warning on stderr saying which variable was
+  ignored and why.
+- The address is the same everywhere it appears: the probe, the `llama.cpp`
+  preset in Settings → Local models, and a Local harness link to `llama.cpp`,
+  which follows the endpoint by name.
+
+The variables are read by whichever process does the probing. `ao
+local-provider` reads its own environment; Settings and the Local harness use
+the daemon's, so set them where the daemon (or the desktop app that starts it)
+is launched, and restart it after a change.
+
 ## Naming another endpoint
 
 Anything else serving models gets added by hand: a non-default port, LM Studio,

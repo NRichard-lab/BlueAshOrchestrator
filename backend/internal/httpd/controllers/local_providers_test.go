@@ -8,11 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
+	"github.com/aoagents/agent-orchestrator/backend/internal/localproviders"
 )
 
 func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
+	t.Setenv(localproviders.EnvLlamaCppURL, "")
+	t.Setenv(localproviders.EnvLlamaCppPort, "9090")
 	dir := t.TempDir()
 	ctrl := &controllers.LocalProvidersController{DataDir: dir, Client: &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 		return nil, http.ErrHandlerTimeout
@@ -27,15 +31,31 @@ func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
 		t.Fatalf("status = %d, body=%s", rec.Code, rec.Body.String())
 	}
 	var body struct {
-		Endpoints []map[string]any `json:"endpoints"`
+		Endpoints []map[string]any    `json:"endpoints"`
 		Presets   []map[string]string `json:"presets"`
-		Notes     map[string]string `json:"notes"`
+		Notes     map[string]string   `json:"notes"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if len(body.Endpoints) < 2 {
 		t.Fatalf("endpoints = %d, want builtins present", len(body.Endpoints))
+	}
+	// The preset the form offers for llama.cpp is the address actually probed,
+	// including when the environment moves it.
+	llamaPreset, llamaEndpoint := "", ""
+	for _, preset := range body.Presets {
+		if preset["name"] == "llama.cpp" {
+			llamaPreset = preset["baseUrl"]
+		}
+	}
+	for _, endpoint := range body.Endpoints {
+		if endpoint["name"] == "llama.cpp" {
+			llamaEndpoint, _ = endpoint["baseUrl"].(string)
+		}
+	}
+	if llamaPreset != "http://127.0.0.1:9090" || llamaEndpoint != llamaPreset {
+		t.Fatalf("llama.cpp preset = %q, endpoint = %q, want both on the overridden port 9090", llamaPreset, llamaEndpoint)
 	}
 	foundBionic := false
 	for _, preset := range body.Presets {
@@ -147,7 +167,7 @@ func TestLocalProvidersHarnessLinkRoundTrip(t *testing.T) {
 		t.Fatal("API key must not appear in list response")
 	}
 	var listBody struct {
-		HarnessLink map[string]any `json:"harnessLink"`
+		HarnessLink map[string]any    `json:"harnessLink"`
 		Notes       map[string]string `json:"notes"`
 	}
 	if err := json.Unmarshal(listRec.Body.Bytes(), &listBody); err != nil {

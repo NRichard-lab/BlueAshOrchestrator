@@ -272,6 +272,11 @@ func (c Config) Addr() string {
 //	AO_AGENT_BROWSER_URL       the host's agent browser (loopback http URL, default none)
 //	AO_AGENT_BROWSER_TOKEN     that browser's credential (trimmed, required with AO_AGENT_BROWSER_URL)
 //
+// Read elsewhere, at the time of use rather than at Load:
+//
+//	AO_LLAMACPP_URL            built-in llama.cpp endpoint address (see localproviders.LlamaCppBaseURL)
+//	AO_LLAMACPP_PORT           its loopback port when AO_LLAMACPP_URL is unset (default localproviders.DefaultLlamaCppPort)
+//
 // The bind host is not configurable: the daemon is loopback-only by design.
 func Load() (Config, error) {
 	cfg := Config{
