@@ -6,6 +6,12 @@ import CoreGraphics
 import AppKit
 import Darwin
 
+#if BLUE_ASH_AI
+let productName = "Blue Ash AI"
+#else
+let productName = "Orchestrator"
+#endif
+
 let protocolVersion = 5
 let home = FileManager.default.homeDirectoryForCurrentUser
 let directory = home.appendingPathComponent(".ao/data/wake")
@@ -131,11 +137,11 @@ struct WakeAssertions {
         if !requestedIdle && idle != 0 { IOPMAssertionRelease(idle); idle = 0 }
         if requestedIdle && idle == 0 {
             guard IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
-                IOPMAssertionLevel(kIOPMAssertionLevelOn), "Orchestrator Stay Awake" as CFString, &idle) == kIOReturnSuccess else { return false }
+                IOPMAssertionLevel(kIOPMAssertionLevelOn), "\(productName) Stay Awake" as CFString, &idle) == kIOReturnSuccess else { return false }
         }
         if requestedDisplay && display == 0 {
             guard IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
-                IOPMAssertionLevel(kIOPMAssertionLevelOn), "Orchestrator Stay Awake display" as CFString, &display) == kIOReturnSuccess else { return false }
+                IOPMAssertionLevel(kIOPMAssertionLevelOn), "\(productName) Stay Awake display" as CFString, &display) == kIOReturnSuccess else { return false }
         }
         return true
     }
@@ -441,7 +447,7 @@ if CommandLine.arguments == [CommandLine.arguments[0], "probe"] {
                         }
                         break
                     } catch {
-                        detail = "Disable Low Power Mode in other Orchestrator instances and resolve pending power recovery before revoking authorization. An older helper must be upgraded first."
+                        detail = "Disable Low Power Mode in other \(productName) instances and resolve pending power recovery before revoking authorization. An older helper must be upgraded first."
                         usleep(100_000)
                     }
                 } while ProcessInfo.processInfo.systemUptime < until

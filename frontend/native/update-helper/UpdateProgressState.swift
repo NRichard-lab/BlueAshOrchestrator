@@ -1,5 +1,11 @@
 import Foundation
 
+#if BLUE_ASH_AI
+let productName = "Blue Ash AI"
+#else
+let productName = "Orchestrator"
+#endif
+
 struct UpdateRequest: Codable, Equatable {
     let version: String
     let appPath: String
@@ -131,7 +137,7 @@ struct UpdateProgressState {
             return parentAlive ? .closing : .installing
         }
         return .recovery(parentAlive
-            ? "Orchestrator is taking longer than expected to close. The update will continue when Orchestrator has closed."
-            : "Orchestrator has not reopened yet. The installer may still be working. You can keep waiting or download the latest app.")
+            ? "\(productName) is taking longer than expected to close. The update will continue when \(productName) has closed."
+            : "\(productName) has not reopened yet. The installer may still be working. You can keep waiting or download the latest app.")
     }
 }

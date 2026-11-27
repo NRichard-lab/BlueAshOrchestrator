@@ -2,6 +2,7 @@
 // messaging (`ao browser-host`), runs commands for consenting AO sessions in
 // their own tab groups, and serves the popup and options pages.
 
+import { productName } from "./product-name";
 import { chromeApi, type ChromeApi, type Port } from "./chrome-api";
 import { ConsentManager } from "./consent";
 import { Executor, POLICY_KEY } from "./executor";
@@ -98,7 +99,7 @@ export class Bridge {
 			const reason = this.chrome.runtime.lastError?.message;
 			if (reason && !this.lastError) {
 				this.lastError = /not found|specified native messaging host/i.test(reason)
-					? { code: "HOST_NOT_INSTALLED", message: "Orchestrator is not set up for Chrome. Run `ao browser chrome setup`." }
+					? { code: "HOST_NOT_INSTALLED", message: `${productName()} is not set up for Chrome. Run \`ao browser chrome setup\`.` }
 					: { code: "HOST_DISCONNECTED", message: reason };
 			}
 			this.port = undefined;
@@ -223,10 +224,10 @@ export class Bridge {
 		await this.chrome.action.setBadgeBackgroundColor({ color: busy ? "#f97316" : "#6b7280" }).catch(() => undefined);
 		const sessions = [...new Set([...this.inFlight.values()].map((entry) => entry.sessionId))];
 		const title = busy
-			? `Orchestrator agent working: ${sessions.join(", ")}`
+			? `${productName()} agent working: ${sessions.join(", ")}`
 			: this.ready
-				? "Orchestrator Browser Bridge: connected"
-				: "Orchestrator Browser Bridge: not connected to Orchestrator";
+				? `${productName()} Browser Bridge: connected`
+				: `${productName()} Browser Bridge: not connected to ${productName()}`;
 		await this.chrome.action.setTitle({ title }).catch(() => undefined);
 	}
 }
