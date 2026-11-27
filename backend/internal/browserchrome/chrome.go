@@ -1,7 +1,7 @@
 // Package browserchrome connects AO's browser commands to the user's own
 // Google Chrome through the AO Browser Bridge extension.
 //
-// The extension talks to Chrome Native Messaging host "dev.ao.browser_bridge",
+// The extension talks to a Chrome Native Messaging host ("dev.ao.browser_bridge" for Orchestrator),
 // which is the `ao browser-host` subcommand started by Chrome. The host relays
 // frames between the extension and a dedicated daemon socket served by a
 // browserruntime.Broker, so the daemon dispatches commands exactly as it does
@@ -24,11 +24,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
+// HostName is the Chrome Native Messaging host name, from the product profile: Chrome keys the
+// registration (registry value on Windows, manifest file name elsewhere) by it, so each product
+// needs its own or the last one to run setup takes over the other's bridge.
+var HostName = brand.NativeMessagingHost
+
 const (
-	// HostName is the Chrome Native Messaging host name.
-	HostName = "dev.ao.browser_bridge"
 	// Transport names the Chrome runtime in browser status responses.
 	Transport = "chrome-extension"
 	// Client is the hello client name the host reports for the extension.
@@ -95,7 +100,11 @@ func (p Paths) Extension() string { return filepath.Join(p.Root, "extension") }
 
 // HostManifestCopy is the manifest file kept under ~/.ao (Windows registers
 // this path; macOS and Linux keep it for status and repair).
-func (p Paths) HostManifestCopy() string { return filepath.Join(p.Root, HostName+".json") }
+func (p Paths) HostManifestCopy() string { return p.hostManifestCopy(HostName) }
+
+func (p Paths) hostManifestCopy(hostName string) string {
+	return filepath.Join(p.Root, hostName+".json")
+}
 
 // Endpoint tells the host how to reach the daemon's Chrome runtime socket.
 type Endpoint struct {

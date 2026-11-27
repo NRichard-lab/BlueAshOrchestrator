@@ -1,10 +1,25 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { brandProfile } from "./brand-profile.mjs";
 
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+// The Orchestrator values written in native/dictation-helper/Info.plist, replaced with this
+// product's below. CFBundleExecutable is deliberately NOT one of them: it must keep naming the
+// compiled file inside the bundle.
+const SOURCE_APP_ID = "dev.agent-orchestrator.desktop";
+const SOURCE_BRAND_NAME = "Orchestrator";
+
+/** The helper's Info.plist with this product's identifier and the names macOS shows in its prompts. */
+export function dictationHelperPlist(template, brand = brandProfile()) {
+  return template
+    .replace(`<string>${SOURCE_APP_ID}.dictation</string>`, `<string>${brand.appId}.dictation</string>`)
+    .replace(/(<key>CFBundle(?:Display)?Name<\/key>\s*<string>)[^<]*/g, `$1${brand.displayName}`)
+    .replaceAll(`<string>${SOURCE_BRAND_NAME} `, `<string>${brand.displayName} `);
+}
 
 /** Where the built helper's executable lives, inside its app bundle. */
 export const DICTATION_HELPER_EXECUTABLE = path.join("dictation-helper", "Orchestrator.app", "Contents", "MacOS", "Orchestrator");
@@ -23,7 +38,10 @@ export function buildDictationHelper({ arch = process.arch } = {}) {
   mkdirSync(path.join(bundle, "Contents", "MacOS"), { recursive: true });
   mkdirSync(path.join(bundle, "Contents", "Resources"), { recursive: true });
   mkdirSync(cache, { recursive: true });
-  copyFileSync(path.join(source, "Info.plist"), path.join(bundle, "Contents", "Info.plist"));
+  // A nested bundle of THIS product: it carries this product's identifier, and macOS names this
+  // product in its microphone and speech prompts.
+  const plistPath = path.join(bundle, "Contents", "Info.plist");
+  writeFileSync(plistPath, dictationHelperPlist(readFileSync(path.join(source, "Info.plist"), "utf8")));
   copyFileSync(path.join(frontend, "assets", "icon.icns"), path.join(bundle, "Contents", "Resources", "icon.icns"));
   const compile = spawnSync("xcrun", [
     "swiftc", "-target", `${cpu}-apple-macosx11.0`, "-O", path.join(source, "main.swift"),

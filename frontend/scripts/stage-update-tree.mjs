@@ -28,6 +28,9 @@ const BOOTSTRAP_ASSETS = [
 	"agent-orchestrator-win32-x64.exe",
 	"BlueAshAI-win32-x64.exe",
 	"agent-orchestrator-linux-x64.AppImage",
+	"BlueAshAI-darwin-arm64.zip",
+	"BlueAshAI-darwin-x64.zip",
+	"BlueAshAI-linux-x64.AppImage",
 ];
 
 export function channelLayout(channel, pr) {

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import manifest from "./manifest.json";
+import { BLUEASHAI_BRAND, LEGACY_BRAND } from "../shared/brand";
 import { HOST_NAME } from "./protocol";
 
 // Must equal backend/internal/browserchrome.ExtensionID: the native host
@@ -17,7 +18,10 @@ function extensionId(key: string): string {
 describe("extension manifest", () => {
 	it("pins the extension ID the AO native host allows", () => {
 		expect(extensionId(manifest.key)).toBe(EXTENSION_ID);
+		// The unit-test build is the legacy profile; a BlueAshAI build connects to its own host.
+		expect(HOST_NAME).toBe(LEGACY_BRAND.nativeMessagingHost);
 		expect(HOST_NAME).toBe("dev.ao.browser_bridge");
+		expect(BLUEASHAI_BRAND.nativeMessagingHost).not.toBe(HOST_NAME);
 	});
 
 	it("shows Orchestrator's logo in Chrome", () => {

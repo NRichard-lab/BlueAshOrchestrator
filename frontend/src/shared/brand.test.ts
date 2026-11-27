@@ -21,6 +21,7 @@ describe("product profiles", () => {
 		for (const key of [
 			"displayName", "executableName", "packagerName", "appId", "appUserModelId", "installerArtifactName",
 			"windowsAssetName", "windowsInstallDirName", "updaterCacheDirName", "stateDirName", "defaultPort", "protocolScheme",
+			"nativeMessagingHost",
 		] as const) {
 			expect(b[key], key).not.toBe(l[key]);
 		}
@@ -38,6 +39,11 @@ describe("product profiles", () => {
 		expect(b.installerArtifactName).toBe("BlueAshAI Setup ${version}.${ext}");
 		expect(b.windowsAssetName).toBe("BlueAshAI-win32-x64.exe");
 		expect(b.windowsInstallDirName).toBe("BlueAshAI");
+		expect(b.appId).toBe("ai.blueash.desktop");
+		expect(b.packagerName).toBe("BlueAshAI");
+		// Chrome accepts only lowercase letters, digits, underscore and dot in a host name.
+		expect(b.nativeMessagingHost).toMatch(/^[a-z0-9_]+(\.[a-z0-9_]+)*$/);
+		expect(b.nativeMessagingHost).toBe("ai.blueash.browser_bridge");
 	});
 
 	it("a BlueAshAI default run file yields Windows pipes distinct from the installed Orchestrator's", () => {
@@ -70,12 +76,15 @@ describe("product profiles", () => {
 
 	it("the Go ldflags stamped by build-daemon.mjs name the same values (single JSON source)", () => {
 		const script = readFileSync(path.join(__dirname, "..", "..", "scripts", "build-daemon.mjs"), "utf8");
-		for (const field of ["StateDirName", "Port", "WindowsAssetName", "WindowsInstallDirName", "WindowsExeName", "UpdatesEnabled", "RemoteTelemetryEnabled", "PricingCatalogSyncEnabled"]) {
+		for (const field of ["StateDirName", "Port", "WindowsAssetName", "WindowsInstallDirName", "WindowsExeName", "UpdatesEnabled", "RemoteTelemetryEnabled", "PricingCatalogSyncEnabled",
+			// The macOS/Linux names `ao start` resolves and the Chrome host name it registers.
+			"ExecutableName", "MacAppName", "ProtocolScheme", "NativeMessagingHost"]) {
 			expect(script).toContain(`internal/brand`);
 			expect(script).toContain(`.${field}=`);
 		}
 		expect(script).toContain("brands.json");
 		const json = JSON.parse(readFileSync(path.join(__dirname, "brands.json"), "utf8"));
 		expect(json.blueashai.stateDirName).toBe(BLUEASHAI_BRAND.stateDirName);
+		expect(json.blueashai.nativeMessagingHost).toBe(BLUEASHAI_BRAND.nativeMessagingHost);
 	});
 });

@@ -2,8 +2,12 @@
 // (Chrome native messaging). Commands and results mirror the daemon's browser
 // runtime protocol, so the extension returns the same result shapes as AO's
 // Browser panel and `ao browser` renders them unchanged.
+import { NATIVE_MESSAGING_HOST } from "../shared/brand";
 
-export const HOST_NAME = "dev.ao.browser_bridge";
+// The host name is per product (see shared/brand.ts): the extension connects to the bridge of the
+// product that shipped it, never to an installed Orchestrator's. The extension build compiles the
+// profile in the same way the app does (scripts/build-browser-extension.mjs).
+export const HOST_NAME = NATIVE_MESSAGING_HOST;
 export const HOST_PROTOCOL = 1;
 
 export type CommandFrame = {

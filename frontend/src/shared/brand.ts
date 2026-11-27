@@ -46,6 +46,13 @@ export type Brand = {
 	/** URL scheme this app registers and handles (never another product's). */
 	protocolScheme: string;
 	/**
+	 * Chrome Native Messaging host name for Chrome mode. Chrome keys the registration by it (an HKCU
+	 * value on Windows, a manifest file name elsewhere), so each product needs its own: sharing one
+	 * means whichever product ran `ao browser chrome setup` last owns the other's bridge too.
+	 * Must match brand.NativeMessagingHost in the Go daemon.
+	 */
+	nativeMessagingHost: string;
+	/**
 	 * Prefix of the instance variables (INSTANCE_ENV): "AO" keeps the legacy AO_* names, BlueAshAI uses
 	 * "BLUEASH" so its daemon coordinates never share a name with an installed Orchestrator's.
 	 */
@@ -139,6 +146,9 @@ export function scrubForeignInstanceEnv(env: Record<string, string | undefined>,
 	}
 	return removed;
 }
+
+/** This build's Chrome Native Messaging host name (see Brand.nativeMessagingHost). */
+export const NATIVE_MESSAGING_HOST: string = BRAND.nativeMessagingHost;
 
 /** Visible name for a product id reported by a daemon (running.json / health payload). */
 export function productName(product: string): string {

@@ -5,10 +5,13 @@ import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "no
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
+import { brandDefine, brandProfile } from "./brand-profile.mjs";
 
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = path.join(frontend, "src", "browser-extension");
 export const outDir = path.join(frontend, "browser-extension");
+// The product name written into the manifest.json source copy, replaced with this build's.
+export const SOURCE_BRAND_NAME = "Orchestrator";
 
 // Each script is a self-contained classic script: the service worker,
 // the on-demand content script, and the three extension pages.
@@ -27,6 +30,9 @@ export async function buildBrowserExtension() {
 		await build({
 			configFile: false,
 			logLevel: "warn",
+			// The extension talks to its own product's native host, so it needs the same
+			// compile-time product profile as the app (src/shared/brand.ts).
+			define: brandDefine(),
 			publicDir: false,
 			build: {
 				outDir,
@@ -45,6 +51,12 @@ export async function buildBrowserExtension() {
 		copyFileSync(path.join(source, "icons", `icon-${size}.png`), path.join(outDir, `icon-${size}.png`));
 	}
 	const manifest = JSON.parse(readFileSync(path.join(source, "manifest.json"), "utf8"));
+	// The name Chrome shows follows the product that ships the extension.
+	const displayName = brandProfile().displayName;
+	for (const key of ["name", "description"]) {
+		manifest[key] = manifest[key].replaceAll(SOURCE_BRAND_NAME, displayName);
+	}
+	manifest.action.default_title = manifest.name;
 	writeFileSync(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 	return outDir;
 }

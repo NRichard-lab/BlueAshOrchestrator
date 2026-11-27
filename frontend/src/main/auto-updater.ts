@@ -14,7 +14,7 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import semver from "semver";
-import { AO_BUNDLE_ID } from "./stale-app-copies";
+import { APP_BUNDLE_ID } from "./stale-app-copies";
 import type { RequestOptions } from "node:http";
 import {
   readUpdateSettings,
@@ -291,7 +291,7 @@ function preparationNow(): number {
 function macShipItDir(): string | undefined {
   if (process.platform !== "darwin") return undefined;
   try {
-    const dir = path.join(os.homedir(), "Library", "Caches", `${AO_BUNDLE_ID}.ShipIt`);
+    const dir = path.join(os.homedir(), "Library", "Caches", `${APP_BUNDLE_ID}.ShipIt`);
     return existsSync(dir) ? dir : undefined;
   } catch { return undefined; }
 }

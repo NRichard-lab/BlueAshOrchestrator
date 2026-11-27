@@ -29,6 +29,16 @@ var (
 	WindowsInstallDirName = "Agent Orchestrator"
 	// WindowsExeName is the installed app executable inside that folder.
 	WindowsExeName = "agent-orchestrator.exe"
+	// ExecutableName is the packaged app binary without an extension. The macOS and Linux release
+	// asset names, the Linux AppImage file and its desktop entry are derived from it.
+	ExecutableName = "agent-orchestrator"
+	// MacAppName is the macOS bundle name without ".app" (the packager name in brands.json).
+	MacAppName = "Agent Orchestrator"
+	// ProtocolScheme is the URL scheme the desktop app registers and handles.
+	ProtocolScheme = "ao-app"
+	// NativeMessagingHost is the Chrome Native Messaging host name Chrome mode registers. Chrome
+	// keys the registration by this name, so two products sharing it overwrite each other's.
+	NativeMessagingHost = LegacyNativeMessagingHost
 
 	// UpdatesEnabled, RemoteTelemetryEnabled and PricingCatalogSyncEnabled are compile-time feature
 	// switches stamped by ldflags from brands.json. They are strings because -X only sets strings; only
@@ -87,8 +97,12 @@ var (
 
 const (
 	// LegacyID is the product id of the upstream Orchestrator profile.
-	LegacyID        = "legacy"
-	legacyEnvPrefix = "AO"
+	LegacyID = "legacy"
+	// LegacyNativeMessagingHost is the Orchestrator host name. BlueAshAI builds up to
+	// 0.15.4-blueash.4 registered under it too, so a build with its own name retires a registration
+	// of this one that points into its own data directory (see browserchrome).
+	LegacyNativeMessagingHost = "dev.ao.browser_bridge"
+	legacyEnvPrefix           = "AO"
 )
 
 // instanceEnv is the closed set of instance variables, by their legacy AO_ name.

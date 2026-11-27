@@ -94,7 +94,7 @@ func testInstaller(t *testing.T) (Installer, string, string) {
 	if err := os.WriteFile(executable, []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return Installer{
+	installer := Installer{
 		Paths:           NewPaths(filepath.Join(root, "data")),
 		Executable:      executable,
 		ExtensionSource: source,
@@ -102,7 +102,14 @@ func testInstaller(t *testing.T) (Installer, string, string) {
 			{Name: "Google Chrome", UserDataDir: chromeDir},
 			{Name: "Google Chrome Beta", UserDataDir: filepath.Join(root, "Chrome Beta")},
 		},
-	}, chromeDir, root
+	}
+	// On platforms where Chrome reads native hosts from a registry (Windows), the real one holds
+	// the registration of whatever Chrome mode the person running the tests has enabled. Never
+	// write there from a test: give the fixture its own registry instead.
+	if platformRegistry() != nil {
+		installer.registry = &fakeRegistry{values: map[string]string{}}
+	}
+	return installer, chromeDir, root
 }
 
 func TestSetupRegistersInstalledChannelsOnly(t *testing.T) {

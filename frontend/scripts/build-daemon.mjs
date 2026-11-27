@@ -69,6 +69,11 @@ if (process.env.AO_BRAND === "blueashai") {
 	ldflags.push(`-X ${brandPackage}.WindowsAssetName=${b.windowsAssetName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsInstallDirName=${b.windowsInstallDirName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsExeName=${b.executableName}.exe`);
+	// macOS/Linux names `ao start` resolves, downloads and registers, and the Chrome host name.
+	ldflags.push(`-X ${brandPackage}.ExecutableName=${b.executableName}`);
+	ldflags.push(`-X ${brandPackage}.MacAppName=${b.packagerName}`);
+	ldflags.push(`-X ${brandPackage}.ProtocolScheme=${b.protocolScheme}`);
+	ldflags.push(`-X ${brandPackage}.NativeMessagingHost=${b.nativeMessagingHost}`);
 	// Product identity (running.json / health payload) and the instance-variable prefix, so the
 	// daemon and CLI read and export BLUEASH_RUN_FILE and friends instead of Orchestrator's AO_* names.
 	ldflags.push(`-X ${brandPackage}.ID=${b.id}`);

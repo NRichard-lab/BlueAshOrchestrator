@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { lstat } from "node:fs/promises";
 import {
-	AO_BUNDLE_ID,
+	APP_BUNDLE_ID,
 	findStaleAppCopies,
 	isUnchangedStaleAppCopy,
 	readBundleMetadata,
@@ -38,12 +38,12 @@ describe("readBundleMetadata", () => {
 		await mkdir(path.join(bundle, "Contents"), { recursive: true });
 		await writeFile(path.join(bundle, "Contents", "Info.plist"), `<?xml version="1.0"?>
 <plist><dict>
-<key>CFBundleIdentifier</key><string>${AO_BUNDLE_ID}</string>
+<key>CFBundleIdentifier</key><string>${APP_BUNDLE_ID}</string>
 <key>CFBundleShortVersionString</key><string>0.10.3</string>
 </dict></plist>`);
 
 		await expect(readBundleMetadata(bundle)).resolves.toEqual({
-			bundleId: AO_BUNDLE_ID,
+			bundleId: APP_BUNDLE_ID,
 			version: "0.10.3",
 		});
 	});
@@ -108,8 +108,8 @@ describe("findStaleAppCopies", () => {
 				[DESKTOP_COPY]: { device: 1, inode: 11 },
 			},
 			metadata: {
-				[DOWNLOADS_COPY]: { bundleId: AO_BUNDLE_ID, version: "0.10.3" },
-				[DESKTOP_COPY]: { bundleId: AO_BUNDLE_ID, version: "0.12.0" },
+				[DOWNLOADS_COPY]: { bundleId: APP_BUNDLE_ID, version: "0.10.3" },
+				[DESKTOP_COPY]: { bundleId: APP_BUNDLE_ID, version: "0.12.0" },
 			},
 		});
 
@@ -125,11 +125,11 @@ describe("findStaleAppCopies", () => {
 
 	it.each([
 		["another app", ORIGINAL_IDENTITY, { bundleId: "com.example.other", version: "0.10.3" }],
-		["an unreadable version", ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: null }],
-		["an invalid version", ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: "broken" }],
-		["the same version", ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: RUNNING_VERSION }],
-		["a newer version", ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: "0.14.0" }],
-		["a symlink or regular file", null, { bundleId: AO_BUNDLE_ID, version: "0.10.3" }],
+		["an unreadable version", ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: null }],
+		["an invalid version", ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: "broken" }],
+		["the same version", ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: RUNNING_VERSION }],
+		["a newer version", ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: "0.14.0" }],
+		["a symlink or regular file", null, { bundleId: APP_BUNDLE_ID, version: "0.10.3" }],
 	] as const)("leaves %s untouched", async (_label, identity, metadata) => {
 		const deps = dependencies({
 			identities: { [DOWNLOADS_COPY]: identity },
@@ -171,7 +171,7 @@ describe("isUnchangedStaleAppCopy", () => {
 			stale,
 			STAGED_PATH,
 			RUNNING_VERSION,
-			dependencies(ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: " v0.10.3 " }),
+			dependencies(ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: " v0.10.3 " }),
 		)).resolves.toBe(true);
 	});
 
@@ -180,7 +180,7 @@ describe("isUnchangedStaleAppCopy", () => {
 			stale,
 			STAGED_PATH,
 			RUNNING_VERSION,
-			dependencies(ORIGINAL_IDENTITY, { bundleId: AO_BUNDLE_ID, version: "0.11.0" }),
+			dependencies(ORIGINAL_IDENTITY, { bundleId: APP_BUNDLE_ID, version: "0.11.0" }),
 		)).resolves.toBe(false);
 	});
 
@@ -188,7 +188,7 @@ describe("isUnchangedStaleAppCopy", () => {
 		const fileIdentity = vi.fn(async () => ORIGINAL_IDENTITY);
 		await isUnchangedStaleAppCopy(stale, STAGED_PATH, RUNNING_VERSION, {
 			fileIdentity,
-			readMetadata: async () => ({ bundleId: AO_BUNDLE_ID, version: "0.10.3" }),
+			readMetadata: async () => ({ bundleId: APP_BUNDLE_ID, version: "0.10.3" }),
 		});
 		expect(fileIdentity).toHaveBeenCalledWith(STAGED_PATH);
 	});
@@ -313,7 +313,7 @@ describe("retireStaleAppCopies", () => {
 		let identity = ORIGINAL_IDENTITY;
 		const dependencies = {
 			fileIdentity: async () => identity,
-			readMetadata: async () => ({ bundleId: AO_BUNDLE_ID, version: "0.10.3" }),
+			readMetadata: async () => ({ bundleId: APP_BUNDLE_ID, version: "0.10.3" }),
 		};
 		const restore = vi.fn(async () => undefined);
 		const trashItem = vi.fn(async () => undefined);

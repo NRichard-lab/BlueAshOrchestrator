@@ -43,7 +43,7 @@ const PRODUCT = resolveBrand(process.env.AO_BRAND);
 const EXECUTABLE_NAME = TEST_IDENTITY?.executableName ?? PRODUCT.executableName;
 export const WINDOWS_DISPLAY_NAME = "Orchestrator.inc";
 const AUTH_PROTOCOL = {
-	name: "Orchestrator authentication callback",
+	name: `${PRODUCT.displayName} authentication callback`,
 	schemes: [PRODUCT.protocolScheme],
 };
 const AUTH_PROTOCOL_MIME_TYPE = `x-scheme-handler/${PRODUCT.protocolScheme}`;
@@ -230,8 +230,8 @@ const config: ForgeConfig = {
 			// helper's own usage strings and its disclaim. Without the speech key
 			// it kills the helper. The microphone string also covers terminals and
 			// agents, which macOS attributes to this app.
-			NSSpeechRecognitionUsageDescription: "Orchestrator turns your speech into message text.",
-			NSMicrophoneUsageDescription: "Orchestrator uses the microphone for dictation and for tools you run in it.",
+			NSSpeechRecognitionUsageDescription: `${PRODUCT.displayName} turns your speech into message text.`,
+			NSMicrophoneUsageDescription: `${PRODUCT.displayName} uses the microphone for dictation and for tools you run in it.`,
 		},
 		protocols: [AUTH_PROTOCOL],
 		appCategoryType: "public.app-category.developer-tools",
@@ -446,8 +446,8 @@ const config: ForgeConfig = {
 		// break the signature seal on the way in (see makers/maker-dmg.ts, #3267).
 		new MakerDMG(
 			{
-				appId: "dev.agent-orchestrator.desktop",
-				productName: "Agent Orchestrator",
+				appId: TEST_IDENTITY?.appId ?? PRODUCT.appId,
+				productName: PACKAGER_NAME,
 			},
 			["darwin"],
 		),
@@ -457,9 +457,9 @@ const config: ForgeConfig = {
 		// prefer a system package.
 		new MakerAppImage(
 			{
-				appId: "dev.agent-orchestrator.desktop",
-				productName: "Orchestrator",
-				appImage: { artifactName: "Agent Orchestrator-${version}.${ext}" },
+				appId: TEST_IDENTITY?.appId ?? PRODUCT.appId,
+				productName: PRODUCT.displayName,
+				appImage: { artifactName: `${PACKAGER_NAME}-\${version}.\${ext}` },
 				icon: "assets/icon.png",
 				protocols: [AUTH_PROTOCOL],
 			},

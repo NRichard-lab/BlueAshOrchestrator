@@ -48,6 +48,10 @@ existing tests and builds are unchanged):
 | --- | --- | --- |
 | Visible name / exe / installer | Orchestrator.inc / `agent-orchestrator.exe` / `Agent Orchestrator Setup <v>.exe` | BlueAshAI / `BlueAshAI.exe` / `BlueAshAI Setup <v>.exe` |
 | Windows asset alias (`ao start`, conductor) | `agent-orchestrator-win32-x64.exe` | `BlueAshAI-win32-x64.exe` |
+| macOS/Linux asset aliases (`ao start`) | `agent-orchestrator-darwin-<arch>.zip`, `agent-orchestrator-linux-x64.AppImage` | `BlueAshAI-darwin-<arch>.zip`, `BlueAshAI-linux-x64.AppImage` |
+| macOS bundle, Linux AppImage and desktop entry | `Agent Orchestrator.app`, `agent-orchestrator.AppImage`, `agent-orchestrator-ao-app.desktop` | `BlueAshAI.app`, `BlueAshAI.AppImage`, `BlueAshAI-blueashai.desktop` |
+| macOS bundle identifier (app, dictation helper, repair installer) | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |
+| Chrome Native Messaging host | `dev.ao.browser_bridge` | `ai.blueash.browser_bridge` |
 | NSIS appId (install key GUID) | `dev.agent-orchestrator.desktop` (`d06535a3-…`) | `ai.blueash.desktop` (`7ebb2fd8-9d4d-5b06-b9b3-8cce0c92e0db`) |
 | AppUserModelID | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |
 | Per-user state dir (run file, daemon data, sign-in) | `~/.ao` | `~/.blueashai` |

@@ -169,6 +169,11 @@ jobs:
         run: npm ci
         working-directory: packages/product-ui
 
+      # The packaging identity the bare-node build scripts stamp (macOS bundle and identifier,
+      # Chrome native messaging host). Platform-independent, unlike the mac-native lane above.
+      - name: Test product packaging identity
+        run: node --test scripts/brand-packaging.node-test.mjs
+
       - name: Typecheck project
         run: npm run typecheck
 

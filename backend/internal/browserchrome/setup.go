@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // Browser is one Chrome channel AO can register its native host with.
@@ -22,8 +24,10 @@ type Browser struct {
 }
 
 // ManifestPath is where this channel looks for AO's host manifest.
-func (b Browser) ManifestPath() string {
-	return filepath.Join(b.UserDataDir, "NativeMessagingHosts", HostName+".json")
+func (b Browser) ManifestPath() string { return b.manifestPath(HostName) }
+
+func (b Browser) manifestPath(hostName string) string {
+	return filepath.Join(b.UserDataDir, "NativeMessagingHosts", hostName+".json")
 }
 
 // Installer writes and removes Chrome-mode registration.
@@ -149,17 +153,60 @@ func (i Installer) Setup() (Status, error) {
 
 // Refresh re-points an existing registration at the current executable and
 // extension bundle. It does nothing when Chrome mode is not enabled.
+//
+// A build whose host name differs from the one earlier builds of the same product used first
+// retires that old registration and, if there was one, registers under the current name: Chrome
+// mode stays enabled across the upgrade instead of silently turning off, and the old name is
+// handed back to the product it belongs to.
 func (i Installer) Refresh() error {
-	if !i.Status().Enabled {
-		return nil
+	retired, retireErr := i.retireLegacyRegistration()
+	if !retired && !i.Status().Enabled {
+		return retireErr
 	}
 	_, err := i.Setup()
-	return err
+	return errors.Join(retireErr, err)
+}
+
+// retireLegacyRegistration removes a registration under brand.LegacyNativeMessagingHost that this
+// data directory wrote, and reports whether there was one. It never touches a registration that
+// points anywhere else: that one belongs to an installed Orchestrator. A no-op for Orchestrator
+// itself, whose current name is the legacy name.
+func (i Installer) retireLegacyRegistration() (bool, error) {
+	legacy := brand.LegacyNativeMessagingHost
+	if HostName == legacy {
+		return false, nil
+	}
+	var errs []error
+	retired := false
+	legacyCopy := i.Paths.hostManifestCopy(legacy)
+	if reg := i.reg(); reg != nil {
+		if path, err := reg.Lookup(legacy); err == nil && path != "" && samePath(path, legacyCopy) {
+			retired = true
+			errs = append(errs, reg.Unregister(legacy))
+		}
+	}
+	for _, browser := range i.browsers() {
+		path := browser.manifestPath(legacy)
+		if !i.ownsManifestNamed(path, legacy) {
+			continue
+		}
+		retired = true
+		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			errs = append(errs, err)
+		}
+	}
+	if err := os.Remove(legacyCopy); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		errs = append(errs, err)
+	}
+	return retired, errors.Join(errs...)
 }
 
 // Remove unregisters the host and deletes AO's Chrome-mode files.
 func (i Installer) Remove() (Status, error) {
 	var errs []error
+	if _, err := i.retireLegacyRegistration(); err != nil {
+		errs = append(errs, err)
+	}
 	// Only unregister a registration that points at this data directory's
 	// manifest: the Windows name is shared by every AO install.
 	if reg := i.reg(); reg != nil && i.ownsRegistration(reg) {
@@ -228,19 +275,24 @@ func (i Installer) ownsRegistration(reg hostRegistry) bool {
 	if err != nil || path == "" {
 		return false
 	}
-	want := i.Paths.HostManifestCopy()
+	return samePath(path, i.Paths.HostManifestCopy())
+}
+
+func samePath(path, want string) bool {
 	return sameFile(path, want) || strings.EqualFold(filepath.Clean(path), filepath.Clean(want))
 }
 
 // ownsManifest reports whether path is AO's manifest pointing at this data
 // directory's host, so Remove never deletes a manifest it did not write.
-func (i Installer) ownsManifest(path string) bool {
+func (i Installer) ownsManifest(path string) bool { return i.ownsManifestNamed(path, HostName) }
+
+func (i Installer) ownsManifestNamed(path, hostName string) bool {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false
 	}
 	var manifest hostManifest
-	if json.Unmarshal(data, &manifest) != nil || manifest.Name != HostName {
+	if json.Unmarshal(data, &manifest) != nil || manifest.Name != hostName {
 		return false
 	}
 	return filepath.Clean(manifest.Path) == filepath.Clean(i.HostPath())
@@ -249,7 +301,7 @@ func (i Installer) ownsManifest(path string) bool {
 func (i Installer) manifestJSON() ([]byte, error) {
 	data, err := json.MarshalIndent(hostManifest{
 		Name:           HostName,
-		Description:    "Agent Orchestrator browser bridge",
+		Description:    brand.MacAppName + " browser bridge",
 		Path:           i.HostPath(),
 		Type:           "stdio",
 		AllowedOrigins: []string{AllowedOrigin()},
@@ -286,7 +338,7 @@ func (i Installer) wrapperScript() string {
 	if runtime.GOOS == "windows" {
 		return "@echo off\r\n\"" + i.Executable + "\" browser-host --endpoint \"" + i.Paths.Endpoint() + "\" %*\r\n"
 	}
-	return "#!/bin/sh\n# Agent Orchestrator: Chrome native messaging host for the Orchestrator Browser Bridge.\nexec " +
+	return "#!/bin/sh\n# " + brand.MacAppName + ": Chrome native messaging host for the " + brand.DisplayName + " Browser Bridge.\nexec " +
 		quoteShell(i.Executable) + " browser-host --endpoint " + quoteShell(i.Paths.Endpoint()) + " \"$@\"\n"
 }
 
