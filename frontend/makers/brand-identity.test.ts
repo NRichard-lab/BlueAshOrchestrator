@@ -40,6 +40,16 @@ describe("macOS and Linux packaging identity", () => {
 		expect(live).not.toMatch(/name="agent-orchestrator-/);
 	});
 
+	it("the self-hosted installer downloads this product's bootstrap assets", () => {
+		// A standalone script (no repo, no node), so it writes the names out; they must still match.
+		const script = read("../scripts/setup-self-hosted.sh");
+		const exe = BLUEASHAI_BRAND.executableName;
+		for (const asset of [`${exe}-darwin-arm64.zip`, `${exe}-darwin-x64.zip`, `${exe}-linux-x64.AppImage`]) {
+			expect(script, asset).toContain(`asset='${asset}'`);
+		}
+		expect(script).not.toMatch(/asset='agent-orchestrator-/);
+	});
+
 	// The bare-node build scripts (a "#!" line and no type declarations) are asserted in
 	// scripts/brand-packaging.node-test.mjs and build-mac-repair-installer.node-test.mjs. Here:
 	// that each one reads the profile rather than a literal.
