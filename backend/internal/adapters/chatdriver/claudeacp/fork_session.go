@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
@@ -244,7 +245,7 @@ func jsonStringBody(s string) []byte {
 
 // runForkScript runs fork_session.mjs with the bundled Node and Agent SDK.
 var runForkScript = func(ctx context.Context, env []string, sourceID, dir, upTo string) (string, error) {
-	runtimeDir := strings.TrimSpace(os.Getenv("AO_ACP_RUNTIME_DIR"))
+	runtimeDir := strings.TrimSpace(os.Getenv(brand.Env("AO_ACP_RUNTIME_DIR")))
 	if runtimeDir == "" {
 		runtimeDir = runtimeDirectoryBesideExecutable()
 	}

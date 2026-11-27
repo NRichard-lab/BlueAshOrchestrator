@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 const aoBinaryName = "ao"
@@ -23,7 +25,7 @@ func MergeEnv(project, child map[string]string) map[string]string {
 	env := make(map[string]string, len(project)+len(child))
 	for i, source := range []map[string]string{project, child} {
 		for key, value := range source {
-			if i == 0 && strings.HasPrefix(strings.ToUpper(key), "AO_") {
+			if i == 0 && brand.ReservedEnvName(key) {
 				continue
 			}
 			if runtime.GOOS == "windows" {

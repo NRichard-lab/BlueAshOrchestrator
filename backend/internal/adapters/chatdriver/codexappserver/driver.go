@@ -18,6 +18,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/persistenthost"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/processenv"
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -822,7 +823,7 @@ func codexProcessEnv(ctx context.Context, bin string, env map[string]string) []s
 	if _, ok := overlay["PATH"]; !ok {
 		overlay["PATH"] = os.Getenv("PATH")
 	}
-	agentlaunch.AugmentRuntimePATHForLaunchBinary(ctx, overlay, []string{bin}, exec.LookPath, agentlaunch.PinnedDir(agentlaunch.Executable, overlay["AO_DATA_DIR"]))
+	agentlaunch.AugmentRuntimePATHForLaunchBinary(ctx, overlay, []string{bin}, exec.LookPath, agentlaunch.PinnedDir(agentlaunch.Executable, overlay[brand.Env("AO_DATA_DIR")]))
 	return envSlice(overlay)
 }
 

@@ -19,7 +19,16 @@ import (
 
 // appBundleName is the macOS bundle directory name produced by electron-forge
 // (spaced, per frontend/forge.config.ts).
-const appBundleName = "Agent Orchestrator.app"
+//
+// These names come from the product profile so two products never resolve, download or register
+// each other's app; they are variables only because the profile is stamped at link time.
+var appBundleName = brand.MacAppName + ".app"
+
+// linuxAppImageName is the file name `ao start` installs the AppImage under.
+var linuxAppImageName = brand.ExecutableName + ".AppImage"
+
+// protocolMimeType is the freedesktop MIME type of the app's URL scheme.
+var protocolMimeType = "x-scheme-handler/" + brand.ProtocolScheme
 
 // appStateFileName is the marker the desktop app writes under ~/.ao on every
 // launch (spec §5). `ao start` is a read-only consumer of it.
@@ -214,7 +223,7 @@ func knownAppLocations() []string {
 	case "linux":
 		paths := []string{linuxAppImagePath()}
 		if home, err := os.UserHomeDir(); err == nil {
-			paths = append(paths, filepath.Join(home, "Applications", "agent-orchestrator.AppImage"))
+			paths = append(paths, filepath.Join(home, "Applications", linuxAppImageName))
 		}
 		return paths
 	default:
@@ -236,12 +245,12 @@ func linuxAppImagePath() string {
 	if err != nil {
 		// Fall back to a bare filename so a misconfigured state dir surfaces as a
 		// clear "not found" rather than a panic; fetch will re-error on download.
-		return "agent-orchestrator.AppImage"
+		return linuxAppImageName
 	}
-	return filepath.Join(dir, "agent-orchestrator.AppImage")
+	return filepath.Join(dir, linuxAppImageName)
 }
 
-const linuxDesktopEntryName = "agent-orchestrator-ao-app.desktop"
+var linuxDesktopEntryName = brand.ExecutableName + "-" + brand.ProtocolScheme + ".desktop"
 
 func linuxApplicationsDir() (string, error) {
 	// A URL-scheme handler is OS integration metadata, not AO runtime state.
@@ -281,12 +290,12 @@ func (c *commandContext) registerLinuxProtocolHandler(
 	}
 	entry := fmt.Sprintf(`[Desktop Entry]
 Type=Application
-Name=Orchestrator
+Name=%s
 Exec=%s %%u
 Terminal=false
 NoDisplay=true
-MimeType=x-scheme-handler/ao-app;
-`, desktopExecPath(appPath))
+MimeType=%s;
+`, brand.DisplayName, desktopExecPath(appPath), protocolMimeType)
 	target := filepath.Join(applicationsDir, linuxDesktopEntryName)
 	temporary := target + ".tmp"
 	if err := os.WriteFile(temporary, []byte(entry), 0o600); err != nil {
@@ -305,10 +314,11 @@ MimeType=x-scheme-handler/ao-app;
 		"xdg-mime",
 		"default",
 		linuxDesktopEntryName,
-		"x-scheme-handler/ao-app",
+		protocolMimeType,
 	); err != nil {
 		return fmt.Errorf(
-			"register ao-app URL handler with xdg-mime (install xdg-utils or use the .deb/.rpm package): %w: %s",
+			"register %s URL handler with xdg-mime (install xdg-utils or use the .deb/.rpm package): %w: %s",
+			brand.ProtocolScheme,
 			err,
 			out,
 		)
@@ -318,14 +328,15 @@ MimeType=x-scheme-handler/ao-app;
 		"xdg-mime",
 		"query",
 		"default",
-		"x-scheme-handler/ao-app",
+		protocolMimeType,
 	)
 	if err != nil {
-		return fmt.Errorf("verify ao-app URL handler: %w: %s", err, out)
+		return fmt.Errorf("verify %s URL handler: %w: %s", brand.ProtocolScheme, err, out)
 	}
 	if strings.TrimSpace(string(out)) != linuxDesktopEntryName {
 		return fmt.Errorf(
-			"verify ao-app URL handler: xdg-mime selected %q instead of %q",
+			"verify %s URL handler: xdg-mime selected %q instead of %q",
+			brand.ProtocolScheme,
 			strings.TrimSpace(string(out)),
 			linuxDesktopEntryName,
 		)
@@ -634,6 +645,7 @@ func humanBytes(n int64) string {
 
 // assetName maps the current GOOS/GOARCH to the stable release asset name the
 // release pipeline publishes (spec §6.3, §8). The pipeline uses "x64" for amd64.
+// Shown for Orchestrator; another product's names start with its own executable name.
 //   - darwin: agent-orchestrator-darwin-{arm64,x64}.zip (signed bundle zip)
 //   - windows: agent-orchestrator-win32-x64.exe (NSIS installer, amd64 only)
 //   - linux: agent-orchestrator-linux-x64.AppImage (self-contained, amd64 only)
@@ -644,7 +656,7 @@ func assetName() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("agent-orchestrator-darwin-%s.zip", arch), nil
+		return fmt.Sprintf("%s-darwin-%s.zip", brand.ExecutableName, arch), nil
 	case "windows":
 		if _, err := requireAMD64(); err != nil {
 			return "", err
@@ -654,7 +666,7 @@ func assetName() (string, error) {
 		if _, err := requireAMD64(); err != nil {
 			return "", err
 		}
-		return "agent-orchestrator-linux-x64.AppImage", nil
+		return brand.ExecutableName + "-linux-x64.AppImage", nil
 	default:
 		return "", fmt.Errorf("ao start: no release asset for %s", runtime.GOOS)
 	}

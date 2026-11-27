@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/daemonmeta"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
 )
@@ -89,6 +91,30 @@ func TestRunFileOwnerServing(t *testing.T) {
 				t.Errorf("runFileOwnerServing = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+// The serving daemon's own product id wins over the file's, so the startup refusal can name a
+// daemon from another product instead of calling it "already running".
+func TestRunFileOwnerServingReportsTheServingProduct(t *testing.T) {
+	const pid = 4242
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"status":"ok","service":%q,"pid":%d,"product":"blueashai"}`, daemonmeta.ServiceName, pid)
+	}))
+	defer srv.Close()
+	host, port := hostPort(t, srv.URL)
+
+	info := &runfile.Info{PID: pid, Port: port}
+	if !runFileOwnerServing(&http.Client{Timeout: time.Second}, host, info) {
+		t.Fatal("a daemon answering with the recorded pid is serving")
+	}
+	if info.Product != "blueashai" {
+		t.Fatalf("product = %q, want the id the daemon reported", info.Product)
+	}
+	err := brand.ForeignDaemonError(info.Product, "running.json")
+	if err == nil || !strings.Contains(err.Error(), "belongs to BlueAshAI") {
+		t.Fatalf("a legacy build must refuse to start beside it with a clear reason, got %v", err)
 	}
 }
 

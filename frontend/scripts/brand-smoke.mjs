@@ -216,6 +216,9 @@ async function main() {
 			noPinFile: !existsSync(join(instDir, "ao-instance.json")),
 			daemonStateDir: daemon.includes(Buffer.from(`brand.StateDirName=${BRAND.stateDirName}`)),
 			daemonPort: daemon.includes(Buffer.from(`brand.Port=${BRAND.defaultPort}`)),
+			// Own product id and instance-variable prefix: the daemon neither reads nor exports AO_RUN_FILE & co.
+			daemonProductId: daemon.includes(Buffer.from(`brand.ID=${BRAND.id}`)),
+			daemonEnvPrefix: BRAND.envPrefix !== "AO" && daemon.includes(Buffer.from(`brand.EnvPrefix=${BRAND.envPrefix}`)),
 			portFree: await portFree(BRAND.defaultPort),
 			portNotHost: BRAND.defaultPort !== hostPort && BRAND.defaultPort !== 3011,
 			stateDirNotHost: BRAND.stateDirName !== ".ao",
@@ -242,7 +245,10 @@ async function main() {
 		const proxyUrl = `http://127.0.0.1:${proxy.port}`;
 		const cdpPort = 30000 + Math.floor(Math.random() * 20000);
 		const env = { ...process.env, USERPROFILE: home, HOME: home, APPDATA: join(home, "AppData", "Roaming"), LOCALAPPDATA: join(home, "AppData", "Local"), HTTPS_PROXY: proxyUrl, HTTP_PROXY: proxyUrl, https_proxy: proxyUrl, http_proxy: proxyUrl, NO_PROXY: "", no_proxy: "", NODE_USE_ENV_PROXY: "1", AO_SKIP_PROTOCOL_REGISTRATION: "1" };
-		for (const k of ["AO_RUN_FILE", "AO_PORT", "AO_DATA_DIR", "AO_BRAND", "AO_TEST_IDENTITY"]) delete env[k];
+		// Launch with defaults: no daemon coordinates from the invoking shell under either product's
+		// names (this script may itself run inside an Orchestrator or BlueAshAI session).
+		for (const k of Object.keys(env)) if (/^(AO|BLUEASH)_(RUN_FILE|PORT|DATA_DIR|APP_RUN_ID|OWNER|ACP_RUNTIME_DIR|BROWSER_(RUNTIME|STREAM)_ADDRESS|BROWSER_RUNTIME_TOKEN(_STDIN)?)$/i.test(k)) delete env[k];
+		for (const k of ["AO_BRAND", "AO_TEST_IDENTITY"]) delete env[k];
 		step("launching installed BlueAshAI with default state/port/pipes");
 		child = spawn(exe, [`--proxy-server=${proxyUrl}`, `--remote-debugging-port=${cdpPort}`], { env, stdio: "ignore", cwd: instDir });
 		let sampling = false;

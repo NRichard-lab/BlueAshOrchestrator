@@ -50,9 +50,18 @@ func runFileOwnerServing(client *http.Client, host string, info *runfile.Info) b
 	var body struct {
 		Service string `json:"service"`
 		PID     int    `json:"pid"`
+		Product string `json:"product"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		return false
 	}
-	return body.Service == daemonmeta.ServiceName && body.PID == info.PID
+	if body.Service != daemonmeta.ServiceName || body.PID != info.PID {
+		return false
+	}
+	// Report who is really serving, so the refusal can name another product's
+	// daemon instead of calling it "already running".
+	if body.Product != "" {
+		info.Product = body.Product
+	}
+	return true
 }

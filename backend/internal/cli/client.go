@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/caller"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
@@ -176,6 +177,10 @@ func (c *commandContext) doJSONPathWithHeadersAndTimeout(
 	}
 	if info == nil {
 		return daemonUnavailableError{message: "Orchestrator daemon is not running — start it with `ao start`", cause: errDaemonNotRunning}
+	}
+	// Never send this product's commands to another product's daemon.
+	if err := brand.ForeignDaemonError(info.Product, cfg.RunFilePath); err != nil {
+		return err
 	}
 	if !c.deps.ProcessAlive(info.PID) {
 		return daemonUnavailableError{message: fmt.Sprintf("Orchestrator daemon is not running (stale run-file at %s) — start it with `ao start`", cfg.RunFilePath), cause: errDaemonNotRunning}

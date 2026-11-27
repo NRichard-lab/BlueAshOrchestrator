@@ -14,6 +14,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 const (
@@ -250,7 +252,7 @@ func writeJSON(ctx context.Context, dataDir, name string, value any) error {
 }
 
 func validName(name string) bool {
-	if name == "" || strings.HasPrefix(name, "AO_") {
+	if name == "" || brand.ReservedEnvName(name) {
 		return false
 	}
 	for _, r := range name {

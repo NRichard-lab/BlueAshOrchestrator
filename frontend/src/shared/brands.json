@@ -13,6 +13,8 @@
 		"stateDirName": ".ao",
 		"defaultPort": 3001,
 		"protocolScheme": "ao-app",
+		"nativeMessagingHost": "dev.ao.browser_bridge",
+		"envPrefix": "AO",
 		"updatesEnabled": true,
 		"remoteTelemetryEnabled": true,
 		"pricingCatalogSyncEnabled": true
@@ -31,6 +33,8 @@
 		"stateDirName": ".blueashai",
 		"defaultPort": 3101,
 		"protocolScheme": "blueashai",
+		"nativeMessagingHost": "ai.blueash.browser_bridge",
+		"envPrefix": "BLUEASH",
 		"updatesEnabled": false,
 		"remoteTelemetryEnabled": false,
 		"pricingCatalogSyncEnabled": false

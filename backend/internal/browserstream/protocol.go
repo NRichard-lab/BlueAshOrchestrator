@@ -10,13 +10,17 @@ import (
 	"io"
 	"math"
 	"time"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
+
+// RuntimeAddressEnv carries the private listener address to Electron. It is an
+// instance variable, so its name comes from the brand.
+var RuntimeAddressEnv = brand.Env("AO_BROWSER_STREAM_ADDRESS")
 
 const (
 	// ProtocolVersion identifies the private daemon-to-Electron wire format.
 	ProtocolVersion = 1
-	// RuntimeAddressEnv carries the private listener address to Electron.
-	RuntimeAddressEnv = "AO_BROWSER_STREAM_ADDRESS"
 	// KindControl identifies a JSON control packet.
 	KindControl byte = 1
 	// KindJPEG identifies a binary JPEG frame packet.

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { ENV } from "../shared/brand";
 
 // Test-build-only instance pin.
 //
@@ -77,8 +78,8 @@ export function applyTestInstancePin(input: {
 	const parsed = parseInstancePin(raw, input.execDir, input.buildIdentity);
 	if (!parsed.ok) return `${INSTANCE_PIN_FILE} rejected: ${parsed.reason}`;
 	// The pin wins over any inherited variable: a test build is never allowed to use the defaults.
-	input.env.AO_RUN_FILE = parsed.pin.runFile;
-	input.env.AO_PORT = String(parsed.pin.port);
+	input.env[ENV.RUN_FILE] = parsed.pin.runFile;
+	input.env[ENV.PORT] = String(parsed.pin.port);
 	input.env.AO_SKIP_PROTOCOL_REGISTRATION = "1";
 	input.env.AO_TELEMETRY_REMOTE = parsed.pin.telemetryRemote;
 	return null;

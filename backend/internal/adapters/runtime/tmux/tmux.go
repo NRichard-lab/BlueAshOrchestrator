@@ -280,7 +280,7 @@ func New(opts Options) *Runtime {
 		resolution, err := tmuxbin.Resolve()
 		if err == nil {
 			binary = resolution.Path
-		} else if configured := strings.TrimSpace(getenv("AO_TMUX_BINARY")); configured != "" {
+		} else if configured := strings.TrimSpace(getenv(brand.Env("AO_TMUX_BINARY"))); configured != "" {
 			// Keep the configured path on failure so packaged builds fail closed
 			// when they eventually execute it instead of selecting machine tmux.
 			binary = configured
@@ -313,7 +313,7 @@ func New(opts Options) *Runtime {
 	}
 	socketName := strings.TrimSpace(opts.SocketName)
 	if socketName == "" {
-		socketName = strings.TrimSpace(getenv("AO_TMUX_SOCKET_NAME"))
+		socketName = strings.TrimSpace(getenv(brand.Env("AO_TMUX_SOCKET_NAME")))
 	}
 	legacyBinary := opts.LegacyBinary
 	if socketName == "" {
@@ -1774,9 +1774,9 @@ func (r *Runtime) launchEnvDir(cfg ports.RuntimeConfig) (string, error) {
 		}
 		return abs, nil
 	}
-	dataDir := cfg.Env["AO_DATA_DIR"]
+	dataDir := cfg.Env[brand.Env("AO_DATA_DIR")]
 	if dataDir == "" {
-		dataDir = getenv("AO_DATA_DIR")
+		dataDir = getenv(brand.Env("AO_DATA_DIR"))
 	}
 	if dataDir == "" {
 		home, err := os.UserHomeDir()

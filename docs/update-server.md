@@ -48,6 +48,10 @@ existing tests and builds are unchanged):
 | --- | --- | --- |
 | Visible name / exe / installer | Orchestrator.inc / `agent-orchestrator.exe` / `Agent Orchestrator Setup <v>.exe` | BlueAshAI / `BlueAshAI.exe` / `BlueAshAI Setup <v>.exe` |
 | Windows asset alias (`ao start`, conductor) | `agent-orchestrator-win32-x64.exe` | `BlueAshAI-win32-x64.exe` |
+| macOS/Linux asset aliases (`ao start`) | `agent-orchestrator-darwin-<arch>.zip`, `agent-orchestrator-linux-x64.AppImage` | `BlueAshAI-darwin-<arch>.zip`, `BlueAshAI-linux-x64.AppImage` |
+| macOS bundle, Linux AppImage and desktop entry | `Agent Orchestrator.app`, `agent-orchestrator.AppImage`, `agent-orchestrator-ao-app.desktop` | `BlueAshAI.app`, `BlueAshAI.AppImage`, `BlueAshAI-blueashai.desktop` |
+| macOS bundle identifier (app, dictation helper, repair installer) | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |
+| Chrome Native Messaging host | `dev.ao.browser_bridge` | `ai.blueash.browser_bridge` |
 | NSIS appId (install key GUID) | `dev.agent-orchestrator.desktop` (`d06535a3-…`) | `ai.blueash.desktop` (`7ebb2fd8-9d4d-5b06-b9b3-8cce0c92e0db`) |
 | AppUserModelID | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |
 | Per-user state dir (run file, daemon data, sign-in) | `~/.ao` | `~/.blueashai` |
@@ -55,10 +59,30 @@ existing tests and builds are unchanged):
 | Windows pipes (derived from the state dir name) | `ao-supervise`, `ao-browser`, … | `ao-supervise--blueashai`, `ao-browser--blueashai`, … |
 | URL scheme | `ao-app` | `blueashai` (never `ao-app`) |
 | Updater cache dir | `agent-orchestrator-updater` | `blueashai-updater` |
+| Instance variables (run file, data dir, port, launch id, runtime resources) | `AO_RUN_FILE`, `AO_DATA_DIR`, `AO_PORT`, … | `BLUEASH_RUN_FILE`, `BLUEASH_DATA_DIR`, `BLUEASH_PORT`, … |
+| Product id in `running.json` and `/healthz`, `/readyz` | `legacy` | `blueashai` |
 
 The Go daemon/CLI get the same values through ldflags (`frontend/scripts/build-daemon.mjs` →
-`backend/internal/brand`). `AO_PORT`, `AO_RUN_FILE` and `AO_DATA_DIR` still override. The mobile
-LAN bridge default (3011) is not rebranded; a second daemon falls back to another port.
+`backend/internal/brand`). The mobile LAN bridge default (3011) is not rebranded; a second daemon
+falls back to another port.
+
+**Instance variables are per product.** The variables that locate or identify one product's daemon
+(the list is `instanceEnv` in `backend/internal/brand/brand.go`, mirrored by `INSTANCE_ENV` in
+`frontend/src/shared/brand.ts`) are inherited by every terminal, agent and session the daemon starts.
+If both products spelled them `AO_*`, an Orchestrator started from a BlueAshAI terminal would read
+BlueAshAI's run file and data dir, attach to BlueAshAI's daemon instead of starting its own, and sit
+in an error loop (and the reverse). So BlueAshAI reads and exports them only as `BLUEASH_*`
+(`BLUEASH_PORT`, `BLUEASH_RUN_FILE` and `BLUEASH_DATA_DIR` are the overrides), ignores the `AO_*`
+spellings, and removes them from its own environment at start so they are not handed down. Session
+variables (`AO_SESSION_ID`, `AO_PROJECT_ID`, …) name a session, not a daemon, and keep the `AO_`
+prefix in both products. In code, name an instance variable through `brand.Env("AO_…")` (Go) or
+`ENV.…` (TypeScript); a test fails on a bare literal.
+
+**A daemon names its product.** `running.json` and both health probes carry `product`. The desktop
+app and the CLI refuse a daemon that reports another product's id (status code `foreign_product`)
+instead of attaching to it, replacing it or stopping it. A daemon that reports no id predates the
+field (upstream Orchestrator, BlueAshAI up to 0.15.4-blueash.4); for those the executable-path check
+still decides.
 
 **BlueAshAI has no update plane at all (compiled out).** `brands.json` carries three separate
 compile-time switches, all `false` for BlueAshAI and `true` for the legacy profile; they are

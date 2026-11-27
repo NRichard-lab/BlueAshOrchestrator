@@ -163,6 +163,7 @@ import {
 	expectedDaemonPort,
 	parseDaemonProbe,
 	resolveDaemonFromPort,
+	foreignProductStatus,
 	resolveDaemonFromRunFile,
 } from "./shared/daemon-attach";
 import {
@@ -294,7 +295,16 @@ import { createLocalHostIdentity } from "./main/remote-request";
 import { RemoteRegistry } from "./main/remote-registry";
 import { startRemoteProxy } from "./main/remote-proxy";
 import { captureMainError, reportDaemonFailure, ExpectedIpcError, installIpcErrorCapture, setMainErrorSink } from "./main/main-error-capture";
-import { BRAND, UPDATES_ENABLED } from "./shared/brand";
+import { BRAND, ENV, UPDATES_ENABLED, scrubForeignInstanceEnv } from "./shared/brand";
+
+// Before anything reads the environment or starts a child: drop another product's daemon
+// coordinates (see scrubForeignInstanceEnv). This build reads only its own names (ENV), so the
+// scrub is what keeps them from being handed down to the daemon, sessions and terminals.
+scrubForeignInstanceEnv(process.env);
+function withoutForeignInstanceEnv<T extends Record<string, string | undefined>>(env: T): T {
+	scrubForeignInstanceEnv(env);
+	return env;
+}
 
 // Every ipcMain.handle registered from here on reports unexpected throws.
 installIpcErrorCapture(ipcMain);
@@ -600,7 +610,8 @@ const isDev = !app.isPackaged;
 // a concurrently running installed-app daemon. The subdir also isolates supervise.sock
 // on Unix (backend derives it as dir(RunFilePath)/supervise.sock) and the named pipe
 // on Windows (supervisorPipeFromRunFile derives it from the same dir basename).
-const DEV_DAEMON_PORT = 3002;
+// One above the product default (3002 for Orchestrator), so dev builds of two products do not share a port.
+const DEV_DAEMON_PORT = BRAND.defaultPort + 1;
 const DEV_STATE_SUBDIR = "dev"; // ~/.ao/dev/
 
 const RENDERER_SCHEME = "app";
@@ -646,7 +657,7 @@ function syncNativeWindowBackground(force = false): void {
 }
 
 function resolvedDaemonDataDir(): string {
-	const override = process.env.AO_DATA_DIR?.trim();
+	const override = process.env[ENV.DATA_DIR]?.trim();
 	if (override) return override;
 	if (isDev) return path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "data");
 	return path.join(os.homedir(), BRAND.stateDirName, "data");
@@ -1521,7 +1532,8 @@ const RUN_FILE_FRESHNESS_SKEW_MS = 2_000;
 const DAEMON_PROBE_TIMEOUT_MS = 2_000;
 
 function runFilePath(): string | null {
-	if (process.env.AO_RUN_FILE) return process.env.AO_RUN_FILE;
+	const envRunFile = process.env[ENV.RUN_FILE];
+	if (envRunFile) return envRunFile;
 	if (isDev) return path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "running.json");
 	// Install-tied data keeps the handshake beside the data dir so CLI and the
 	// desktop agree when the profile is no longer under ~/.ao.
@@ -1534,7 +1546,7 @@ function runFilePath(): string | null {
 // supervise the daemon.
 function handshakeRunFilePath(): string | null {
 	return daemonHandshakeRunFile({
-		envRunFile: process.env.AO_RUN_FILE,
+		envRunFile: process.env[ENV.RUN_FILE],
 		isDev,
 		stateRunFile: runFilePath(),
 		defaultRunFile: defaultRunFilePath(process.platform, process.env, os.homedir()),
@@ -1825,7 +1837,7 @@ if (process.platform !== "win32") {
 // One id per app launch, minted eagerly so every daemon spawn in this process
 // (including supervisor restarts) reports the same run. An explicit
 // AO_APP_RUN_ID in the environment wins, which lets a test or a wrapper pin it.
-const appRunId = process.env.AO_APP_RUN_ID ?? `apprun-${randomUUID()}`;
+const appRunId = process.env[ENV.APP_RUN_ID] ?? `apprun-${randomUUID()}`;
 // The browser runtime token identifies this app to the daemon's runtime broker.
 // It is derived from an owner-only key in the data dir so it survives an app
 // restart: a daemon kept alive by AO_KEEP_DAEMON (or adopted under a pinned
@@ -1848,7 +1860,7 @@ async function ensureBundledTmuxStaged(): Promise<void> {
 	const source = bundledTmuxBinaryPath(app.isPackaged, process.resourcesPath, process.platform);
 	const destination = stableBundledTmuxBinaryPath(
 		app.isPackaged,
-		process.env.AO_DATA_DIR?.trim() || path.join(os.homedir(), BRAND.stateDirName),
+		process.env[ENV.DATA_DIR]?.trim() || path.join(os.homedir(), BRAND.stateDirName),
 		app.getVersion(),
 		process.platform,
 		process.arch,
@@ -1883,13 +1895,14 @@ function daemonEnv(forceKeep = keepDaemonAlive(process.env)): NodeJS.ProcessEnv 
 	//
 	// AO_APP_RUN_ID scopes temporary command/auth terminals to this app launch.
 	// User-opened shells remain attachable across launches while their PTYs live.
-	const AO_OWNER = forceKeep ? "persistent" : "app";
+	const owner = forceKeep ? "persistent" : "app";
 	const bundledTmuxBinary = stagedBundledTmuxBinary;
+	// Instance variables go out under this build's own names (ENV), never another product's.
 	const ownerTag = {
-		AO_OWNER,
-		AO_DATA_DIR: desktopDataDir,
-		AO_APP_RUN_ID: appRunId,
-        ...(process.platform === "darwin" ? { AO_WAKE_HELPER: app.isPackaged
+		[ENV.OWNER]: owner,
+		[ENV.DATA_DIR]: desktopDataDir,
+		[ENV.APP_RUN_ID]: appRunId,
+        ...(process.platform === "darwin" ? { [ENV.WAKE_HELPER]: app.isPackaged
             ? path.join(process.resourcesPath, "wake-helper", "ao-wake")
             : path.join(app.getAppPath(), "wake-helper", "ao-wake") } : {}),
 		// The browser runtime token is handed over through the child's private
@@ -1897,22 +1910,22 @@ function daemonEnv(forceKeep = keepDaemonAlive(process.env)): NodeJS.ProcessEnv 
 		// same-UID worker could inspect the parent process, and never in argv.
 		// It is derived from an owner-only key in the data dir so an app restart
 		// can still authenticate a kept-alive daemon it adopts.
-		AO_BROWSER_RUNTIME_TOKEN: "",
-		AO_BROWSER_RUNTIME_TOKEN_STDIN: "1",
+		[ENV.BROWSER_RUNTIME_TOKEN]: "",
+		[ENV.BROWSER_RUNTIME_TOKEN_STDIN]: "1",
 		// Under AppImage, APPIMAGE is the stable outer .AppImage file path (the
 		// FUSE mount in executablePath is random per launch). The daemon echoes
 		// it as appImagePath in /healthz|/readyz so the identity check can
 		// recognise its own daemon across a relaunch-to-update.
-		...(process.env.APPIMAGE ? { AO_APPIMAGE: process.env.APPIMAGE } : {}),
+		...(process.env.APPIMAGE ? { [ENV.APPIMAGE]: process.env.APPIMAGE } : {}),
 		// Claude Code Chat uses AO's packaged ACP adapter + Node runtime. The
 		// provider executable itself is resolved by the daemon from the user's PATH
 		// and passed through CLAUDE_CODE_EXECUTABLE; it is not part of this resource.
-		AO_ACP_RUNTIME_DIR:
-			process.env.AO_ACP_RUNTIME_DIR ??
+		[ENV.ACP_RUNTIME_DIR]:
+			process.env[ENV.ACP_RUNTIME_DIR] ??
 			(app.isPackaged
 				? path.join(process.resourcesPath, "acp-runtime")
 				: path.join(app.getAppPath(), "resources", "acp-runtime")),
-		...(bundledTmuxBinary ? { AO_TMUX_BINARY: bundledTmuxBinary, AO_TMUX_SOCKET_NAME: "ao" } : {}),
+		...(bundledTmuxBinary ? { [ENV.TMUX_BINARY]: bundledTmuxBinary, [ENV.TMUX_SOCKET_NAME]: BRAND.id === "legacy" ? "ao" : BRAND.id } : {}),
 		// The packaged macOS app ships cloudflared, so turning on remote access
 		// never waits for an install. An explicit AO_CLOUDFLARED_PATH still wins.
 		...(app.isPackaged && process.platform === "darwin"
@@ -1923,9 +1936,9 @@ function daemonEnv(forceKeep = keepDaemonAlive(process.env)): NodeJS.ProcessEnv 
 	// the installed app. User-set env vars take priority (checked first).
 	const devExtras: Record<string, string> = {};
 	if (isDev) {
-		if (!process.env.AO_PORT) devExtras.AO_PORT = String(DEV_DAEMON_PORT);
-		if (!process.env.AO_RUN_FILE) devExtras.AO_RUN_FILE = runFilePath() ?? "";
-		if (!process.env.AO_DATA_DIR) devExtras.AO_DATA_DIR = path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "data");
+		if (!process.env[ENV.PORT]) devExtras[ENV.PORT] = String(DEV_DAEMON_PORT);
+		if (!process.env[ENV.RUN_FILE]) devExtras[ENV.RUN_FILE] = runFilePath() ?? "";
+		if (!process.env[ENV.DATA_DIR]) devExtras[ENV.DATA_DIR] = path.join(os.homedir(), BRAND.stateDirName, DEV_STATE_SUBDIR, "data");
 		devExtras.AO_ALLOWED_ORIGINS = devDaemonAllowedOrigins(
 			process.env.AO_ALLOWED_ORIGINS,
 			rendererUrl(),
@@ -1934,13 +1947,10 @@ function daemonEnv(forceKeep = keepDaemonAlive(process.env)): NodeJS.ProcessEnv 
 	// Windows keeps its native environment semantics while overlaying values
 	// exported by the selected login-shell probe.
 	if (process.platform === "win32") {
-		return { ...process.env, ...(cachedShellEnv ?? {}), ...devExtras, ...telemetryOverrides(), ...ownerTag };
+		return withoutForeignInstanceEnv({ ...process.env, ...(cachedShellEnv ?? {}), ...devExtras, ...telemetryOverrides(), ...ownerTag });
 	}
-	return buildDaemonEnv(
-		process.env,
-		cachedShellEnv,
-		{ ...devExtras, ...telemetryOverrides(), ...ownerTag },
-		configuredLoginShell,
+	return withoutForeignInstanceEnv(
+		buildDaemonEnv(process.env, cachedShellEnv, { ...devExtras, ...telemetryOverrides(), ...ownerTag }, configuredLoginShell),
 	);
 }
 
@@ -2194,6 +2204,16 @@ function establishSupervisorLink(): void {
 	}
 }
 
+// A daemon that reports another product's id answered where this app expected its own. Record it
+// once per start attempt and surface the message; the caller returns without attaching, replacing,
+// signaling or spawning.
+function reportForeignDaemon(status: DaemonStatus, trigger: DaemonStartTrigger, via: "run_file" | "port_probe"): DaemonStatus {
+	lifecycleLog("daemon_foreign_product", { trigger, via, pid: status.pid ?? null, port: status.port ?? null, decision: "report_no_attach_no_replace" });
+	console.warn(`AO: ${status.message}`);
+	setDaemonStatus(status);
+	return daemonStatus;
+}
+
 async function inspectExistingDaemon(
 	launch: DaemonLaunchSpec,
 ): Promise<{ status: DaemonStatus; owner: string | undefined; appRunId: string | undefined } | null> {
@@ -2245,7 +2265,8 @@ async function refreshDaemonStatus(): Promise<DaemonStatus> {
 	if (!launch) return daemonStatus;
 	const existing = await inspectExistingDaemon(launch);
 	if (existing) {
-		if (!daemonAutoRestartStandDown && browserDaemonOwnershipDecision(appRunId, existing).action === "replace") {
+		// Polling must not turn into repeated takeover attempts against another product's daemon.
+		if (existing.status.code !== "foreign_product" && !daemonAutoRestartStandDown && browserDaemonOwnershipDecision(appRunId, existing).action === "replace") {
 			return startDaemon({ trigger: "renderer_status" });
 		}
 		setDaemonStatus(existing.status);
@@ -2297,7 +2318,7 @@ async function startDaemon(options: { forceReplaceAdopted?: boolean; autoRestart
 // separate port isolates the dev daemon from the installed-app daemon.
 // AO_PORT always wins if set explicitly.
 function resolvedDaemonPort(): number {
-	return isDev && !process.env.AO_PORT ? DEV_DAEMON_PORT : expectedDaemonPort(process.env);
+	return isDev && !process.env[ENV.PORT] ? DEV_DAEMON_PORT : expectedDaemonPort(process.env);
 }
 
 function daemonLaunchEnv(): NodeJS.ProcessEnv {
@@ -2326,7 +2347,7 @@ function daemonLaunchEnv(): NodeJS.ProcessEnv {
 // with "entrypoint ... no such file". Rebuild it here. The script is idempotent
 // and a no-op when the runtime is intact. Dev only: a packaged runtime is signed.
 async function repairDevAcpRuntime(): Promise<void> {
-	if (app.isPackaged || process.env.AO_ACP_RUNTIME_DIR) return;
+	if (app.isPackaged || process.env[ENV.ACP_RUNTIME_DIR]) return;
 	const runtimeDir = path.join(app.getAppPath(), "resources", "acp-runtime");
 	const adapter = path.join(
 		runtimeDir,
@@ -2408,6 +2429,9 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 	}
 	if (existing) {
 		if (autoRestartIntent) return daemonStatus;
+		// Another product's daemon: report it and stop here. Never shut it down, and never spawn
+		// over it (the spawn would collide on the same run file or port).
+		if (existing.status.code === "foreign_product") return reportForeignDaemon(existing.status, trigger, "run_file");
 		const ownership = browserDaemonOwnershipDecision(appRunId, existing);
 		if (shouldReplaceDaemonForStartup({ ownership, forceRequested: forceReplaceAdoptedRequested })) {
 			lifecycleLog("daemon_replace", {
@@ -2462,6 +2486,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 	}
 	if (directDaemon) {
 		if (autoRestartIntent) return daemonStatus;
+		if (directDaemon.code === "foreign_product") return reportForeignDaemon(directDaemon, trigger, "port_probe");
 		let portAttachOwner: string | undefined;
 		let portAttachAppRunId: string | undefined;
 		// Re-link iff the daemon is app-owned. Read the run-file for the owner tag;
@@ -2548,6 +2573,9 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 		}
 	}
 	if (startCancelled() || (autoRestartIntent && orphanProbe)) return daemonStatus;
+	// The port started answering since the attach checks, as another product's daemon: same rule.
+	const foreignOrphan = orphanProbe ? foreignProductStatus(resolvedDaemonPort(), orphanProbe) : null;
+	if (foreignOrphan) return reportForeignDaemon(foreignOrphan, trigger, "port_probe");
 	const holder = autoRestartIntent ? { pid: null, reason: "automatic recovery never signals a port holder" } : await portHolderPidToReplace({
 		probe: orphanProbe,
 		runFile,
@@ -3351,10 +3379,10 @@ async function triageEnv(): Promise<NodeJS.ProcessEnv> {
 		? { ...process.env, ...(cachedShellEnv ?? {}) }
 		: buildDaemonEnv(process.env, cachedShellEnv, {}, configuredLoginShell);
 	return {
-		...env,
+		...withoutForeignInstanceEnv(env),
 		AO_DEV_DAEMON_BINARY: daemonLaunchEnv().AO_DEV_DAEMON_BINARY,
-		AO_DATA_DIR: path.resolve(desktopDataDir),
-		AO_RUN_FILE: path.resolve(handshakeRunFilePath() ?? path.join(desktopDataDir, "running.json")),
+		[ENV.DATA_DIR]: path.resolve(desktopDataDir),
+		[ENV.RUN_FILE]: path.resolve(handshakeRunFilePath() ?? path.join(desktopDataDir, "running.json")),
 	};
 }
 ipcMain.handle("triage.launch", async () => launchTriageInTerminal(await triageEnv()));
@@ -3692,7 +3720,7 @@ ipcMain.handle("telemetry:getBootstrap", async () => {
 		env: process.env,
 		exists: existsSync,
 	});
-	const bootstrap = await buildTelemetryBootstrap({ ...process.env, AO_DATA_DIR: desktopDataDir }, app.getVersion(), process.platform, os.homedir(), app.isPackaged, telemetryPolicyController.snapshot(), install);
+	const bootstrap = await buildTelemetryBootstrap({ ...process.env, [ENV.DATA_DIR]: desktopDataDir }, app.getVersion(), process.platform, os.homedir(), app.isPackaged, telemetryPolicyController.snapshot(), install);
 	if (!bootstrap) return bootstrap;
 	const lifetimeSessions = await daemonLifetimeSessions();
 	if (lifetimeSessions !== null) bootstrap.lifetimeSessions = lifetimeSessions;

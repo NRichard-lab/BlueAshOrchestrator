@@ -31,6 +31,7 @@ vi.mock("./scripts/build-mac-dmg.mjs", async (importOriginal) => {
 	return { ...actual, checkMacDmgLayout };
 });
 
+import { LEGACY_BRAND } from "./src/shared/brand";
 import config, { extraResourcesForPlatform, labelMacBundle, macSignOptionsForFile, WINDOWS_DISPLAY_NAME } from "./forge.config";
 
 // Minimal synthetic Mach-O headers (thin little-endian + fat big-endian), the
@@ -419,7 +420,7 @@ describe("packaged authentication callback registration", () => {
 	it("declares ao-app in the macOS bundle and Linux package metadata", () => {
 		expect(config.packagerConfig?.protocols).toEqual([
 			{
-				name: "Orchestrator authentication callback",
+				name: `${LEGACY_BRAND.displayName} authentication callback`,
 				schemes: ["ao-app"],
 			},
 		]);

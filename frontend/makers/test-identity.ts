@@ -11,6 +11,8 @@
 //
 // Production builds never set it, and every value below is unchanged when it is unset.
 
+import { BLUEASHAI_BRAND, LEGACY_BRAND } from "../src/shared/brand";
+
 export type TestIdentity = {
 	id: string;
 	/** packaged binary name (no .exe); NSIS kills running processes by this name */
@@ -28,7 +30,13 @@ export type TestIdentity = {
 };
 
 const ID = /^[a-z][a-z0-9]{3,11}$/;
-const PRODUCTION_NAMES = ["agent-orchestrator", "dev.agent-orchestrator.desktop", "orchestrator.inc"];
+// Every product profile's production names, so a test build cannot collide with EITHER product
+// (src/shared/brands.json). Lowercased for comparison.
+const PRODUCTION_NAMES = [LEGACY_BRAND, BLUEASHAI_BRAND].flatMap((brand) =>
+	[brand.executableName, brand.appId, brand.appUserModelId, brand.displayName, brand.packagerName, brand.updaterCacheDirName].map((name) =>
+		name.toLowerCase(),
+	),
+);
 
 export function resolveTestIdentity(env: NodeJS.ProcessEnv): TestIdentity | undefined {
 	const id = env.AO_TEST_IDENTITY?.trim();

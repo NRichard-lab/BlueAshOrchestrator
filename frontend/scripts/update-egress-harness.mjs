@@ -297,6 +297,8 @@ export async function run({ app, scenario, out, waitMs }) {
 		...process.env,
 		USERPROFILE: home, HOME: home, APPDATA: join(home, "AppData", "Roaming"), LOCALAPPDATA: join(home, "AppData", "Local"),
 		AO_DATA_DIR: plan.dataDir, AO_RUN_FILE: plan.runFile, AO_PORT: String(plan.port),
+		// The same coordinates under BlueAshAI's names: that build ignores the AO_ spellings.
+		BLUEASH_DATA_DIR: plan.dataDir, BLUEASH_RUN_FILE: plan.runFile, BLUEASH_PORT: String(plan.port),
 		HTTPS_PROXY: proxyUrl, HTTP_PROXY: proxyUrl, https_proxy: proxyUrl, http_proxy: proxyUrl, NO_PROXY: "", no_proxy: "",
 		NODE_USE_ENV_PROXY: "1", NODE_EXTRA_CA_CERTS: pki.ca, AO_SKIP_PROTOCOL_REGISTRATION: "1",
 	};

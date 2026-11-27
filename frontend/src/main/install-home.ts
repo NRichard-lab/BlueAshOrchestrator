@@ -12,7 +12,7 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { BRAND } from "../shared/brand";
+import { BRAND, ENV } from "../shared/brand";
 
 /** Marker the Windows installer (and settings) leave beside the packaged exe. */
 export const INSTALL_HOME_MARKER = "ao-home.json";
@@ -141,8 +141,18 @@ export function resolveInstallHomePaths(input: {
 	execDir?: string | null;
 	marker?: InstallHomeRecord | null;
 }): InstallHomePaths {
-	const configured = input.env.AO_DATA_DIR?.trim();
-	if (configured) {
+	const configured = input.env[ENV.DATA_DIR]?.trim();
+	const installDir = input.execDir?.trim() || "";
+	const marker = input.marker ?? null;
+	const markerApplies = Boolean(input.isPackaged && installDir && marker);
+	// The data-dir variable naming this install's own data folder is not an override: it is what the
+	// app itself exports to its daemon, so every terminal and agent it starts inherits it. Treating
+	// that as "env" would move the Electron profile to <dataDir>/electron, away from the installer's
+	// choice, so a launch from one of those terminals would miss the single-instance lock (it is tied
+	// to the profile folder) and open a second app on the same daemon and data.
+	const inheritedOwnDataDir =
+		Boolean(configured) && markerApplies && sameDirectory(path.resolve(input.launchWorkingDirectory, configured ?? ""), marker?.dataDir ?? "");
+	if (configured && !inheritedOwnDataDir) {
 		const dataDir = path.resolve(input.launchWorkingDirectory, configured);
 		return {
 			dataDir,
@@ -153,9 +163,7 @@ export function resolveInstallHomePaths(input: {
 		};
 	}
 
-	const installDir = input.execDir?.trim() || "";
-	const marker = input.marker ?? null;
-	if (input.isPackaged && installDir && marker) {
+	if (markerApplies && marker) {
 		return {
 			dataDir: marker.dataDir,
 			electronDir: marker.electronDir,
@@ -174,6 +182,14 @@ export function resolveInstallHomePaths(input: {
 		installDir: root,
 		source: "default",
 	};
+}
+
+// path.resolve drops trailing separators. Windows paths are case-insensitive, and the comparison only
+// decides whether a variable names the install's own folder, so folding case everywhere is safe.
+function sameDirectory(a: string, b: string): boolean {
+	if (!a || !b) return false;
+	const fold = (value: string) => path.resolve(value).toLowerCase();
+	return fold(a) === fold(b);
 }
 
 export type MigrateDataDirResult = {

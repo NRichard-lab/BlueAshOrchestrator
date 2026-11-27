@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // ProjectConfig is the typed per-project configuration — the SQLite twin of the
@@ -263,7 +265,7 @@ func (c ProjectConfig) Validate() error {
 			return fmt.Errorf("env %q: invalid variable name or value", key)
 		}
 		folded := strings.ToUpper(key)
-		if strings.HasPrefix(folded, "AO_") {
+		if brand.ReservedEnvName(folded) {
 			return fmt.Errorf("env %q: AO_ prefix is reserved", key)
 		}
 		if seenEnv[folded] {

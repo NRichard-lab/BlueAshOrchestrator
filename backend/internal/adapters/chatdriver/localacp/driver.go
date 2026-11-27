@@ -16,6 +16,7 @@ import (
 	acpdriver "github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/acp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/nativeacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/opencodeidentity"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/localproviders"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -40,9 +41,9 @@ func New(plugin nativeacp.Plugin, log *slog.Logger) ports.ChatDriver {
 }
 
 func configure(ctx context.Context, cfg acpdriver.LaunchConfig) ([]string, map[string]string, error) {
-	dataDir := strings.TrimSpace(cfg.Env["AO_DATA_DIR"])
+	dataDir := strings.TrimSpace(cfg.Env[brand.Env("AO_DATA_DIR")])
 	if dataDir == "" {
-		dataDir = strings.TrimSpace(os.Getenv("AO_DATA_DIR"))
+		dataDir = strings.TrimSpace(os.Getenv(brand.Env("AO_DATA_DIR")))
 	}
 	content, err := local.PrepareACPConfigContent(cfg.Env["OPENCODE_CONFIG_CONTENT"], cfg.SystemPrompt, cfg.Permissions, dataDir)
 	if err != nil {

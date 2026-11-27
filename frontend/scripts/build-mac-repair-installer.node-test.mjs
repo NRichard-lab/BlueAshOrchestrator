@@ -5,6 +5,11 @@ import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { buildRepairInstaller, distribution, renderGuard, validateMetadata } from './build-mac-repair-installer.mjs';
+import { brandProfile } from './brand-profile.mjs';
+
+// The product this build is for (src/shared/brands.json via AO_BRAND): the installer recognizes and
+// replaces only its own bundle, and names only its own product in what the Installer shows.
+const BRAND = brandProfile();
 
 const version = '0.12.12-nightly.202609061223';
 const metadata = { id: 'dev.agent-orchestrator.desktop', version, build: version, executable: 'agent-orchestrator', archs: 'arm64' };
@@ -45,7 +50,7 @@ async function guardFixture(t) {
   }
   helpers.plist = path.join(dir, 'plist');
   await writeFile(helpers.plist, `#!/bin/bash\ncase "$3" in /Applications/Other.app/*) echo foreign.app; exit 0;; esac\ncase "$2" in *CFBundleIdentifier) /bin/cat '${dir}/bundle';; *CFBundleShortVersionString) /bin/cat '${dir}/old';; *CFBundleVersion) /bin/cat '${dir}/build';; *) exit 1;; esac\n`, { mode: 0o755 });
-  let guard = await renderGuard({ version, architectures: ['arm64'] }, true);
+  let guard = await renderGuard({ version, architectures: ['arm64'], executable: metadata.executable }, true);
   // Test-only source transformation: the shipped script has no environment override.
   for (const [from, to] of Object.entries({ '/usr/sbin/sysctl': helpers.arch, '/usr/bin/uname': helpers.uname, '/usr/bin/id': helpers.id, '/bin/ps': helpers.ps, '/usr/libexec/PlistBuddy': helpers.plist })) guard = guard.replaceAll(from, `'${to}'`);
   guard = guard.replaceAll('/Applications', `${dir}/Applications`);
@@ -75,23 +80,41 @@ test('root preinstall refuses nonroot, foreign volume, unrelated bundles, symlin
 });
 test('running executable and updater checks reject AO narrowly without matching argument text or other apps', async (t) => {
   const f = await guardFixture(t);
-  for (const process of ['/Applications/Renamed.app/Contents/Frameworks/Squirrel.framework/Versions/A/Resources/ShipIt', '/Applications/Renamed.app/Contents/MacOS/agent-orchestrator', '/Applications/Agent Orchestrator.app/Contents/MacOS/agent-orchestrator', '/private/var/folders/x/Agent Orchestrator.app/Contents/Frameworks/Agent Orchestrator Helper.app/Contents/MacOS/helper', '/Users/test/Library/Caches/dev.agent-orchestrator.desktop.ShipIt/update/ShipIt']) {
+  const app = `${BRAND.packagerName}.app`;
+  for (const process of ['/Applications/Renamed.app/Contents/Frameworks/Squirrel.framework/Versions/A/Resources/ShipIt', `/Applications/Renamed.app/Contents/MacOS/${metadata.executable}`, `/Applications/${app}/Contents/MacOS/${metadata.executable}`, `/private/var/folders/x/${app}/Contents/Frameworks/${BRAND.packagerName} Helper.app/Contents/MacOS/helper`, `/Users/test/Library/Caches/${BRAND.appId}.ShipIt/update/ShipIt`]) {
     await f.set('ps', process); assert.notEqual(f.check().status, 0, process);
   }
   await f.set('ps', '/Applications/Other.app/Contents/MacOS/ShipIt\n/bin/bash\n/usr/bin/node'); assert.equal(f.check().status, 0);
 });
-test('guard messages use Orchestrator for the app and updater', async (t) => {
+test('guard messages name this product for the app and updater', async (t) => {
   const f = await guardFixture(t);
-  await f.set('ps', '/Applications/Agent Orchestrator.app/Contents/MacOS/agent-orchestrator');
+  const name = BRAND.displayName.replaceAll('.', '[.]');
+  await f.set('ps', `/Applications/${BRAND.packagerName}.app/Contents/MacOS/${metadata.executable}`);
   const app = f.check();
   assert.notEqual(app.status, 0);
-  assert.match(app.stderr, /^Orchestrator repair: Quit Orchestrator\./);
-  assert.match(app.stderr, /before opening Orchestrator\./);
+  assert.match(app.stderr, new RegExp(`^${name} repair: Quit ${name}[.]`));
+  assert.match(app.stderr, new RegExp(`before opening ${name}[.]`));
   await f.set('ps', '/Applications/Renamed.app/Contents/Frameworks/Squirrel.framework/Versions/A/Resources/ShipIt');
   const updater = f.check();
   assert.notEqual(updater.status, 0);
-  assert.match(updater.stderr, /^Orchestrator repair: Orchestrator updater is running\./);
-  assert.match(updater.stderr, /before opening Orchestrator\./);
+  assert.match(updater.stderr, new RegExp(`^${name} repair: ${name} updater is running[.]`));
+  assert.match(updater.stderr, new RegExp(`before opening ${name}[.]`));
+});
+
+// Every product-identity value in guard.sh comes from the profile, so a BlueAshAI installer never
+// matches, quits or replaces an installed Orchestrator (and the reverse).
+test('the rendered guard carries this product identity and nothing else', async () => {
+  const guard = await renderGuard({ version, architectures: ['arm64'], executable: metadata.executable }, true);
+  assert.ok(!guard.includes('@@'), 'unsubstituted placeholder left in the guard');
+  assert.ok(guard.includes(`app='/Applications/${BRAND.packagerName}.app'`), guard);
+  assert.ok(guard.includes(`[ "$id" = ${BRAND.appId} ]`), guard);
+  assert.ok(guard.includes(`[ "$owner_id" != ${BRAND.appId} ]`), guard);
+  assert.ok(guard.includes(`/Contents/MacOS/${metadata.executable}$/`), guard);
+  assert.ok(guard.includes(`${BRAND.appId.replaceAll('.', '[.]')}[.]ShipIt`), guard);
+  assert.match(distribution(version, ['arm64']), new RegExp(`<app id="${BRAND.appId.replaceAll('.', '[.]')}"/>`));
+  // A value needing shell or regex quoting is refused, never escaped into the script.
+  await assert.rejects(renderGuard({ version, architectures: ['arm64'], executable: "ao'; rm -rf /" }, true), /Unsupported characters/);
+  await assert.rejects(renderGuard({ version, architectures: ['arm64'] }, true), /Invalid guard constants/);
 });
 async function buildFixture(t, failAt) {
   const dir = await fixture(t), app = path.join(dir, 'Agent Orchestrator.app');

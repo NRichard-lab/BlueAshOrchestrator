@@ -42,6 +42,11 @@ type Info struct {
 	// BrowserStreamAddress is the private Electron media socket locator. It is
 	// authenticated with the same per-launch token as the command runtime.
 	BrowserStreamAddress string `json:"browserStreamAddress,omitempty"`
+	// Product is the id of the product whose daemon wrote this file (brand.ID).
+	// Clients compare it with their own before attaching, so a run file that
+	// points at another product's daemon is refused instead of used. Absent in
+	// files written by builds that predate it (see brand.ForeignProduct).
+	Product string `json:"product,omitempty"`
 }
 
 // Write atomically writes running.json at path, creating parent directories

@@ -19,7 +19,7 @@
 
 import type { DaemonStatus } from "./daemon-status";
 import { parseRunFile } from "./daemon-discovery";
-import { BRAND } from "./brand";
+import { BRAND, ENV, productName } from "./brand";
 
 // The daemon's default bind port (backend/internal/config). AO_PORT overrides it.
 export const DEFAULT_DAEMON_PORT = BRAND.defaultPort;
@@ -37,6 +37,11 @@ export type DaemonProbe = {
 	appImagePath?: string;
 	/** The daemon also serves [::1] at its port; absent from an older daemon. */
 	ipv6Loopback?: boolean;
+	/**
+	 * Id of the product that built the daemon (brands.json id). Absent from builds that predate the
+	 * field: the upstream Orchestrator, and BlueAshAI up to 0.15.4-blueash.4.
+	 */
+	product?: string;
 };
 
 /** A /healthz|/readyz probe of a loopback port; resolves null when nothing valid answers. */
@@ -48,7 +53,7 @@ export type DaemonProber = (port: number, endpoint: "healthz" | "readyz") => Pro
  * daemon before spawning a child that would only refuse and exit.
  */
 export function expectedDaemonPort(env: Record<string, string | undefined>): number {
-	const configured = env.AO_PORT ? Number(env.AO_PORT) : NaN;
+	const configured = env[ENV.PORT] ? Number(env[ENV.PORT]) : NaN;
 	return Number.isInteger(configured) && configured >= 1 && configured <= 65535 ? configured : DEFAULT_DAEMON_PORT;
 }
 
@@ -72,7 +77,43 @@ export function parseDaemonProbe(endpoint: "healthz" | "readyz", body: unknown):
 		startupWorkingDirectory:
 			typeof candidate.startupWorkingDirectory === "string" ? candidate.startupWorkingDirectory : undefined,
 		appImagePath: typeof candidate.appImagePath === "string" ? candidate.appImagePath : undefined,
+		...(typeof candidate.product === "string" && candidate.product.trim() ? { product: candidate.product.trim() } : {}),
 		...(candidate.ipv6Loopback === true ? { ipv6Loopback: true } : {}),
+	};
+}
+
+/**
+ * Refuse a daemon that reports another product's id. Two products can run side by side with the
+ * same service name; attaching across them shows one product's sessions in the other's window and
+ * leaves the app waiting on a daemon it will never own. Returns the message to show, or null when
+ * the daemon is this product's or reports no product (an older build: other identity checks apply).
+ */
+export function foreignProductError(probe: Pick<DaemonProbe, "product" | "pid">, port?: number): string | null {
+	if (!probe.product || probe.product === BRAND.id) return null;
+	const where = port ? ` on port ${port}` : "";
+	return (
+		`The daemon${where} (pid ${probe.pid}) belongs to ${productName(probe.product)}, not ${BRAND.displayName}. ` +
+		`${BRAND.displayName} will not attach to it or stop it. This usually means ${ENV.RUN_FILE}, ${ENV.DATA_DIR} or ${ENV.PORT} ` +
+		`points at the other product: remove those settings, or quit the other app if it is using ${BRAND.displayName}'s port, then restart ${BRAND.displayName}.`
+	);
+}
+
+/**
+ * The status for a daemon that reports another product's id, or null. Checked on /healthz, before
+ * readiness: whether another product's daemon is ready is not this app's business, and the caller
+ * must neither wait for it, replace it nor spawn over it.
+ */
+export function foreignProductStatus(port: number, health: DaemonProbe): DaemonStatus | null {
+	const message = foreignProductError(health, port);
+	if (!message) return null;
+	return {
+		state: "error",
+		port,
+		pid: health.pid,
+		executablePath: health.executablePath,
+		workingDirectory: health.workingDirectory,
+		message,
+		code: "foreign_product",
 	};
 }
 
@@ -104,6 +145,8 @@ export async function resolveDaemonFromRunFile(deps: RunFileResolveDeps): Promis
 	// at the wrong process — return null so the caller falls through to the port
 	// probe rather than trusting a stale handshake.
 	if (!health || health.pid !== info.pid) return null;
+	const foreign = foreignProductStatus(info.port, health);
+	if (foreign) return foreign;
 	return readinessStatus(info.port, info.pid, health, probe, identityError);
 }
 
@@ -131,6 +174,8 @@ export async function resolveDaemonFromPort(deps: PortProbeResolveDeps): Promise
 	const { expectedPort, probe, identityError } = deps;
 	const health = await probe(expectedPort, "healthz");
 	if (!health) return null;
+	const foreign = foreignProductStatus(expectedPort, health);
+	if (foreign) return foreign;
 	return readinessStatus(expectedPort, health.pid, health, probe, identityError);
 }
 

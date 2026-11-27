@@ -106,9 +106,12 @@ trap cleanup EXIT
 platform="$(uname -s)"
 arch="$(uname -m)"
 case "$platform:$arch" in
-	Darwin:arm64) asset='agent-orchestrator-darwin-arm64.zip' ;;
-	Darwin:x86_64) asset='agent-orchestrator-darwin-x64.zip' ;;
-	Linux:x86_64) asset='agent-orchestrator-linux-x64.AppImage' ;;
+	# This product's bootstrap asset names (frontend/src/shared/brands.json executableName), the
+	# same ones `ao start` asks the update server for. Written out because this script is
+	# standalone; frontend/makers/brand-identity.test.ts keeps them in step with the profile.
+	Darwin:arm64) asset='BlueAshAI-darwin-arm64.zip' ;;
+	Darwin:x86_64) asset='BlueAshAI-darwin-x64.zip' ;;
+	Linux:x86_64) asset='BlueAshAI-linux-x64.AppImage' ;;
 	Linux:aarch64|Linux:arm64) if [[ -z "$bundle" ]]; then
 		printf 'No published desktop artifact for %s/%s; pass --bundle from a native build.\n' "$platform" "$arch" >&2
 		exit 1

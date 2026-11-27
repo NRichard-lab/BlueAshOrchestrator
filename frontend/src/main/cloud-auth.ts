@@ -17,7 +17,7 @@ import { isWebDistinctId, type CloudAccount, type CloudSignInContext } from "../
 // functions, so the static ES cycle is safe at module-init time.
 import { revokeLocalSession } from "./cloud-auth-local";
 import { providerAuthFlow } from "./provider-auth-flow";
-import { BRAND } from "../shared/brand";
+import { BRAND, ENV } from "../shared/brand";
 
 // persistLocalClaudeOAuthToken writes a captured Claude setup-token under the AO
 // data dir so local claude sessions can authenticate with the SAME credential
@@ -191,7 +191,7 @@ export function resolveCloudAuthDir(
   launchWorkingDirectory: string,
   isPackaged: boolean,
 ): string {
-  const configured = env.AO_DATA_DIR?.trim();
+  const configured = env[ENV.DATA_DIR]?.trim();
   if (configured) return path.resolve(launchWorkingDirectory, configured);
   return isPackaged ? path.join(homeDir, BRAND.stateDirName) : path.join(homeDir, BRAND.stateDirName, "dev");
 }

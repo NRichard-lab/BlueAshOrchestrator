@@ -20,11 +20,18 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 //go:embed assets/hook.cjs
-var hookSource []byte
+var hookSourceTemplate []byte
+
+// hookSource is the managed hook with this build's instance-variable names. The
+// asset is written with the legacy AO_ spellings; routing.json keys and the
+// environment the hook hands to `ao hooks` must use the brand's names, or the
+// hook would refuse every event and the CLI would not find its daemon.
+var hookSource = brand.RewriteEnvNames(hookSourceTemplate)
 
 const profileMarker = "agent-orchestrator: private minimax-code profile\n"
 const standingTransportMarker = "agent-orchestrator: native user-prompt context v1\n"
@@ -530,12 +537,12 @@ func (p *Plugin) PrepareRuntimeLaunch(ctx context.Context, cfg ports.WorkspaceHo
 		return err
 	}
 	env := map[string]string{}
-	for _, key := range []string{"AO_SESSION_ID", "AO_DATA_DIR", "AO_RUN_FILE", "AO_RUNTIME_LAUNCH_ID"} {
+	for _, key := range []string{"AO_SESSION_ID", brand.Env("AO_DATA_DIR"), brand.Env("AO_RUN_FILE"), "AO_RUNTIME_LAUNCH_ID"} {
 		if value := cfg.Env[key]; value != "" {
 			env[key] = value
 		}
 	}
-	if env["AO_SESSION_ID"] != cfg.SessionID || env["AO_DATA_DIR"] != cfg.DataDir || !launchIDPattern.MatchString(env["AO_RUNTIME_LAUNCH_ID"]) {
+	if env["AO_SESSION_ID"] != cfg.SessionID || env[brand.Env("AO_DATA_DIR")] != cfg.DataDir || !launchIDPattern.MatchString(env["AO_RUNTIME_LAUNCH_ID"]) {
 		return errors.New("MiniMax hook routing requires the current AO runtime generation")
 	}
 	// Pin the conversation this launch runs: the restored native ID, or empty so

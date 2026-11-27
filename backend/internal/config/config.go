@@ -299,13 +299,13 @@ func Load() (Config, error) {
 		ManagedHarnessInstalls: true,
 	}
 
-	if raw := os.Getenv("AO_PORT"); raw != "" {
+	if raw := os.Getenv(brand.Env("AO_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil {
-			return Config{}, fmt.Errorf("invalid AO_PORT %q: %w", raw, err)
+			return Config{}, fmt.Errorf("invalid %s %q: %w", brand.Env("AO_PORT"), raw, err)
 		}
 		if port < 1 || port > 65535 {
-			return Config{}, fmt.Errorf("invalid AO_PORT %d: out of range 1-65535", port)
+			return Config{}, fmt.Errorf("invalid %s %d: out of range 1-65535", brand.Env("AO_PORT"), port)
 		}
 		cfg.Port = port
 	}
@@ -341,7 +341,7 @@ func Load() (Config, error) {
 	// A missing AO_APP_RUN_ID means nothing is supervising this daemon, so this
 	// boot IS the run: mint an id rather than leaving it empty, which would make
 	// every boot share one run id and defeat orphan detection entirely.
-	if raw := os.Getenv("AO_APP_RUN_ID"); raw != "" {
+	if raw := os.Getenv(brand.Env("AO_APP_RUN_ID")); raw != "" {
 		cfg.AppRunID = raw
 	} else {
 		cfg.AppRunID = newAppRunID()
@@ -726,8 +726,8 @@ func newAppRunID() string {
 // wins; otherwise it sits under the canonical AO home directory so the CLI and
 // Electron supervisor share one handshake location.
 func resolveRunFilePath() (string, error) {
-	if p, ok := os.LookupEnv("AO_RUN_FILE"); ok && p != "" {
-		return absOverride("AO_RUN_FILE", p)
+	if p, ok := os.LookupEnv(brand.Env("AO_RUN_FILE")); ok && p != "" {
+		return absOverride(brand.Env("AO_RUN_FILE"), p)
 	}
 	stateDir, err := defaultStateDir()
 	if err != nil {
@@ -740,8 +740,8 @@ func resolveRunFilePath() (string, error) {
 // AO_DATA_DIR wins; otherwise it defaults under the same canonical AO home
 // directory as the run-file.
 func resolveDataDir() (string, error) {
-	if p, ok := os.LookupEnv("AO_DATA_DIR"); ok && p != "" {
-		return absOverride("AO_DATA_DIR", p)
+	if p, ok := os.LookupEnv(brand.Env("AO_DATA_DIR")); ok && p != "" {
+		return absOverride(brand.Env("AO_DATA_DIR"), p)
 	}
 	stateDir, err := defaultStateDir()
 	if err != nil {
@@ -783,7 +783,7 @@ func ResolvePaths() (stateDir, dataDir, runFile string, err error) {
 		return
 	}
 	stateDir = filepath.Dir(dataDir)
-	if os.Getenv("AO_DATA_DIR") != "" {
+	if os.Getenv(brand.Env("AO_DATA_DIR")) != "" {
 		stateDir = dataDir
 	}
 	return

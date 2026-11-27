@@ -19,6 +19,7 @@ export function daemonFailureTitle(status: DaemonStatus, t: TFunction = appI18n.
 		case "daemon_unreachable":
 			return t("daemon.title.unreachable");
 		case "identity_mismatch":
+		case "foreign_product":
 			return t("daemon.title.identityMismatch");
 		case "binary_missing":
 			return t("daemon.title.binaryMissing");
@@ -43,6 +44,9 @@ export function daemonFailureHint(status: DaemonStatus, t: TFunction = appI18n.t
 		case "daemon_unreachable":
 		case "identity_mismatch":
 			return t("daemon.hint.conflict");
+		// The message already says what to change; restarting this app's daemon cannot fix it.
+		case "foreign_product":
+			return "";
 		default:
 			return t("daemon.hint.default");
 	}

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	agentagy "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/agy"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -70,7 +71,7 @@ func (r *Reviewer) ReviewCommand(ctx context.Context, inv ports.ReviewInvocation
 		return ports.ReviewCommandSpec{}, fmt.Errorf("agy reviewer: prepare Orchestrator-owned profile: %w", err)
 	}
 	envVars := env.TUIEnvironment()
-	envVars["AO_DATA_DIR"] = env.DataDir
+	envVars[brand.Env("AO_DATA_DIR")] = env.DataDir
 	if err := r.verifyCompatibility(ctx, binary, envVars); err != nil {
 		return ports.ReviewCommandSpec{}, err
 	}

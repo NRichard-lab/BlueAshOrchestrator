@@ -3,9 +3,13 @@ import { lstat, readFile, rename } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import semver from "semver";
+import { BRAND } from "../shared/brand";
 
-export const AO_BUNDLE_ID = "dev.agent-orchestrator.desktop";
-export const MAINTAINED_MAC_APP_PATH = "/Applications/Agent Orchestrator.app";
+// This product's bundle identity and the one macOS location its updater maintains. From the product
+// profile: a BlueAshAI build must never read, stage or trash an Orchestrator bundle, or the reverse.
+export const APP_BUNDLE_ID = BRAND.appId;
+export const MAC_APP_BUNDLE_NAME = `${BRAND.packagerName}.app`;
+export const MAINTAINED_MAC_APP_PATH = `/Applications/${MAC_APP_BUNDLE_NAME}`;
 
 export interface BundleMetadata {
 	bundleId: string | null;
@@ -85,8 +89,8 @@ export async function findStaleAppCopies(
 
 	const dependencies = { ...defaultDiscoveryDependencies, ...dependencyOverrides };
 	const candidates = [
-		path.join(input.homeDir, "Downloads", "Agent Orchestrator.app"),
-		path.join(input.homeDir, "Desktop", "Agent Orchestrator.app"),
+		path.join(input.homeDir, "Downloads", MAC_APP_BUNDLE_NAME),
+		path.join(input.homeDir, "Desktop", MAC_APP_BUNDLE_NAME),
 	];
 	const copies: StaleAppCopy[] = [];
 	for (const candidate of candidates) {
@@ -94,7 +98,7 @@ export async function findStaleAppCopies(
 			const identity = await dependencies.fileIdentity(candidate);
 			if (!identity) continue;
 			const metadata = await dependencies.readMetadata(candidate);
-			if (metadata.bundleId !== AO_BUNDLE_ID) continue;
+			if (metadata.bundleId !== APP_BUNDLE_ID) continue;
 			const candidateVersion = semver.valid(metadata.version ?? "");
 			if (candidateVersion && semver.lt(candidateVersion, runningVersion)) {
 				copies.push({ path: candidate, version: candidateVersion, ...identity });
@@ -153,7 +157,7 @@ export async function isUnchangedStaleAppCopy(
 		if (!identity || identity.device !== copy.device || identity.inode !== copy.inode) return false;
 		const metadata = await dependencies.readMetadata(inspectPath);
 		const bundleVersion = semver.valid(metadata.version ?? "");
-		return metadata.bundleId === AO_BUNDLE_ID
+		return metadata.bundleId === APP_BUNDLE_ID
 			&& bundleVersion !== null
 			&& bundleVersion === copy.version
 			&& semver.lt(copy.version, currentVersion);

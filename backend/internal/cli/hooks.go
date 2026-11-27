@@ -25,6 +25,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/copilot"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/cursor"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/memcode"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/pricing"
@@ -683,7 +684,7 @@ const artifactNudgeReason = "Orchestrator does not show Claude artifacts. Write 
 // use, by atomically creating a marker file under AO_DATA_DIR. Any failure
 // reports false so the tool call is allowed.
 func claimArtifactNudge(sessionID string) bool {
-	dataDir := strings.TrimSpace(os.Getenv("AO_DATA_DIR"))
+	dataDir := strings.TrimSpace(os.Getenv(brand.Env("AO_DATA_DIR")))
 	if dataDir == "" {
 		return false
 	}
@@ -1209,7 +1210,7 @@ func shouldEmitSessionStartContext(agent, event string) bool {
 }
 
 func (c *commandContext) emitSessionStartContext(agent, event, sessionID string) {
-	dataDir := strings.TrimSpace(os.Getenv("AO_DATA_DIR"))
+	dataDir := strings.TrimSpace(os.Getenv(brand.Env("AO_DATA_DIR")))
 	if dataDir == "" {
 		return
 	}
@@ -1248,7 +1249,7 @@ func (c *commandContext) reportHookFailure(agent, event, sessionID string, cause
 	if !errors.Is(cause, errDaemonNotRunning) {
 		_, _ = fmt.Fprintln(c.deps.Err, msg)
 	}
-	dataDir := strings.TrimSpace(os.Getenv("AO_DATA_DIR"))
+	dataDir := strings.TrimSpace(os.Getenv(brand.Env("AO_DATA_DIR")))
 	if dataDir == "" {
 		return
 	}

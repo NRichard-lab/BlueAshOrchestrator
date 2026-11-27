@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 )
 
@@ -51,7 +52,7 @@ func computerUsePrompt(skillDir string) string {
 // daemon: its supervisor always sets AO_OWNER ("app" or "persistent"), and a
 // CLI-started daemon has none. Only then does macOS check Orchestrator for
 // what sessions run. A variable so tests can pick one.
-var desktopOwnedDaemon = func() bool { return os.Getenv("AO_OWNER") != "" }
+var desktopOwnedDaemon = func() bool { return os.Getenv(brand.Env("AO_OWNER")) != "" }
 
 // promptGOOS is the platform the daemon, and so every session it spawns, runs
 // on. A variable so tests can pick one.

@@ -92,6 +92,34 @@ describe("resolveInstallHomePaths", () => {
 		});
 	});
 
+	// Every terminal and agent the app starts inherits the data-dir variable the app gave its daemon.
+	// Launching the app again from one of them must resolve the SAME Electron profile as a normal
+	// launch, or the single-instance lock (tied to the profile folder) is missed and a second app opens.
+	it("treats an inherited variable naming the install's own data folder as the marker, not an override", () => {
+		const marker = defaultInstallHomeRecord("/opt/BlueAshAI");
+		const normal = resolveInstallHomePaths({
+			env: {},
+			homeDir: "/home/ao",
+			launchWorkingDirectory: "/work",
+			isPackaged: true,
+			execDir: "/opt/BlueAshAI",
+			marker,
+		});
+		for (const inherited of [marker.dataDir, `${marker.dataDir}${path.sep}`, marker.dataDir.toUpperCase()]) {
+			const fromSession = resolveInstallHomePaths({
+				env: { AO_DATA_DIR: inherited },
+				homeDir: "/home/ao",
+				launchWorkingDirectory: "/some/worktree",
+				isPackaged: true,
+				execDir: "/opt/BlueAshAI",
+				marker,
+			});
+			expect(fromSession).toEqual(normal);
+			expect(fromSession.source).toBe("marker");
+			expect(fromSession.electronDir).toBe(marker.electronDir);
+		}
+	});
+
 	it("falls back to the profile defaults without a marker", () => {
 		expect(
 			resolveInstallHomePaths({

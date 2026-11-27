@@ -13,6 +13,8 @@ export type DaemonFailureCode =
 	| "port_unconfirmed"
 	| "not_ready"
 	| "identity_mismatch"
+	// A daemon that reports another product's id answered. Never attached to, replaced or stopped.
+	| "foreign_product"
 	| "datadir_unwritable";
 
 export type DaemonStatus = {

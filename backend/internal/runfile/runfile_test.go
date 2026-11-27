@@ -187,3 +187,22 @@ func TestCheckStaleNoFile(t *testing.T) {
 		t.Errorf("CheckStale with no file = %+v, want nil", live)
 	}
 }
+
+// Product round-trips, and a file from a build that predates the field reads as "not reported".
+func TestProductRoundTripAndAbsence(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "running.json")
+	if err := Write(path, Info{PID: 1, Port: 3101, Product: "blueashai"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Read(path)
+	if err != nil || got == nil || got.Product != "blueashai" {
+		t.Fatalf("Read = %+v, %v", got, err)
+	}
+	if err := os.WriteFile(path, []byte(`{"pid":1,"port":3001}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err = Read(path)
+	if err != nil || got == nil || got.Product != "" {
+		t.Fatalf("a file without the field must read as unreported, got %+v, %v", got, err)
+	}
+}

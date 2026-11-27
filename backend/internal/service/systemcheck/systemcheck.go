@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	agentsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/agent"
@@ -183,7 +184,7 @@ func (s *Service) checkTmux() Requirement {
 			Detail: "Not required on Windows — Orchestrator uses the built-in ConPTY terminal runtime instead of tmux.",
 		}
 	}
-	configured := strings.TrimSpace(os.Getenv("AO_TMUX_BINARY"))
+	configured := strings.TrimSpace(os.Getenv(brand.Env("AO_TMUX_BINARY")))
 	resolution, err := tmuxbin.ResolveWith(configured, os.Executable, s.executables.LookPath)
 	if err != nil || resolution.Path == "" {
 		detail := "tmux was not found on PATH; it is required on macOS/Linux to start sessions."

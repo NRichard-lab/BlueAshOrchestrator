@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/caller"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/daemonmeta"
@@ -454,6 +455,9 @@ func daemonProbePayload(status string, cfg config.Config, ipv6Loopback bool) map
 		"service":      daemonmeta.ServiceName,
 		"pid":          os.Getpid(),
 		"ipv6Loopback": ipv6Loopback,
+		// Lets a client tell this product's daemon from another product's that
+		// shares the service name (the upstream Orchestrator omits the field).
+		"product": brand.ID,
 	}
 	if exe, err := os.Executable(); err == nil && exe != "" {
 		payload["executablePath"] = exe
@@ -468,7 +472,7 @@ func daemonProbePayload(status string, cfg config.Config, ipv6Loopback bool) map
 	// AppImage. The value is the stable outer .AppImage file path, which the
 	// app's daemon identity check compares instead of the transient
 	// /tmp/.mount_* executable path (regenerated on every AppImage launch).
-	if appImage := os.Getenv("AO_APPIMAGE"); appImage != "" {
+	if appImage := os.Getenv(brand.Env("AO_APPIMAGE")); appImage != "" {
 		payload["appImagePath"] = appImage
 	}
 	return payload

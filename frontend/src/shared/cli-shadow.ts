@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import semver from "semver";
 import { cliLinkSupport, type CliLinkIo } from "./cli-link";
+import { ENV } from "./brand";
 
 // "different" means the versions cannot be ordered, such as a "dev" build or an
 // ao that did not answer.
@@ -67,7 +68,7 @@ const CLI_NAME = "ao";
 // AO_DATA_DIR or AO_RUN_FILE) is a side-by-side instance, so the ao on PATH
 // differs from theirs by design. Only the user's real install can be shadowed.
 export function cliShadowEnabled(env: Record<string, string | undefined>, isPackaged: boolean): boolean {
-	return isPackaged && !env.AO_DATA_DIR?.trim() && !env.AO_RUN_FILE?.trim();
+	return isPackaged && !env[ENV.DATA_DIR]?.trim() && !env[ENV.RUN_FILE]?.trim();
 }
 
 // `ao version` prints "0.14.9-nightly.1 commit abc built ...", and older or

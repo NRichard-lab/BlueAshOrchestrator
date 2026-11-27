@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/opencodev2"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/process"
 	"github.com/aoagents/agent-orchestrator/backend/internal/providerkeys"
@@ -357,7 +358,7 @@ func (s *Service) startReserved(ctx context.Context, plan Plan) (StartResult, er
 	if plan.AgentID == "claude-code" && s.dataDir != "" {
 		// The launcher runs in a private auth workspace. Preserve the daemon's
 		// resolved data root instead of re-resolving a relative inherited value.
-		env["AO_DATA_DIR"] = s.dataDir
+		env[brand.Env("AO_DATA_DIR")] = s.dataDir
 	}
 	if plan.AgentID == "opencode-v2" {
 		dataHome, err := opencodev2.DataHome(ctx)

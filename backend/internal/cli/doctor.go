@@ -23,6 +23,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/codex"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/registry"
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/tmuxbin"
 )
@@ -487,7 +488,7 @@ func (c *commandContext) checkTerminalRuntime(ctx context.Context) doctorCheck {
 }
 
 func (c *commandContext) checkTmux(ctx context.Context) doctorCheck {
-	resolution, err := tmuxbin.ResolveWith(os.Getenv("AO_TMUX_BINARY"), c.deps.Executable, c.deps.LookPath)
+	resolution, err := tmuxbin.ResolveWith(os.Getenv(brand.Env("AO_TMUX_BINARY")), c.deps.Executable, c.deps.LookPath)
 	if err != nil || resolution.Path == "" {
 		return doctorCheck{Level: doctorWarn, Section: doctorSectionTools, Name: "tmux", Message: "no configured, bundled, or system tmux found for this ao process; required on macOS/Linux to start sessions"}
 	}

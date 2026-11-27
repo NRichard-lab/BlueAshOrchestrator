@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
 )
@@ -39,6 +40,32 @@ func TestHealthProbes(t *testing.T) {
 		}
 		if ct := resp.Header.Get("Content-Type"); ct != "application/json; charset=utf-8" {
 			t.Errorf("GET %s Content-Type = %q, want JSON", path, ct)
+		}
+	}
+}
+
+// Both probes name the product that built the daemon, so a client can refuse a foreign one.
+func TestHealthProbesIncludeProduct(t *testing.T) {
+	router := newTestRouter(config.Config{}, discardLogger(), nil)
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	client := &http.Client{Timeout: 2 * time.Second}
+	for _, path := range []string{"/healthz", "/readyz"} {
+		resp, err := client.Get(srv.URL + path)
+		if err != nil {
+			t.Fatalf("GET %s: %v", path, err)
+		}
+		var body struct {
+			Product string `json:"product"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&body)
+		resp.Body.Close()
+		if err != nil {
+			t.Fatalf("decode %s: %v", path, err)
+		}
+		if body.Product != brand.ID || body.Product == "" {
+			t.Fatalf("GET %s product = %q, want %q", path, body.Product, brand.ID)
 		}
 	}
 }

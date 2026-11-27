@@ -65,7 +65,7 @@ case "${1:-}" in
 		python3 - "$tmp" "$digest" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
-asset = {"name": "agent-orchestrator-linux-x64.AppImage", "browser_download_url": "https://example.test/stable", "digest": "sha256:" + sys.argv[2]}
+asset = {"name": "BlueAshAI-linux-x64.AppImage", "browser_download_url": "https://example.test/stable", "digest": "sha256:" + sys.argv[2]}
 stable = {"tag_name": "v1.0.0", "prerelease": False, "draft": False, "published_at": "2026-10-10T00:00:00Z", "assets": [asset]}
 def nightly(tag, date, url):
     return dict(stable, tag_name=tag, prerelease=True, published_at=date, assets=[dict(asset, browser_download_url=url)])

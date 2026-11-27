@@ -11,14 +11,17 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hooksjson"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 const (
 	museManagedHooksEnvVar = "TBH_MANAGED_HOOKS_PATH"
 	museHookCommandPrefix  = "ao hooks muse "
-	aoRunFileEnvVar        = "AO_RUN_FILE"
 )
+
+// aoRunFileEnvVar is an instance variable, so its name comes from the brand.
+var aoRunFileEnvVar = brand.Env("AO_RUN_FILE")
 
 type museHooksFile struct {
 	Hooks map[string][]hooksjson.MatcherGroup `json:"hooks"`
@@ -53,7 +56,7 @@ func museHookGroup(cfg ports.WorkspaceHookConfig, event string) hooksjson.Matche
 func museHookCommand(cfg ports.WorkspaceHookConfig, event string) string {
 	assignments := []string{
 		"AO_SESSION_ID=" + museShellQuote(strings.TrimSpace(cfg.SessionID)),
-		"AO_DATA_DIR=" + museShellQuote(strings.TrimSpace(cfg.DataDir)),
+		brand.Env("AO_DATA_DIR") + "=" + museShellQuote(strings.TrimSpace(cfg.DataDir)),
 	}
 	if runFile := strings.TrimSpace(os.Getenv(aoRunFileEnvVar)); runFile != "" {
 		assignments = append(assignments, aoRunFileEnvVar+"="+museShellQuote(runFile))

@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/devimport"
 )
@@ -147,7 +148,7 @@ func defaultNormalDataDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolve home dir: %w", err)
 	}
-	return filepath.Join(home, ".ao", "data"), nil
+	return filepath.Join(home, brand.StateDirName, "data"), nil
 }
 
 func expandHomePath(path string) (string, error) {
