@@ -1,3 +1,4 @@
+import { productText } from "./shared/brand-text";
 import type { SideCloseRequest, SideCloseState } from "./shared/side-close";
 import { SideCloseRecovery, type SideSnapshotCoverage } from "./main/side-close";
 import { SideCloseController } from "./main/side-close-controller";
@@ -1149,7 +1150,7 @@ async function createWindowInternal(): Promise<void> {
 	windowComposition = composition;
 	syncNativeWindowBackground(true);
 	const shellWebContents = getShellWebContents();
-	if (!shellWebContents) throw new Error("Orchestrator shell WebContents was not created");
+	if (!shellWebContents) throw new Error(productText("Orchestrator shell WebContents was not created"));
 	trustedShellWebContents.set(shellWebContents.id, shellWebContents);
 	relayScrollPhases(shellWebContents);
 	shellWebContents.once("destroyed", () => {
@@ -1544,7 +1545,7 @@ function handshakeRunFilePath(): string | null {
 
 function editorStateDir(): string {
 	const runFile = runFilePath();
-	if (!runFile) throw new Error("Orchestrator state directory is not available.");
+	if (!runFile) throw new Error(productText("Orchestrator state directory is not available."));
 	return path.dirname(runFile);
 }
 
@@ -1977,12 +1978,12 @@ function daemonIdentityError(launch: DaemonLaunchSpec, probe: DaemonProbe): stri
 			: false;
 		const executableMatches = probe.executablePath ? canonicalPathInside(probe.executablePath, launch.cwd) : false;
 		if (!probe.workingDirectory && !probe.startupWorkingDirectory && !probe.executablePath) {
-			return "An older Orchestrator daemon is already running, but it does not report its checkout identity. Stop it and restart this app.";
+			return productText("An older Orchestrator daemon is already running, but it does not report its checkout identity. Stop it and restart this app.");
 		}
 		if (!cwdMatches && !startupCwdMatches && !executableMatches) {
 			const actual =
 				probe.startupWorkingDirectory ?? probe.workingDirectory ?? probe.executablePath ?? "an unknown location";
-			return `Another Orchestrator daemon is already running from ${actual}; expected this checkout at ${launch.cwd}. Stop the other daemon before using this checkout.`;
+			return productText`Another Orchestrator daemon is already running from ${actual}; expected this checkout at ${launch.cwd}. Stop the other daemon before using this checkout.`;
 		}
 		return null;
 	}
@@ -2104,7 +2105,7 @@ function handleBrowserRuntimeRejection(reason: string): void {
 	disposeBrowserRuntimeLink();
 	setDaemonStatus({
 		state: "starting",
-		message: "Restarting the Orchestrator daemon to restore the browser runtime.",
+		message: productText("Restarting the Orchestrator daemon to restore the browser runtime."),
 	});
 	void startDaemon({ forceReplaceAdopted: true, trigger: "browser_runtime_recovery" });
 }
@@ -2256,7 +2257,7 @@ async function refreshDaemonStatus(): Promise<DaemonStatus> {
 		lifecycleLog("daemon_unreachable", { previousState: daemonStatus.state, previousPid: daemonStatus.pid ?? null, decision: "mark_stopped_no_respawn" });
 		setDaemonStatus({
 			state: "stopped",
-			message: "Orchestrator daemon is no longer reachable.",
+			message: productText("Orchestrator daemon is no longer reachable."),
 			code: "daemon_unreachable",
 		});
 	}
@@ -2595,7 +2596,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 	if (launch.source === "bundled" && !existsSync(launch.command)) {
 		setDaemonStatus({
 			state: "error",
-			message: `Bundled Orchestrator daemon binary was not found at ${launch.command}. Rebuild the desktop package.`,
+			message: productText`Bundled Orchestrator daemon binary was not found at ${launch.command}. Rebuild the desktop package.`,
 			code: "binary_missing",
 		});
 		return daemonStatus;
@@ -2606,7 +2607,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 		if (autoRestartIntent && startCancelled()) return daemonStatus;
 		setDaemonStatus({
 			state: "error",
-			message: `Could not stage Orchestrator's bundled tmux under the Orchestrator data directory: ${(err as Error).message}`,
+			message: productText`Could not stage Orchestrator's bundled tmux under the Orchestrator data directory: ${(err as Error).message}`,
 			code: "binary_missing",
 		});
 		return daemonStatus;
@@ -2626,7 +2627,7 @@ async function startDaemonInner(startEpoch: number, autoRestartIntent: DaemonAut
 			// and leave the UI stuck on "starting". Report it as a failure instead.
 			setDaemonStatus({
 				state: "error",
-				message: `Could not create the Orchestrator data directory at ${launch.cwd}: ${(err as Error).message}`,
+				message: productText`Could not create the Orchestrator data directory at ${launch.cwd}: ${(err as Error).message}`,
 				code: "datadir_unwritable",
 			});
 			return daemonStatus;
@@ -3133,7 +3134,7 @@ function stopDaemon(): DaemonStatus {
 function reportDaemonRestartFailure(error: unknown): DaemonStatus {
 	setDaemonStatus({
 		state: "error",
-		message: `Could not restart the Orchestrator daemon: ${error instanceof Error ? error.message : String(error)}`,
+		message: productText`Could not restart the Orchestrator daemon: ${error instanceof Error ? error.message : String(error)}`,
 		details: daemonOutput.trim() || undefined,
 		code: "spawn_failed",
 	});
@@ -3183,7 +3184,7 @@ async function restartDaemon(): Promise<DaemonStatus> {
 		// a replacement instead of collapsing back to a code-less stopped state.
 		setDaemonStatus({
 			state: "error",
-			message: "Orchestrator daemon is still stopping. It will restart automatically when shutdown completes.",
+			message: productText("Orchestrator daemon is still stopping. It will restart automatically when shutdown completes."),
 			details: daemonOutput.trim() || undefined,
 			code: "not_ready",
 		});
@@ -4802,9 +4803,9 @@ app.whenReady().then(async () => {
 					buttons: ["Move old copies to Trash", "Not now"],
 					defaultId: 0,
 					cancelId: 1,
-					title: "Remove old Orchestrator copies",
+					title: productText("Remove old Orchestrator copies"),
 					message: `Old copies of ${APP_DISPLAY_NAME} can replace your updated app.`,
-					detail: `${formatStaleAppCopies(copies)}\n\nMove these copies to Trash to prevent another downgrade. Your Orchestrator projects and sessions will not be removed.`,
+					detail: productText`${formatStaleAppCopies(copies)}\n\nMove these copies to Trash to prevent another downgrade. Your Orchestrator projects and sessions will not be removed.`,
 					noLink: true,
 				});
 				return result.response === 0;
@@ -4816,7 +4817,7 @@ app.whenReady().then(async () => {
 					buttons: ["OK"],
 					defaultId: 0,
 					title: "Some old copies could not be removed",
-					message: "Move these copies to Trash manually before launching Orchestrator again.",
+					message: productText("Move these copies to Trash manually before launching Orchestrator again."),
 					detail: paths.join("\n"),
 					noLink: true,
 				});

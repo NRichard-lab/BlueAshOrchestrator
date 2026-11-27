@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import type { FirstRunPromptAction } from "../lib/experiments";
 import { apiErrorException } from "../lib/api-error-exception";
 import { AppLink } from "./AppLink";
@@ -1151,7 +1152,7 @@ function importValidationMessage(result: ImportValidationResult): string {
 function importBlockingErrorLabel(code: string): string {
 	switch (code) {
 		case "INVALID_PATH":
-			return "Choose a folder Orchestrator can read.";
+			return productText("Choose a folder Orchestrator can read.");
 		case "PATH_NOT_DIRECTORY":
 			return "Choose a folder, not a file.";
 		case "BARE_REPOSITORY":
@@ -1159,9 +1160,9 @@ function importBlockingErrorLabel(code: string): string {
 		case "UNSUPPORTED_GIT_METADATA":
 			return "Repair the Git metadata or choose a different folder.";
 		case "CHILD_REPO_SCAN_FAILED":
-			return "Orchestrator could not inspect the repositories under this folder.";
+			return productText("Orchestrator could not inspect the repositories under this folder.");
 		case "IMPORT_PATH_UNSAFE":
-			return "Choose a specific project folder outside Orchestrator's own state directories.";
+			return productText("Choose a specific project folder outside Orchestrator's own state directories.");
 		case "DETACHED_HEAD":
 			return "This repository is checked out in detached HEAD state. Check out a named branch before importing it.";
 		case "WORKSPACE_CHILD_REPO_REQUIRED":

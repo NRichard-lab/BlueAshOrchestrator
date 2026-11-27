@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { execFile } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -83,7 +84,7 @@ function projectSetupSafetyReason(repoPath: string, options: ScanOptions = {}): 
 	if (!home) return undefined;
 	const aoState = path.join(home, BRAND.stateDirName);
 	if (isDescendantPath(repoPath, aoState)) {
-		return "Selected folder is inside Orchestrator's internal data directory. Select a project folder outside ~/.ao.";
+		return productText("Selected folder is inside Orchestrator's internal data directory. Select a project folder outside ~/.ao.");
 	}
 	return undefined;
 }
@@ -92,7 +93,7 @@ export async function ancestorRepositorySetupWarning(repoPath: string, options: 
 	try {
 		const top = normalizeGitReportedPath(repoPath, await gitOutput(repoPath, ["rev-parse", "--show-toplevel"], options));
 		if (top && !samePath(top, repoPath)) {
-			return `Selected folder is inside an existing Git repository at ${top}. Orchestrator will initialize this folder as a separate repository.`;
+			return productText`Selected folder is inside an existing Git repository at ${top}. Orchestrator will initialize this folder as a separate repository.`;
 		}
 	} catch {
 		// No ancestor repository.
@@ -213,7 +214,7 @@ async function scanGitRepo(
 }
 
 function scanRepoValidationReason(name: string): string | undefined {
-	if (name === "__root__") return "Repository name is reserved by Orchestrator.";
+	if (name === "__root__") return productText("Repository name is reserved by Orchestrator.");
 	return undefined;
 }
 

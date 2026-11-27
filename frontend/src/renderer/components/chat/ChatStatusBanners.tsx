@@ -13,6 +13,7 @@
  * without displacing the conversation.
  */
 
+import { productText } from "../../../shared/brand-text";
 import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CircleArrowUp, Download, KeyRound, Plug, TriangleAlert } from "@/components/app-icons";
@@ -145,11 +146,11 @@ export const ThreadStateBanner = memo(function ThreadStateBanner({
 		status === "system_error"
 			? {
 					title: "The agent's thread hit an internal error",
-					body: "The provider reported a fault in this thread, not in Orchestrator's connection to it. New turns will usually fail; the conversation and the worktree are kept.",
+					body: productText("The provider reported a fault in this thread, not in Orchestrator's connection to it. New turns will usually fail; the conversation and the worktree are kept."),
 				}
 			: {
 					title: "The agent closed this thread",
-					body: "The provider dropped the conversation on its side. Orchestrator kept the history, but the agent no longer holds it.",
+					body: productText("The provider dropped the conversation on its side. Orchestrator kept the history, but the agent no longer holds it."),
 				};
 
 	return (

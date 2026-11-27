@@ -1,3 +1,4 @@
+import { productText } from "../../../shared/brand-text";
 import type { ConversationActivity } from "../../types/conversation";
 import { mcpToolName } from "../../lib/mcp-tool";
 
@@ -694,7 +695,7 @@ function isOrchestratorGuide(path: string): boolean {
  */
 function aoStep(args: string[]): CommandStep {
 	if (args.includes("--help") || args.includes("-h") || args[0] === "help") {
-		return { done: "Looked up how to use Orchestrator", live: "Looking up how to use Orchestrator", icon: "read" };
+		return { done: productText("Looked up how to use Orchestrator"), live: productText("Looking up how to use Orchestrator"), icon: "read" };
 	}
 	const values = positionals(args, AO_VALUE_FLAGS);
 	const [area, action] = values;
@@ -735,7 +736,7 @@ function aoStep(args: string[]): CommandStep {
 		case "project":
 			return { done: "Checked projects", live: "Checking projects", icon: "list" };
 	}
-	return { done: "Used Orchestrator", live: "Using Orchestrator", icon: "tool" };
+	return { done: productText("Used Orchestrator"), live: productText("Using Orchestrator"), icon: "tool" };
 }
 
 function aoBrowserStep(

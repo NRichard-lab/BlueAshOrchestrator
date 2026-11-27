@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import { useQueryClient } from "@tanstack/react-query";
 import { RotateCcw } from "@/components/app-icons";
 import {
@@ -1493,7 +1494,7 @@ function AttachedTerminal({
 							<TerminalBootStatus subject={session.kind === "orchestrator" ? "orchestrator" : "agent"} label={coverLabel} />
 						) : (
 							<div className="text-center">
-								<div className="text-terminal">{"Orchestrator"}</div>
+								<div className="text-terminal">{productText("Orchestrator")}</div>
 								<div className="mt-2 text-terminal-dim">{t("terminal.noSessionSelected")}</div>
 							</div>
 						)}

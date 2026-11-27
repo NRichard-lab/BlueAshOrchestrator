@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import net from "node:net";
 import { StringDecoder } from "node:string_decoder";
 import { HANDSHAKE_CLOSED_BEFORE_ACCEPT } from "../shared/daemon-takeover";
@@ -346,8 +347,8 @@ export function connectBrowserRuntime(
 				// malformed hello are all refusals, with different causes.
 				const reason = error ? `${error.code}: ${error.message}` : "no reason given";
 				log(
-					`browser-runtime-link: the Orchestrator daemon refused this app's browser runtime (${reason}); ` +
-						"run `ao stop`, then reopen Orchestrator.",
+					productText`browser-runtime-link: the Orchestrator daemon refused this app's browser runtime (${reason}); ` +
+						productText("run `ao stop`, then reopen Orchestrator."),
 				);
 				setState({ ...REJECTED, rejectionCode: error?.code });
 				// A refused token cannot be retried into acceptance, so the caller may

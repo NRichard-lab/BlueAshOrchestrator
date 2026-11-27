@@ -1,3 +1,4 @@
+import { productText } from "../../../shared/brand-text";
 import type { ChatExcerptSnapshot } from "../../../shared/chat-excerpt";
 import { excerptSizeError } from "../../../shared/chat-excerpt";
 import { captureExcerptSnapshot, captureExcerptTurn } from "../../lib/chat-excerpt-snapshot";
@@ -3164,7 +3165,7 @@ function ControllerBanner({
 				{controller.state === "stopped" && waking && !terminated ? (
 					<span className="text-xs leading-snug text-muted-foreground">Restoring the agent. You can keep typing.</span>
 				) : restarting ? (
-					<span className="text-xs leading-snug text-muted-foreground">Orchestrator restarted. History is kept.</span>
+					<span className="text-xs leading-snug text-muted-foreground">{productText("Orchestrator")} restarted. History is kept.</span>
 				) : controller.error ? (
 					<span className="text-xs leading-snug text-muted-foreground">{controller.error}</span>
 				) : null}

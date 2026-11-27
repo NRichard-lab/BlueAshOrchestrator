@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import { sessionBrowserUnavailable } from "../lib/artifact-preview";
 import { BrowserIcon } from "./icons";
 import { BrowserSiteBlockRow, continueLabel, useUserBrowser } from "./BrowserContinueElsewhere";
@@ -2084,7 +2085,7 @@ function StaticPreview({ url }: { url: string }) {
 	return (
 		<div className="absolute inset-0 overflow-auto bg-background text-foreground">
 			<div className="border-b border-border bg-surface px-4 py-3">
-				<div className="text-caption font-semibold uppercase tracking-wide-md text-muted-foreground">Orchestrator Preview</div>
+				<div className="text-caption font-semibold uppercase tracking-wide-md text-muted-foreground">{productText("Orchestrator")} Preview</div>
 				<div className="mt-1 truncate font-mono text-xs text-accent">{url}</div>
 			</div>
 			<div className="mx-auto max-w-preview-max px-5 py-6">

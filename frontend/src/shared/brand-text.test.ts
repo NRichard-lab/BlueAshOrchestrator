@@ -4,7 +4,7 @@ import { appCatalogs } from "../renderer/i18n/all-messages";
 import { createAppI18n } from "../renderer/i18n/instance";
 import { APP_LOCALES } from "./ui-locale";
 import { BLUEASHAI_BRAND, LEGACY_BRAND } from "./brand";
-import { DE_PRODUCT_OCCURRENCES, DE_ROLE_KEYS, KEPT_KEYS, ROLE_KEYS, brandCatalog, brandText } from "./brand-text";
+import { DE_PRODUCT_OCCURRENCES, DE_ROLE_KEYS, KEPT_KEYS, ROLE_KEYS, brandCatalog, brandText, productText, productTextFor } from "./brand-text";
 
 const blue = (value: string, key = "some.key", locale = "en") => brandText(value, key, locale, BLUEASHAI_BRAND);
 const baseKey = (key: string) => key.replace(/_(?:zero|one|two|few|many|other)$/, "");
@@ -182,5 +182,40 @@ describe("brandCatalog over the real catalogs", () => {
 			expect(Math.max(...positions), key).toBeLessThan(occurrences);
 			expect(positions.length, key).toBeLessThan(occurrences);
 		}
+	});
+});
+
+describe("productText", () => {
+	const blueText = productTextFor(BLUEASHAI_BRAND);
+
+	it("returns the text as written for the legacy profile, which is what source and test builds compile", () => {
+		const reason = "version";
+		expect(productText("Restart Orchestrator to retry.")).toBe("Restart Orchestrator to retry.");
+		expect(productText`the Orchestrator daemon refused (${reason})`).toBe("the Orchestrator daemon refused (version)");
+	});
+
+	it("rewrites a plain string", () => {
+		expect(blueText("Orchestrator")).toBe("Blue Ash AI");
+		expect(blueText("Could not stage Orchestrator's bundled tmux under the Orchestrator data directory")).toBe(
+			"Could not stage Blue Ash AI's bundled tmux under the Blue Ash AI data directory",
+		);
+		expect(blueText("An older Orchestrator daemon is already running.")).toBe("An older Blue Ash AI daemon is already running.");
+		expect(blueText("An Orchestrator daemon is already running, but it is not ready yet.")).toBe("A Blue Ash AI daemon is already running, but it is not ready yet.");
+		expect(blueText("This Orchestrator-managed session link is malformed.")).toBe("This Blue Ash AI-managed session link is malformed.");
+	});
+
+	it("keeps Orchestrator Cloud", () => {
+		expect(blueText("Sign in to Orchestrator Cloud to use remote hosts.")).toBe("Sign in to Orchestrator Cloud to use remote hosts.");
+	});
+
+	it("as a template tag, rewrites the literal parts and never the values", () => {
+		const actual = "/Applications/Agent Orchestrator.app";
+		const title = "Orchestrator notes";
+		expect(blueText`Another Orchestrator daemon is already running from ${actual}; expected ${title}.`).toBe(
+			"Another Blue Ash AI daemon is already running from /Applications/Agent Orchestrator.app; expected Orchestrator notes.",
+		);
+		expect(blueText`The command at ${"/usr/local/bin/ao"} is not an Orchestrator link.`).toBe("The command at /usr/local/bin/ao is not a Blue Ash AI link.");
+		expect(blueText`Orchestrator v${"1.2.3"} is no longer supported.`).toBe("Blue Ash AI v1.2.3 is no longer supported.");
+		expect(blueText`${3} of ${4}`).toBe("3 of 4");
 	});
 });

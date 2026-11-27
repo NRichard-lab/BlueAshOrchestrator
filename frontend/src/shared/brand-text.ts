@@ -17,7 +17,10 @@
 // brand-text.test.ts checks every catalog against these lists, so a new upstream string that
 // uses the word in a way the lists do not cover fails there rather than shipping mislabelled.
 //
-// This module is pure so the renderer and the main process (tray menu) can both import it.
+// English text written in code instead of a catalog (dialogs, toasts, error messages) goes through
+// productText, which applies the same rewrite to a literal.
+//
+// This module is pure so the renderer and the main process can both import it.
 import { BRAND, LEGACY_BRAND, type Brand } from "./brand";
 
 /** Catalog values are strings, a few string arrays, and (in the tray's partial catalog) absent. */
@@ -158,3 +161,30 @@ export function brandCatalog<T extends Catalog>(catalog: T, locale: string, bran
 	}
 	return out as T;
 }
+
+type ProductText = {
+	(text: string): string;
+	(strings: TemplateStringsArray, ...values: unknown[]): string;
+};
+
+/** productText for a given profile. Exported for tests; code uses productText. */
+export function productTextFor(brand: Brand): ProductText {
+	const rewrite = (text: string) => brandText(text, "", "en", brand);
+	return (first: string | TemplateStringsArray, ...values: unknown[]): string => {
+		if (typeof first === "string") return rewrite(first);
+		return first.reduce((out, part, index) => out + rewrite(part) + (index < values.length ? String(values[index]) : ""), "");
+	};
+}
+
+/**
+ * English text written in code, with this build's product name. Keep the upstream wording inside:
+ *
+ *   productText("Restart Orchestrator to retry.")
+ *   productText`Could not restart the Orchestrator daemon: ${message}`
+ *
+ * As a template tag it rewrites only the literal parts, so a value such as a path
+ * (/Applications/Agent Orchestrator.app) or a session title is never changed. The legacy profile
+ * returns the text as written. Do not wrap the orchestrator session role, text addressed to agents,
+ * or identifiers such as a User-Agent or a commit author name.
+ */
+export const productText: ProductText = productTextFor(BRAND);

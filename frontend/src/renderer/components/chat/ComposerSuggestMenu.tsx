@@ -12,6 +12,7 @@
  * rather than a focus move).
  */
 
+import { productText } from "../../../shared/brand-text";
 import { useEffect, useRef } from "react";
 import { CornerDownLeft } from "@/components/app-icons";
 import { useEdgeFade } from "../../hooks/useEdgeFade";
@@ -150,5 +151,5 @@ export function ComposerSuggestMenu({
 
 function displayBadge(badge?: string): string | undefined {
 	if (!badge || badge.toLowerCase() === "agent") return undefined;
-	return badge.toLowerCase() === "ao" ? "Orchestrator" : badge;
+	return badge.toLowerCase() === "ao" ? productText("Orchestrator") : badge;
 }

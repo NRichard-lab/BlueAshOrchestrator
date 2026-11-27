@@ -1,3 +1,4 @@
+import { productText } from "../../../shared/brand-text";
 import { AppLink } from "../AppLink";
 import { TurnForkButton } from "../SessionForkControls";
 import { useAgentAccountLabel } from "../../hooks/useAgentAccounts";
@@ -2283,7 +2284,7 @@ function TerminalInput({ text, truncated }: { text: string; truncated?: boolean 
 			</pre>
 			{truncated ? (
 				<p className="text-micro text-muted-foreground/70">
-					Orchestrator stopped recording keystrokes at its cap; more were sent.
+					{productText("Orchestrator")} stopped recording keystrokes at its cap; more were sent.
 				</p>
 			) : null}
 		</div>
@@ -2387,7 +2388,7 @@ function CommandOutput({
 			) : null}
 			{detail?.outputTruncated ? (
 				<p className="text-xs leading-relaxed text-warning">
-					This command printed more than Orchestrator stores, so the output above stops early. Open a shell in
+					This command printed more than {productText("Orchestrator")} stores, so the output above stops early. Open a shell in
 					the worktree to see the rest.
 				</p>
 			) : null}
@@ -2626,7 +2627,7 @@ function Patch({ patch, truncated }: { patch: string; truncated?: boolean }) {
 			<ToolDiffCode text={patch} />
 			{truncated ? (
 				<p className="border-t border-border px-2.5 py-1.5 text-xs leading-relaxed text-warning">
-					This patch is longer than Orchestrator stores, so it stops early. The whole change is in the
+					This patch is longer than {productText("Orchestrator")} stores, so it stops early. The whole change is in the
 					worktree and in the turn&rsquo;s diff.
 				</p>
 			) : null}
@@ -2675,7 +2676,7 @@ function ReasoningBlock({ activity }: { activity: ConversationActivity }) {
 				<ChatMarkdown text={text} streaming={streaming} muted />
 				{activity.detail?.textTruncated ? (
 					<p className="mt-1 text-micro text-muted-foreground/70">
-						This summary is longer than Orchestrator stores, so it stops early.
+						This summary is longer than {productText("Orchestrator")} stores, so it stops early.
 					</p>
 				) : null}
 			</div>
@@ -3052,7 +3053,7 @@ function truncationNote(value: unknown): string | undefined {
 	const record = value as { truncated?: unknown; bytes?: unknown; note?: unknown };
 	if (record.truncated !== true) return undefined;
 	const bytes = typeof record.bytes === "number" ? ` (${formatBytes(record.bytes)})` : "";
-	return `This payload${bytes} was larger than Orchestrator stores, so it was not kept.`;
+	return productText`This payload${bytes} was larger than Orchestrator stores, so it was not kept.`;
 }
 
 function formatBytes(bytes: number): string {
@@ -3832,7 +3833,7 @@ export function ApprovalCard({
 					))}
 					{decisions.length === 0 ? (
 						<p className="text-xs text-warning">
-							The agent offered no decisions Orchestrator can present. Open diagnostics.
+							The agent offered no decisions {productText("Orchestrator")} can present. Open diagnostics.
 						</p>
 					) : null}
 				</div>
@@ -4282,7 +4283,7 @@ export function TurnChangedFiles({
 
 			{diff.truncated ? (
 				<p className="px-3 pb-2 text-xs leading-relaxed text-warning">
-					This turn changed more files than Orchestrator lists here.
+					This turn changed more files than {productText("Orchestrator")} lists here.
 					{onReview ? " Use Review for the whole change." : " Open the Files tab for the whole change."}
 				</p>
 			) : null}

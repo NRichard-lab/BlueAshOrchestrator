@@ -1,3 +1,4 @@
+import { productText } from "./brand-text";
 import { BRAND } from "./brand";
 export type DaemonLaunchSpec = {
 	command: string;
@@ -79,18 +80,18 @@ export function bundledDaemonIdentityError(
 ): string | null {
 	if (appImagePath) {
 		if (!probe.appImagePath) {
-			return "An older Orchestrator daemon is already running, but it does not report its install identity. Stop it and restart this app.";
+			return productText("An older Orchestrator daemon is already running, but it does not report its install identity. Stop it and restart this app.");
 		}
 		if (!samePath(probe.appImagePath, appImagePath)) {
-			return `Another Orchestrator daemon is already running from ${probe.appImagePath}; expected ${appImagePath}. Stop the other daemon before using this app.`;
+			return productText`Another Orchestrator daemon is already running from ${probe.appImagePath}; expected ${appImagePath}. Stop the other daemon before using this app.`;
 		}
 		return null;
 	}
 	if (!probe.executablePath) {
-		return "An older Orchestrator daemon is already running, but it does not report its binary path. Stop it and restart this app.";
+		return productText("An older Orchestrator daemon is already running, but it does not report its binary path. Stop it and restart this app.");
 	}
 	if (!samePath(probe.executablePath, expectedCommand)) {
-		return `Another Orchestrator daemon is already running from ${probe.executablePath}; expected ${expectedCommand}. Stop the other daemon before using this app.`;
+		return productText`Another Orchestrator daemon is already running from ${probe.executablePath}; expected ${expectedCommand}. Stop the other daemon before using this app.`;
 	}
 	return null;
 }

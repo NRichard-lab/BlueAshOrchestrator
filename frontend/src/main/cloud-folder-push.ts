@@ -28,6 +28,7 @@
 // environment (never on the command line), scoped to that URL, with redirects
 // off and every credential prompt disabled.
 
+import { productText } from "../shared/brand-text";
 import { execFile, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -276,7 +277,7 @@ function pushRefusal(error: unknown, folderName: string, branch: string): PushFo
 	// exists"); git refuses on its own first when the branch holds a commit it
 	// doesn't have ("fetch first").
 	if (/already exists|\[rejected\].*\((fetch first|non-fast-forward)\)/i.test(stderr)) {
-		return new PushFolderError("branch_exists", `The repository for ${folderName} already has a ${branch} branch, and Orchestrator only uploads a folder into an empty repository. If an earlier upload finished, remove ${folderName} and add its repository from GitHub instead.`);
+		return new PushFolderError("branch_exists", productText`The repository for ${folderName} already has a ${branch} branch, and Orchestrator only uploads a folder into an empty repository. If an earlier upload finished, remove ${folderName} and add its repository from GitHub instead.`);
 	}
 	return new PushFolderError("push_failed", `Could not upload ${folderName}: ${message}`);
 }
@@ -502,7 +503,7 @@ function shownFiles(files: readonly string[]): string {
 }
 
 function secretFilesError(folderName: string, files: readonly string[]): PushFolderError {
-	return new PushFolderError("secret_files", `${folderName}'s history holds files that look like secrets (${shownFiles(files)}), so Orchestrator does not upload it: they would reach GitHub. Remove them from its history, or push it to GitHub yourself and add its repository from GitHub.`, [...files]);
+	return new PushFolderError("secret_files", productText`${folderName}'s history holds files that look like secrets (${shownFiles(files)}), so Orchestrator does not upload it: they would reach GitHub. Remove them from its history, or push it to GitHub yourself and add its repository from GitHub.`, [...files]);
 }
 
 /** The folder, resolved, when it is a directory that may be uploaded. */
@@ -523,14 +524,14 @@ async function resolveFolder(folder: string, homeDir: string | undefined, appSta
 	for (const stateDir of appStateDirs) {
 		const realState = await fs.realpath(stateDir).catch(() => path.resolve(stateDir));
 		if (pathWithin(real, realState) || pathWithin(realState, real)) {
-			throw new PushFolderError("folder_unavailable", "A folder that is or holds Orchestrator's own data cannot be uploaded. Choose a project folder.");
+			throw new PushFolderError("folder_unavailable", productText("A folder that is or holds Orchestrator's own data cannot be uploaded. Choose a project folder."));
 		}
 	}
 	return real;
 }
 
 function unreadableRepositoryError(folder: string, error: unknown): PushFolderError {
-	return new PushFolderError("import_failed", `git could not read ${path.basename(folder)} as a repository, so Orchestrator cannot tell whether to upload its commits or its files: ${gitMessage(error)}`);
+	return new PushFolderError("import_failed", productText`git could not read ${path.basename(folder)} as a repository, so Orchestrator cannot tell whether to upload its commits or its files: ${gitMessage(error)}`);
 }
 
 /**
@@ -584,7 +585,7 @@ function largeFileError(folderName: string, file: string): PushFolderError {
 }
 
 function lfsError(folderName: string): PushFolderError {
-	return new PushFolderError("lfs_unsupported", `${folderName} stores files in Git LFS, which Orchestrator cannot upload yet. Push it to GitHub yourself, then add its repository from GitHub.`);
+	return new PushFolderError("lfs_unsupported", productText`${folderName} stores files in Git LFS, which Orchestrator cannot upload yet. Push it to GitHub yourself, then add its repository from GitHub.`);
 }
 
 /** Refuses a shallow clone: it has no history to push. */

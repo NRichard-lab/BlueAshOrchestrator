@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import type { AoBridge } from "../../preload";
 import { coerceUiSettings, DEFAULT_UI_SETTINGS } from "../../shared/ui-locale";
 import { createWebSideCloseBridge } from "./web-side-close";
@@ -147,29 +148,29 @@ export const aoBridge: AoBridge =
 		cloudShare: {
 			available: async () => false,
 			inspect: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			list: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			publish: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			cancel: async () => undefined,
 			setAccess: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			grants: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			invite: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			removeGrant: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			unpublish: async () => {
-				throw new Error("Sharing needs the Orchestrator desktop app.");
+				throw new Error(productText("Sharing needs the Orchestrator desktop app."));
 			},
 			onProgress: () => () => undefined,
 		},

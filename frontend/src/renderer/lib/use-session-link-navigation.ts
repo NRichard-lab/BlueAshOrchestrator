@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { useCloudProjectsQuery, useCloudSessionsQuery, remoteWorkspaceQueryKey, toCloudWorkspace, useWorkspaceQuery } from "../hooks/useWorkspaceQuery";
@@ -69,7 +70,7 @@ export function useSessionLinkNavigation(sourceHostId?: string, sourceKind?: "cl
 		const artifact = parseArtifactLink(url);
 		const target = parseSessionLink(url) ?? artifact;
 		if (!target) {
-			showGlobalToast("This Orchestrator-managed session link is malformed or unsupported.", undefined, {
+			showGlobalToast(productText("This Orchestrator-managed session link is malformed or unsupported."), undefined, {
 				tone: "error",
 				placement: "top-center",
 				dismissible: true,
@@ -78,7 +79,7 @@ export function useSessionLinkNavigation(sourceHostId?: string, sourceKind?: "cl
 			return false;
 		}
 		if (!source.ready) {
-			showGlobalToast(`Orchestrator could not verify that session. Check the ${remoteHostId ? "host" : sourceKind === "cloud" ? "Cloud" : "daemon"} connection and try again.`, undefined, {
+			showGlobalToast(productText`Orchestrator could not verify that session. Check the ${remoteHostId ? "host" : sourceKind === "cloud" ? "Cloud" : "daemon"} connection and try again.`, undefined, {
 				tone: "error",
 				placement: "top-center",
 				dismissible: true,
@@ -88,7 +89,7 @@ export function useSessionLinkNavigation(sourceHostId?: string, sourceKind?: "cl
 		}
 		const resolved = resolveSessionLink(url, source.workspaces);
 		if (!resolved) {
-			showGlobalToast("That session is missing or is not accessible in this Orchestrator workspace.", undefined, {
+			showGlobalToast(productText("That session is missing or is not accessible in this Orchestrator workspace."), undefined, {
 				tone: "error",
 				placement: "top-center",
 				dismissible: true,

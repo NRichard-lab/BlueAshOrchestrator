@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { app, dialog, shell, type BaseWindow, type MessageBoxOptions } from "electron";
 import semver from "semver";
 import { UPDATES_ENABLED } from "../shared/brand";
@@ -51,7 +52,7 @@ async function requireUpdate(options: FloorOptions, running: string, minVersion:
     defaultId: 0,
     cancelId: 1,
     title: "Update Required",
-    message: `Orchestrator v${running} is no longer supported.`,
+    message: productText`Orchestrator v${running} is no longer supported.`,
     detail:
       `Version ${minVersion} or later is required. ` +
       "Download the latest release to continue using the app.",
@@ -104,7 +105,7 @@ export async function checkDesktopVersionFloor(options: FloorOptions = {}): Prom
       defaultId: 0,
       cancelId: 1,
       title: "Update Available",
-      message: "A newer version of Orchestrator is available.",
+      message: productText("A newer version of Orchestrator is available."),
       detail:
         `You are on v${running}. Version ${latestVersion} is recommended. ` +
         "You can update now or continue using the current version.",

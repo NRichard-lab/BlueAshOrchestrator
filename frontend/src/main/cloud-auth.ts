@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { createWorkOS, type User } from "@workos-inc/node";
 import { app, dialog, ipcMain, safeStorage, shell } from "electron";
 import { createHash } from "node:crypto";
@@ -643,7 +644,7 @@ function startLoopbackCallbackServer(dataDir: string): void {
         res.end(
           CALLBACK_HTML(
             "Signed in to Orchestrator Cloud",
-            "You can close this tab and return to Orchestrator.",
+            productText("You can close this tab and return to Orchestrator."),
           ),
         );
       } catch (callbackError) {
@@ -652,7 +653,7 @@ function startLoopbackCallbackServer(dataDir: string): void {
         res.end(
           CALLBACK_HTML(
             "Sign-in failed",
-            "Return to Orchestrator and try signing in again.",
+            productText("Return to Orchestrator and try signing in again."),
           ),
         );
       } finally {
@@ -691,9 +692,9 @@ function signInFailureDetail(error: unknown): string {
     return "The WorkOS response could not be verified. Start sign-in again to continue.";
   }
   if (message.includes("network") || message.includes("fetch")) {
-    return "Orchestrator could not reach WorkOS. Check your connection and try again.";
+    return productText("Orchestrator could not reach WorkOS. Check your connection and try again.");
   }
-  return "Orchestrator could not complete WorkOS sign-in. Please try again.";
+  return productText("Orchestrator could not complete WorkOS sign-in. Please try again.");
 }
 
 export async function showCloudSignInFailure(error: unknown): Promise<void> {
@@ -792,7 +793,7 @@ export function installCloudIPC(
         title: "WorkOS not configured",
         message: "WorkOS sign-in is not configured.",
         detail:
-          "Set VITE_WORKOS_CLIENT_ID and restart Orchestrator to enable sign-in.",
+          productText("Set VITE_WORKOS_CLIENT_ID and restart Orchestrator to enable sign-in."),
       });
       return;
     }

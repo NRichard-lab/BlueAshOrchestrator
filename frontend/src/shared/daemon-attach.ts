@@ -17,6 +17,7 @@
 // Electron main process owns the real fs reads, process signals, fetch, and
 // path identity check.
 
+import { productText } from "./brand-text";
 import type { DaemonStatus } from "./daemon-status";
 import { parseRunFile } from "./daemon-discovery";
 import { BRAND } from "./brand";
@@ -156,7 +157,7 @@ async function readinessStatus(
 			pid,
 			executablePath: health.executablePath,
 			workingDirectory: health.workingDirectory,
-			message: "An Orchestrator daemon is already running, but it is not ready yet.",
+			message: productText("An Orchestrator daemon is already running, but it is not ready yet."),
 			code: "not_ready",
 		};
 	}

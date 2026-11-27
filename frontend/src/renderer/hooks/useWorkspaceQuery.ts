@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import { markApiError } from "../lib/reported-errors";
 import { type QueryClient, useQueries, useQuery, useQueryClient, type Query } from "@tanstack/react-query";
 import { useRemoteUnpinStore, withRemoteUnpins } from "../stores/remote-unpin-store";
@@ -283,7 +284,7 @@ type FakeAgentSeam = { snapshot: () => WorkspaceSummary[] };
 
 class DaemonNotReadyError extends Error {
 	constructor() {
-		super("Orchestrator daemon API is not ready");
+		super(productText("Orchestrator daemon API is not ready"));
 		markApiError(this);
 	}
 }

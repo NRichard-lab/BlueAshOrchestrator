@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "@/components/app-icons";
@@ -34,7 +35,7 @@ export function MigrationPopup() {
 	const restoreFocusOnClose = useRestoreFocusOnClose(open);
 	if (!open) return null;
 
-	const legacyRoot = offer.data?.legacyRoot || "your earlier Orchestrator install";
+	const legacyRoot = offer.data?.legacyRoot || productText("your earlier Orchestrator install");
 	const nowIso = () => new Date().toISOString();
 
 	const proceed = async () => {

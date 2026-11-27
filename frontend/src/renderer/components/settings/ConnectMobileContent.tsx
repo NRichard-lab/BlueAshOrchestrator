@@ -1,3 +1,4 @@
+import { productText } from "../../../shared/brand-text";
 import { apiErrorException } from "../../lib/api-error-exception";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -1077,7 +1078,7 @@ function KeepAwakeRow({
 	const status = keepAwake.lidActive && keepAwake.enabled
 		? t("mobile.keepAwake.lidActive", "Closed-lid keep awake is armed.")
 		: keepAwake.lidReason || lidUnavailable
-			? t(`mobile.keepAwake.lidReason.${keepAwake.lidReason || "unsupported"}`, "Closed-lid keep awake is unavailable. Update or restart the Orchestrator desktop app to retry.")
+			? t(`mobile.keepAwake.lidReason.${keepAwake.lidReason || "unsupported"}`, productText("Closed-lid keep awake is unavailable. Update or restart the Orchestrator desktop app to retry."))
 			: t("mobile.keepAwake.lidIdle", "Closed-lid wake is starting.");
 	return (
 		<SettingsRow

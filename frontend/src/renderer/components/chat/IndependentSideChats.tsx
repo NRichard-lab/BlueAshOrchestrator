@@ -1,3 +1,4 @@
+import { productText } from "../../../shared/brand-text";
 import { excerptSizeError, fitExcerptContext, LOCAL_CHAT_MESSAGE_BYTES } from "../../../shared/chat-excerpt";
 import { upgradeExcerpt } from "../../lib/chat-excerpt-snapshot";
 import { useChatDraftTranslation } from "../../lib/chat-draft-messages";
@@ -840,7 +841,7 @@ export function useIndependentSideChats(
 	const create = useCallback(
 		async (excerpt?: ChatDraftExcerptReference, forceNew = false, idempotencyKey: string = crypto.randomUUID(),
 			options?: { isCurrent?: () => boolean; shouldActivate: () => boolean }) => {
-			if (!enabled) throw new Error("Side chats are currently available only for local Orchestrator-managed sessions.");
+			if (!enabled) throw new Error(productText("Side chats are currently available only for local Orchestrator-managed sessions."));
 			if (!canCreate) throw new Error("The current provider does not support resumable side chats.");
 			if (excerpt) {
 				const sizeError = excerptSizeError([excerpt]);

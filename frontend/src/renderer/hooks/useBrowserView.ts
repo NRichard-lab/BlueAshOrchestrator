@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
 	BrowserAgentActivityState,
@@ -1153,7 +1154,7 @@ export function useBrowserView({
 				setNavState((current) => ({
 					...current,
 					url: normalized,
-					title: normalized ? "Orchestrator preview" : "",
+					title: normalized ? productText("Orchestrator preview") : "",
 					isLoading: false,
 				}));
 				return Promise.resolve();

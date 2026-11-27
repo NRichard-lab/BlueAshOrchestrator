@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { parseDaemonProbe } from "../shared/daemon-attach";
 import { DEVICE_TOKEN_PREFIX, type RemoteEntry } from "./remotes-store";
 
@@ -12,7 +13,7 @@ export type RemoteHealth = "online" | "unauthorized" | "offline" | "not-a-daemon
 
 export class IncompatibleRemoteVersionError extends Error {
 	constructor() {
-		super("Orchestrator versions are incompatible. Update Orchestrator on this computer and the remote host.");
+		super(productText("Orchestrator versions are incompatible. Update Orchestrator on this computer and the remote host."));
 		this.name = "IncompatibleRemoteVersionError";
 	}
 }

@@ -1,3 +1,5 @@
+import { productText } from "../shared/brand-text";
+
 /** Squirrel has already persisted install + relaunch before this is called. */
 export function finishUpdateQuit(
 	cleanup: Promise<unknown>,
@@ -15,7 +17,7 @@ export function finishUpdateQuit(
 			else actions.quit();
 			resolve();
 		};
-		const timer = setTimeout(() => finish(true, new Error("Update shutdown cleanup exceeded 15 seconds; exiting Orchestrator so the prepared installer can continue.")), timeoutMs);
+		const timer = setTimeout(() => finish(true, new Error(productText("Update shutdown cleanup exceeded 15 seconds; exiting Orchestrator so the prepared installer can continue."))), timeoutMs);
 		cleanup.then(() => finish(false), (error) => finish(false, error));
 	});
 }

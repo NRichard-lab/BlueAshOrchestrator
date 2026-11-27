@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { autoUpdater as stockAutoUpdater } from "electron-updater";
 import { desktopFeedUrl, readBakedUpdateOrigin } from "./update-origin";
 import { UPDATES_ENABLED } from "../shared/brand";
@@ -263,7 +264,7 @@ function requiredFreeBytesToStage(archiveBytes: number | undefined): number {
   return Math.min(STAGE_FREE_BYTES_CAP, Math.max(STAGE_FREE_BYTES_FLOOR, derived));
 }
 // Short user-facing lines; the raw ditto/pkzip/codesign detail is logged, not shown.
-const STAGE_STALL_MESSAGE = "Couldn't finish preparing the update. Orchestrator stayed open. Relaunch Orchestrator to try again.";
+const STAGE_STALL_MESSAGE = productText("Couldn't finish preparing the update. Orchestrator stayed open. Relaunch Orchestrator to try again.");
 const STAGE_DISK_MESSAGE = "Not enough disk space to install the update. Free up space, then try again.";
 let nativePreparationBlocked: Error | undefined;
 // A stage refused by the disk preflight. Unlike a stall nothing reached
@@ -550,7 +551,7 @@ function nativeStagingWasLost(): boolean {
 function discardLostNativeStaging(): boolean {
   if (!nativeStagingWasLost()) return false;
   recordUpdateDiagnostic("native-staging-lost", { version: stagedVersion });
-  const failure = new Error("The staged update files are missing. Orchestrator is checking for a fresh update. Confirm installation again when it is ready.");
+  const failure = new Error(productText("The staged update files are missing. Orchestrator is checking for a fresh update. Confirm installation again when it is ready."));
   const restartWasRequested = updateRestartRequested;
   discardStagedBuild();
   updateRestartRequested = false;
@@ -1109,7 +1110,7 @@ function unavailableChannelStatus(version?: string): UpdateStatus {
       semver.lt(version, app.getVersion())) {
     return {
       state: "unsupported",
-      message: "This channel's latest release is older than the installed build. Orchestrator will switch when a newer release is available.",
+      message: productText("This channel's latest release is older than the installed build. Orchestrator will switch when a newer release is available."),
     };
   }
   return { state: "not-available" };
@@ -2216,11 +2217,11 @@ function wireUpdaterEvents(): void {
           message:
             exhausted
               ? "Couldn't install the update — the copy failed verification twice. " +
-                "Orchestrator has discarded the download and stopped retrying on its own. Check " +
+                productText("Orchestrator has discarded the download and stopped retrying on its own. Check ") +
                 "for updates again to start a fresh one, or download the latest build " +
                 "manually and install it over this one."
               : "Couldn't install the update — the downloaded copy failed verification. " +
-                "Orchestrator will prepare it again on the next check.",
+                productText("Orchestrator will prepare it again on the next check."),
         }),
       );
       return;
@@ -2838,9 +2839,9 @@ export function getMacInstallBlocker(): string | undefined {
   if (!bundle.endsWith(".app")) return undefined;
   if (bundle.includes("/AppTranslocation/")) {
     return (
-      "macOS is running Orchestrator from a temporary read-only location " +
+      productText("macOS is running Orchestrator from a temporary read-only location ") +
       "because it was opened straight from where it was downloaded. Quit the app, " +
-      "move Orchestrator into /Applications, reopen it from there, and " +
+      productText("move Orchestrator into /Applications, reopen it from there, and ") +
       "then restart to update."
     );
   }
@@ -2853,9 +2854,9 @@ export function getMacInstallBlocker(): string | undefined {
     // Deliberately does NOT say "move it to /Applications": the app may already
     // be there, and telling someone to do what they have done reads as a bug.
     return (
-      "The update can't be installed because Orchestrator's location isn't " +
+      productText("The update can't be installed because Orchestrator's location isn't ") +
       `writable: ${path.dirname(bundle)}. Fix that folder's permissions, or move ` +
-      "Orchestrator somewhere you can write to, reopen it, and then " +
+      productText("Orchestrator somewhere you can write to, reopen it, and then ") +
       "restart to update."
     );
   }
@@ -2954,7 +2955,7 @@ export async function quitAndInstallUpdate(confirmedVersion?: string): Promise<U
   }
   if (discardLostNativeStaging()) {
     if (escalationStateDir) void runAutomaticUpdateCheck(escalationStateDir);
-    throw new Error("The staged update files are missing. Orchestrator is checking for a fresh update. Confirm installation again when it is ready.");
+    throw new Error(productText("The staged update files are missing. Orchestrator is checking for a fresh update. Confirm installation again when it is ready."));
   }
   if (macRestartPreparation) return macRestartPreparation;
   let confirmation: UpdateInstallResult;
@@ -3014,7 +3015,7 @@ export async function quitAndInstallUpdate(confirmedVersion?: string): Promise<U
       assertInstallActive();
       recordUpdateDiagnostic("quit-and-install", { version });
       autoUpdater.quitAndInstall(false, true);
-      if (!updateRestartRequested) throw nativePreparationError ?? new Error("The installer could not restart Orchestrator.");
+      if (!updateRestartRequested) throw nativePreparationError ?? new Error(productText("The installer could not restart Orchestrator."));
     } catch (err) {
       if (installAbandoned) {
         await progress?.fail(userFacingUpdateError(err, "install")).catch(() => undefined);
@@ -3124,7 +3125,7 @@ export async function ensureUpdatePrefs(stateDir: string): Promise<void> {
     buttons: ["Enable auto-updates", "Not now"],
     defaultId: 0,
     cancelId: 1,
-    message: "Keep Orchestrator up to date automatically?",
+    message: productText("Keep Orchestrator up to date automatically?"),
     detail: "You can change this later in Settings.",
   });
   if (optIn.response !== 0) {

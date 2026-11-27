@@ -1,3 +1,4 @@
+import { productText } from "../shared/brand-text";
 import { type ChildProcess, spawn, type SpawnOptions } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
 import { access, chmod, lstat, mkdtemp, mkdir, readdir, readFile, rm } from "node:fs/promises";
@@ -389,7 +390,7 @@ const claudeAuthFlow: ProviderAuthFlow = {
 				cleanup();
 				server?.close();
 				res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
-				res.end(CLAUDE_CALLBACK_HTML("Sign-in failed", "Return to Orchestrator and try signing in again."));
+				res.end(CLAUDE_CALLBACK_HTML("Sign-in failed", productText("Return to Orchestrator and try signing in again.")));
 				reject(err);
 			};
 
@@ -443,8 +444,8 @@ const claudeAuthFlow: ProviderAuthFlow = {
 						res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
 						res.end(
 							CLAUDE_CALLBACK_HTML(
-								"Signed in to Orchestrator",
-								"You can close this tab and return to Orchestrator.",
+								productText("Signed in to Orchestrator"),
+								productText("You can close this tab and return to Orchestrator."),
 							),
 						);
 						resolve({ provider: "claude-code", credentialType: "oauth_token", secret: accessToken });
@@ -534,7 +535,7 @@ const githubAuthFlow: ProviderAuthFlow = {
 					server?.close();
 					reject(new Error(url.searchParams.get("error_description") || `GitHub sign-in failed: ${errorParam}`));
 					res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-					res.end(GITHUB_CALLBACK_HTML("Sign-in failed", "Return to Orchestrator and try signing in again."));
+					res.end(GITHUB_CALLBACK_HTML("Sign-in failed", productText("Return to Orchestrator and try signing in again.")));
 					return;
 				}
 
@@ -545,7 +546,7 @@ const githubAuthFlow: ProviderAuthFlow = {
 					server?.close();
 					reject(new Error("GitHub sign-in callback is invalid."));
 					res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
-					res.end(GITHUB_CALLBACK_HTML("Sign-in failed", "Return to Orchestrator and try signing in again."));
+					res.end(GITHUB_CALLBACK_HTML("Sign-in failed", productText("Return to Orchestrator and try signing in again.")));
 					return;
 				}
 
@@ -594,8 +595,8 @@ const githubAuthFlow: ProviderAuthFlow = {
 						server?.close();
 						res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
 						res.end(GITHUB_CALLBACK_HTML(
-							"Signed in to Orchestrator",
-							`Authenticated as <strong>${login}</strong>. You can close this tab and return to Orchestrator.`,
+							productText("Signed in to Orchestrator"),
+							productText`Authenticated as <strong>${login}</strong>. You can close this tab and return to Orchestrator.`,
 						));
 						resolve({ provider: "github", credentialType: "access_token", secret: accessToken, refreshToken, expiresIn, refreshTokenExpiresIn });
 					} catch (err) {
@@ -603,7 +604,7 @@ const githubAuthFlow: ProviderAuthFlow = {
 						server?.close();
 						reject(err instanceof Error ? err : new Error(String(err)));
 						res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
-						res.end(GITHUB_CALLBACK_HTML("Sign-in failed", "Return to Orchestrator and try signing in again."));
+						res.end(GITHUB_CALLBACK_HTML("Sign-in failed", productText("Return to Orchestrator and try signing in again.")));
 					}
 				})();
 			});
