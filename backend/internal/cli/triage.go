@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/skillassets"
 )
@@ -39,7 +40,7 @@ func triagePrompt(dir string, terminal bool) string {
 	if terminal {
 		mode = "Terminal mode: do not post to GitHub. Tell the user to leave the agent; the program then shows the text and asks for approval."
 	}
-	return fmt.Sprintf(triagePromptTemplate, filepath.Join(dir, "SKILL.md"), filepath.Join(dir, "context.md"), filepath.Join(dir, "bug-report.md"), mode)
+	return fmt.Sprintf(brand.Text(triagePromptTemplate), filepath.Join(dir, "SKILL.md"), filepath.Join(dir, "context.md"), filepath.Join(dir, "bug-report.md"), mode)
 }
 
 func newTriageCommand(c *commandContext) *cobra.Command {

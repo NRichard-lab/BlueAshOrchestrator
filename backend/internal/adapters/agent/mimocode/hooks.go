@@ -12,6 +12,7 @@ import (
 	_ "embed"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/skillassets"
 )
@@ -126,7 +127,7 @@ func mimoAgentSource(cfg ports.WorkspaceHookConfig) ([]byte, error) {
 		prompt = string(data)
 	}
 	var b strings.Builder
-	b.WriteString("---\n# " + mimoAgentSentinel + "\ndescription: Orchestrator-managed session instructions\nmode: primary\n")
+	b.WriteString("---\n# " + mimoAgentSentinel + "\ndescription: " + brand.Text("Orchestrator-managed session instructions") + "\nmode: primary\n")
 	b.WriteString(mimoAgentPermission(cfg.Config.Permissions))
 	b.WriteString("---\n")
 	b.WriteString(strings.TrimSpace(prompt))

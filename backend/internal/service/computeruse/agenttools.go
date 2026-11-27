@@ -6,6 +6,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // AgentTool is one driver tool AO offers agents as an MCP tool.
@@ -27,7 +29,7 @@ var agentToolNames = []string{
 
 // agentToolRules are AO's rules for a tool, added to the driver's description.
 var agentToolRules = map[string]string{
-	"bring_to_front": "Orchestrator: this takes keyboard focus from the user and does not give it back, so ask the user before using it, unless they said they are away from the computer. Use it when a window reads blank or stuck loading because it is hidden behind others; it sends no keys or clicks.",
+	"bring_to_front": brand.Text("Orchestrator: this takes keyboard focus from the user and does not give it back, so ask the user before using it, unless they said they are away from the computer. Use it when a window reads blank or stuck loading because it is hidden behind others; it sends no keys or clicks."),
 }
 
 // offeredTool reports whether Call runs tool: only the tools agents are

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	workerkimi "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/kimi"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -73,7 +74,7 @@ func (r *Reviewer) ReviewCommand(ctx context.Context, inv ports.ReviewInvocation
 		return ports.ReviewCommandSpec{}, fmt.Errorf("kimi reviewer: create empty skills directory: %w", err)
 	}
 	message := fmt.Sprintf(
-		"Read and follow the Orchestrator reviewer role in `%s`, then %s",
+		brand.Text("Read and follow the Orchestrator reviewer role in `%s`, then %s"),
 		filepath.ToSlash(inv.SystemPromptFile),
 		strings.TrimSpace(inv.Prompt),
 	)

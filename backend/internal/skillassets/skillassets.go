@@ -23,6 +23,8 @@ import (
 	"strings"
 
 	"embed"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 //go:embed using-ao bug-triage
@@ -84,9 +86,30 @@ func materialize(name, destDir string) error {
 		if err != nil {
 			return fmt.Errorf("read embedded %q: %w", p, err)
 		}
-		if err := os.WriteFile(target, b, 0o600); err != nil {
+		if err := os.WriteFile(target, renderSkill(p, b), 0o600); err != nil {
 			return fmt.Errorf("write %q: %w", target, err)
 		}
 		return nil
 	})
+}
+
+func renderSkill(path string, source []byte) []byte {
+	switch path {
+	case "using-ao/SKILL.md", "using-ao/references.md", "using-ao/commands/import.md",
+		"using-ao/commands/browser.md", "using-ao/commands/remote-host.md":
+		content := string(source)
+		var rendered strings.Builder
+		for line := range strings.SplitAfterSeq(content, "\n") {
+			if strings.Contains(line, "legacy Orchestrator") || strings.Contains(line, "legacy Agent Orchestrator") ||
+				strings.Contains(line, "Legacy Orchestrator") || strings.Contains(line, "Orchestrator account") ||
+				strings.Contains(line, "Orchestrator · <session>") || strings.Contains(line, "Orchestrator consent window in Chrome") {
+				rendered.WriteString(line)
+			} else {
+				rendered.WriteString(brand.Text(line))
+			}
+		}
+		return []byte(rendered.String())
+	default:
+		return []byte(brand.Text(string(source)))
+	}
 }

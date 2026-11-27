@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -263,7 +264,7 @@ func writeKiroHooks(hooksPath string, topLevel, rawHooks map[string]json.RawMess
 func setKiroAgentDefaults(topLevel map[string]json.RawMessage, systemPrompt, systemPromptFile string, agentConfig ports.AgentConfig) error {
 	defaults := map[string]any{
 		"name":           kiroAgentName,
-		"description":    kiroAgentDescription,
+		"description":    brand.Text(kiroAgentDescription),
 		"prompt":         nil,
 		"mcpServers":     map[string]any{},
 		"tools":          []string{"*"},

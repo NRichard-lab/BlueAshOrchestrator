@@ -11,6 +11,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
 	agentpi "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/pi"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -96,11 +97,11 @@ func (r *Reviewer) ReviewCommand(ctx context.Context, inv ports.ReviewInvocation
 	if err := os.MkdirAll(inv.TaskPromptRoot, 0o700); err != nil {
 		return ports.ReviewCommandSpec{}, fmt.Errorf("create Pi reviewer directory: %w", err)
 	}
-	if err := os.WriteFile(extensionPath, extensionSource, 0o600); err != nil {
+	if err := os.WriteFile(extensionPath, []byte(brand.Text(string(extensionSource))), 0o600); err != nil {
 		return ports.ReviewCommandSpec{}, fmt.Errorf("write Pi reviewer extension: %w", err)
 	}
 	policyPath := filepath.Join(inv.TaskPromptRoot, "pi-policy.md")
-	if err := os.WriteFile(policyPath, []byte(piPolicy), 0o600); err != nil {
+	if err := os.WriteFile(policyPath, []byte(brand.Text(piPolicy)), 0o600); err != nil {
 		return ports.ReviewCommandSpec{}, fmt.Errorf("write Pi reviewer policy: %w", err)
 	}
 	sessionDir := filepath.Join(inv.TaskPromptRoot, "pi-sessions")

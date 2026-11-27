@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 func TestBuildTaskPrompt_IssueContextStaysInTaskPrompt(t *testing.T) {
@@ -432,5 +434,29 @@ func TestBuildTaskPrompt_StackedTaskNamesItsBase(t *testing.T) {
 	// A promptless worker waits for its instructions; there is nothing to add to.
 	if got := buildTaskPrompt(taskPromptConfig{Role: sessionPromptRoleWorker, BaseBranch: "feat/parent"}); got != "" {
 		t.Fatalf("empty prompt = %q", got)
+	}
+}
+
+func TestBrandedSessionPrompts(t *testing.T) {
+	original := brand.VisibleName
+	brand.VisibleName = "Blue Ash AI"
+	t.Cleanup(func() { brand.VisibleName = original })
+
+	const projectID = "project-Orchestrator"
+	prompt := buildSystemPromptText(systemPromptConfig{
+		Role:    sessionPromptRoleOrchestrator,
+		Project: promptProject{ID: projectID},
+	})
+	for _, want := range []string{"## Orchestrator Agent Role", projectID, "Blue Ash AI's native reviewer", "Orchestrators must pass", "ao review trigger"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("branded prompt missing %q", want)
+		}
+	}
+	const skillDir = "Orchestrator"
+	computer := computerUsePrompt(skillDir)
+	for _, want := range []string{"Blue Ash AI's " + "`ao`" + " tool server", "Orchestrator/commands/cua.md"} {
+		if !strings.Contains(computer, want) {
+			t.Errorf("branded computer use prompt missing %q", want)
+		}
 	}
 }

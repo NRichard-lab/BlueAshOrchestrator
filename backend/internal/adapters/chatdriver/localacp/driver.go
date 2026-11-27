@@ -24,11 +24,11 @@ import (
 // New launches `opencode acp` with the Local provider overlay.
 func New(plugin nativeacp.Plugin, log *slog.Logger) ports.ChatDriver {
 	return nativeacp.New(plugin, nativeacp.Config{
-		Harness:         domain.HarnessLocal,
-		Configure:       configure,
-		SessionMode:     sessionMode,
-		SessionOptions:  sessionOptions,
-		PermissionPolicy: permissionPolicy,
+		Harness:              domain.HarnessLocal,
+		Configure:            configure,
+		SessionMode:          sessionMode,
+		SessionOptions:       sessionOptions,
+		PermissionPolicy:     permissionPolicy,
 		ValidateTurnSettings: validateTurnSettings,
 		EncodeProviderConversationID: func(providerID string) string {
 			return opencodeidentity.Encode(domain.HarnessLocal, providerID)

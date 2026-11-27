@@ -376,7 +376,7 @@ func (s *Service) EditMessage(
 					Env: launchEnv, Model: cfg.Model, Effort: cfg.Effort,
 					AutoCompactTokens: cfg.AutoCompactTokens,
 					Permissions:       cfg.Permissions,
-					SystemPrompt: withHandoffNote(cfg.SystemPrompt, sourceBranch.HandoffNote), AdditionalDirectories: cfg.AdditionalDirectories,
+					SystemPrompt:      withHandoffNote(cfg.SystemPrompt, sourceBranch.HandoffNote), AdditionalDirectories: cfg.AdditionalDirectories,
 					MCPServers: cfg.MCPServers, ProviderScopeID: providerScopeID, ProviderIDsScoped: true,
 				})
 				if err == nil {

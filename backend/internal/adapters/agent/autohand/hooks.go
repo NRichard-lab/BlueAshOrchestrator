@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -146,7 +147,7 @@ func (p *Plugin) GetAgentHooks(ctx context.Context, cfg ports.WorkspaceHookConfi
 		entries = append(entries, autohandHookEntry{
 			Event:       spec.Event,
 			Command:     command,
-			Description: "Orchestrator activity hook",
+			Description: brand.Text("Orchestrator activity hook"),
 			Enabled:     true,
 			Timeout:     autohandHookTimeout,
 		})

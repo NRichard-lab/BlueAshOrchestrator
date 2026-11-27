@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
@@ -443,7 +444,7 @@ func kimiSystemPromptText(inline, file string) (string, error) {
 
 func kimiInstructionFile(systemPrompt string) string {
 	return kimiInstructionsSentinel + "\n\n" +
-		"# Agent Orchestrator Session Instructions\n\n" +
+		brand.Text("# Agent Orchestrator Session Instructions\n\n") +
 		strings.TrimRight(systemPrompt, "\n") + "\n\n" +
 		kimiInstructionsEnd + "\n"
 }

@@ -35,6 +35,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/agentbase"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -268,8 +269,8 @@ func vibeManagerOwnedAgentRoot(dataDir, sessionID string) string {
 func vibeAgentTOML(mode ports.PermissionMode, model, promptText string, hasPrompt bool) (string, error) {
 	var b strings.Builder
 	b.WriteString(`agent_type = "agent"` + "\n")
-	b.WriteString(`display_name = "Orchestrator Session"` + "\n")
-	b.WriteString(`description = "Orchestrator-managed session standing instructions."` + "\n")
+	b.WriteString(brand.Text(`display_name = "Orchestrator Session"`) + "\n")
+	b.WriteString(brand.Text(`description = "Orchestrator-managed session standing instructions."`) + "\n")
 	b.WriteString(`safety = "neutral"` + "\n")
 	if hasPrompt {
 		instructions, err := vibeTOMLBasicString(promptText)
