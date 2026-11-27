@@ -1,3 +1,4 @@
+import { productName } from "../product-name";
 import { chromeApi } from "../chrome-api";
 
 type Status = {
@@ -16,7 +17,7 @@ async function render(): Promise<void> {
 	const dot = document.getElementById("dot")!;
 	dot.className = `dot ${status.state === "connected" ? "ok" : "bad"}`;
 	document.getElementById("state")!.textContent =
-		status.state === "connected" ? (status.activeCommands > 0 ? "Agent working" : "Connected to Orchestrator") : status.state === "connecting" ? "Connecting to Orchestrator…" : "Not connected to Orchestrator";
+		status.state === "connected" ? (status.activeCommands > 0 ? "Agent working" : `Connected to ${productName()}`) : status.state === "connecting" ? `Connecting to ${productName()}…` : `Not connected to ${productName()}`;
 	document.getElementById("detail")!.textContent = status.error?.message ?? `Version ${status.version}`;
 	const list = document.getElementById("sessions")!;
 	list.replaceChildren();

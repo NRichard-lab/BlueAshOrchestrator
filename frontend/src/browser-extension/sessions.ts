@@ -4,6 +4,7 @@
 // logical ids (t1, t2, …). A tab the user drags out of the group is no longer
 // the agent's; a tab the user drags in becomes the agent's.
 
+import { productName } from "./product-name";
 import type { ChromeApi, Tab } from "./chrome-api";
 import { BridgeError } from "./protocol";
 
@@ -24,7 +25,7 @@ export type SessionTabs = {
 export type ActiveTab = { logicalId: string; tabId: number; tab: Tab };
 
 export function groupTitle(sessionId: string): string {
-	return `Orchestrator · ${sessionId.length > 24 ? `${sessionId.slice(0, 23)}…` : sessionId}`;
+	return `${productName()} · ${sessionId.length > 24 ? `${sessionId.slice(0, 23)}…` : sessionId}`;
 }
 
 export function groupColor(sessionId: string): string {
@@ -113,7 +114,7 @@ export class SessionTabRegistry {
 		if (session.groupId !== undefined && tab.groupId !== session.groupId) {
 			delete session.tabs[logicalId];
 			await this.save();
-			throw new BridgeError("BROWSER_TARGET_MISMATCH", `Tab ${logicalId} left this session's Orchestrator tab group`);
+			throw new BridgeError("BROWSER_TARGET_MISMATCH", `Tab ${logicalId} left this session's ${productName()} tab group`);
 		}
 		return { logicalId, tabId, tab };
 	}

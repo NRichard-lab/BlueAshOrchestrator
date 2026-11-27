@@ -2,6 +2,8 @@
 // default seed of high-risk sites), an optional allow list, and sites where
 // agents must use synthetic (T0) input instead of the trusted debugger tier.
 
+import { productName } from "./product-name";
+
 export type SitePolicy = {
 	/** Hosts agents must never act on. */
 	deny: string[];
@@ -56,14 +58,14 @@ export function evaluateUrl(policy: SitePolicy, rawUrl: string | undefined): Pol
 		return { allowed: false, reason: "The page address is not a web URL" };
 	}
 	if (url.protocol !== "http:" && url.protocol !== "https:") {
-		return { allowed: false, reason: `Agents from Orchestrator cannot act on ${url.protocol} pages` };
+		return { allowed: false, reason: `Agents from ${productName()} cannot act on ${url.protocol} pages` };
 	}
 	const host = url.hostname;
 	if (policy.deny.some((pattern) => hostMatches(host, pattern))) {
-		return { allowed: false, reason: `${host} is on the Orchestrator Browser Bridge deny list` };
+		return { allowed: false, reason: `${host} is on the ${productName()} Browser Bridge deny list` };
 	}
 	if (policy.allow.length > 0 && !policy.allow.some((pattern) => hostMatches(host, pattern))) {
-		return { allowed: false, reason: `${host} is not on the Orchestrator Browser Bridge allow list` };
+		return { allowed: false, reason: `${host} is not on the ${productName()} Browser Bridge allow list` };
 	}
 	return { allowed: true };
 }
