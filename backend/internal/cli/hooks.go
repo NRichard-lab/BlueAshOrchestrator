@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/copilot"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/cursor"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/memcode"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/pricing"

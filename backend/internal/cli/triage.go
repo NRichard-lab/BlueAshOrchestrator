@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/skillassets"
 )
