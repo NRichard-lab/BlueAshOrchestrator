@@ -86,14 +86,15 @@ On a PR, vitest runs the tests related to the changed frontend files plus the
 files listed in `frontend/scripts/ci-vitest-always-run.txt`. Add a test to that
 list when it reads source files from disk instead of importing them.
 
-Draft and stacked PRs run no lanes. Marking a PR ready, or retargeting a stacked
-PR to `main`, starts them. Editing a PR's title or body starts nothing. A PR
-from a fork that targets another branch fails `ci-ok`: target `main` and push
-again.
+Ready PRs select lanes from the changes against their current base, including
+stacked PRs in this repository. Drafts skip lanes unless labeled `ci:full`.
+Retargeting a stacked PR to `main` requests a rerun. Editing a PR's title or body
+starts nothing. A fork PR targeting another branch fails `ci-ok` if ready or
+labeled `ci:full`. Target `main` and push again.
 
 ### Native CI coverage
 
-Ready PRs targeting `main` run the Linux suites. Ask a maintainer to add
+Path-selected PR runs use Linux by default. Ask a maintainer to add
 `ci:macos` for macOS helpers, updater or packaging changes, or `ci:full` for
 Windows paths, process handling, or other cross-platform changes. `ci:full`
 also enables the frontend macOS jobs. Changes to the macOS helpers under
