@@ -53,6 +53,13 @@ func newLocalProviderListCommand(_ *commandContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// A mistyped AO_LLAMACPP_URL or AO_LLAMACPP_PORT is skipped rather
+			// than fatal; say so on stderr, where it cannot corrupt --json.
+			if problem := localproviders.LlamaCppOverrideProblem(); problem != nil {
+				for _, line := range strings.Split(problem.Error(), "\n") {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s\n", line)
+				}
+			}
 			client := &http.Client{Timeout: localproviders.DefaultTimeout}
 			results := localproviders.ProbeAll(cmd.Context(), client, localproviders.All(dataDir))
 			if asJSON {

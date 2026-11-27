@@ -55,6 +55,19 @@ func harnessEnvFor(kind localproviders.Kind) string {
 	return "OPENAI_BASE_URL"
 }
 
+// presetDTOs renders the addresses the settings form offers. They come from the
+// localproviders package so a preset always matches the address that is probed.
+func presetDTOs() []map[string]string {
+	presets := localproviders.Presets()
+	out := make([]map[string]string, 0, len(presets))
+	for _, preset := range presets {
+		out = append(out, map[string]string{
+			"name": preset.Name, "baseUrl": preset.BaseURL, "kind": string(preset.Kind),
+		})
+	}
+	return out
+}
+
 func (c *LocalProvidersController) list(w http.ResponseWriter, r *http.Request) {
 	results := localproviders.ProbeAll(r.Context(), c.client(), localproviders.All(c.DataDir))
 	out := make([]localProviderDTO, 0, len(results))
@@ -67,11 +80,7 @@ func (c *LocalProvidersController) list(w http.ResponseWriter, r *http.Request) 
 	}
 	envelope.WriteJSON(w, http.StatusOK, map[string]any{
 		"endpoints": out,
-		"presets": []map[string]string{
-			{"name": "ollama", "baseUrl": "http://127.0.0.1:11434", "kind": "ollama"},
-			{"name": "llama.cpp", "baseUrl": "http://127.0.0.1:8080", "kind": "openai-compatible"},
-			{"name": "bionic", "baseUrl": "http://127.0.0.1:1234", "kind": "openai-compatible"},
-		},
+		"presets":   presetDTOs(),
 		"notes": map[string]string{
 			"bionic": "Bionic (LM Studio agent app) is treated as a generic OpenAI-compatible server on :1234. Its protocol is not specially verified; if /v1/models answers, discovery lists its models.",
 			"lan":    "Non-loopback addresses are only probed after you add them. Use a network you trust.",

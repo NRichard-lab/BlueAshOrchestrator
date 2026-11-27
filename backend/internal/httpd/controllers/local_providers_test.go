@@ -11,9 +11,12 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
+	"github.com/aoagents/agent-orchestrator/backend/internal/localproviders"
 )
 
 func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
+	t.Setenv(localproviders.EnvLlamaCppURL, "")
+	t.Setenv(localproviders.EnvLlamaCppPort, "9090")
 	dir := t.TempDir()
 	ctrl := &controllers.LocalProvidersController{DataDir: dir, Client: &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 		return nil, http.ErrHandlerTimeout
@@ -37,6 +40,22 @@ func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
 	}
 	if len(body.Endpoints) < 2 {
 		t.Fatalf("endpoints = %d, want builtins present", len(body.Endpoints))
+	}
+	// The preset the form offers for llama.cpp is the address actually probed,
+	// including when the environment moves it.
+	llamaPreset, llamaEndpoint := "", ""
+	for _, preset := range body.Presets {
+		if preset["name"] == "llama.cpp" {
+			llamaPreset = preset["baseUrl"]
+		}
+	}
+	for _, endpoint := range body.Endpoints {
+		if endpoint["name"] == "llama.cpp" {
+			llamaEndpoint, _ = endpoint["baseUrl"].(string)
+		}
+	}
+	if llamaPreset != "http://127.0.0.1:9090" || llamaEndpoint != llamaPreset {
+		t.Fatalf("llama.cpp preset = %q, endpoint = %q, want both on the overridden port 9090", llamaPreset, llamaEndpoint)
 	}
 	foundBionic := false
 	for _, preset := range body.Presets {
