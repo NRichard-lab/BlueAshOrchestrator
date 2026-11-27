@@ -13,6 +13,7 @@ export function helperBuildOptions(arch, root = frontend) {
   return {
     output,
     args: ["swiftc", "-target", `${cpu}-apple-macosx11.0`, "-O",
+      ...(process.env.AO_BRAND === "blueashai" ? ["-D", "BLUE_ASH_AI"] : []),
       path.join(source, "UpdateProgressState.swift"), path.join(source, "main.swift"),
       "-o", output],
   };

@@ -40,7 +40,7 @@ final class ProgressController: NSObject, NSApplicationDelegate, NSWindowDelegat
         NSApp.setActivationPolicy(.accessory)
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 270),
                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Updating Orchestrator"
+        window.title = "Updating \(productName)"
         window.isReleasedWhenClosed = false
         window.delegate = self
         title.font = .systemFont(ofSize: 22, weight: .semibold)
@@ -141,25 +141,25 @@ final class ProgressController: NSObject, NSApplicationDelegate, NSWindowDelegat
             // Healthy path: stay an accessory with no window. The close and
             // reopen happen silently. The title/detail are still primed in case
             // the stage later escalates to .recovery and the window comes up.
-            title.stringValue = "Closing Orchestrator"
-            detail.stringValue = "Preparing to install your update. This window will stay open while Orchestrator restarts."
+            title.stringValue = "Closing \(productName)"
+            detail.stringValue = "Preparing to install your update. This window will stay open while \(productName) restarts."
             recovery.isHidden = true
             spinner.startAnimation(nil)
         case .installing:
             // Healthy path: also silent, no window. See .closing above.
-            title.stringValue = "Installing and reopening Orchestrator"
-            detail.stringValue = "macOS is installing the update. Orchestrator will reopen automatically when it is ready."
+            title.stringValue = "Installing and reopening \(productName)"
+            detail.stringValue = "macOS is installing the update. \(productName) will reopen automatically when it is ready."
             recovery.isHidden = true
             spinner.startAnimation(nil)
         case .recovery(let message):
             window.setContentSize(NSSize(width: 500, height: 340))
-            title.stringValue = "Still waiting for Orchestrator"
+            title.stringValue = "Still waiting for \(productName)"
             detail.stringValue = String(message.prefix(260))
             recovery.isHidden = false
             spinner.stopAnimation(nil)
         case .reopened:
-            title.stringValue = "Orchestrator has reopened"
-            detail.stringValue = "This version of Orchestrator cannot confirm when its window is ready. You can close this progress window."
+            title.stringValue = "\(productName) has reopened"
+            detail.stringValue = "This version of \(productName) cannot confirm when its window is ready. You can close this progress window."
             recovery.isHidden = false
             recovery.arrangedSubviews.prefix(2).forEach { $0.isHidden = true }
             spinner.stopAnimation(nil)

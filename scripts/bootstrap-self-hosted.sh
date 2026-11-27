@@ -36,7 +36,7 @@ validate_update_origin() {
 
 usage() {
 	printf '%s\n' 'Usage: bootstrap-self-hosted.sh [--nightly | --source-ref BRANCH] [--lan]'
-	printf '%s\n' 'Installs prerequisites, then installs released Orchestrator or builds a source branch.'
+	printf '%s\n' 'Installs prerequisites, then installs the Blue Ash AI release or builds a source branch.'
 	printf '%s\n' 'Downloads stable by default; --nightly installs the newest published nightly.'
 	printf '%s\n' 'Releases come from the update server named by AO_UPDATE_ORIGIN (https://<host>); there is no default.'
 	printf '%s\n' 'Source builds clone AO_SOURCE_REPO_URL (default: the BlueAsh repository).'
@@ -69,7 +69,7 @@ sudo apt-get update
 sudo apt-get install -y ca-certificates curl gh git python3
 sudo loginctl enable-linger "$(id -un)"
 systemctl --user show-environment >/dev/null || {
-	printf '%s\n' 'A systemd user session is required for an always-on Orchestrator host.' >&2; exit 1;
+	printf '%s\n' 'A systemd user session is required for an always-on Blue Ash AI host.' >&2; exit 1;
 }
 
 if "$tunnel" && ! command -v cloudflared >/dev/null; then

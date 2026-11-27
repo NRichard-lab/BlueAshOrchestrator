@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { wakeHelperBuildOptions, buildWakeHelper } from "./build-wake-helper.mjs";
@@ -6,10 +7,11 @@ describe("native wake helper build", () => {
     it(`cross-compiles ${arch} without raising the desktop minimum OS`, () => {
       const { args, output } = wakeHelperBuildOptions(arch, "/project/frontend");
       assert.ok(args.includes(`${cpu}-apple-macosx11.0`));
+      assert.equal(args.includes("BLUE_ASH_AI"), process.env.AO_BRAND === "blueashai");
       for (const file of ["WakePolicy.swift", "WakeLowPower.swift", "WakeEffects.swift", "WakeLights.swift", "WakeBrowserActions.swift", "WakeNetworkActions.swift", "main.swift"]) {
-        assert.ok(args.includes(`/project/frontend/native/wake-helper/${file}`));
+        assert.ok(args.includes(path.join("/project/frontend", "native/wake-helper", file)));
       }
-      assert.equal(output, "/project/frontend/wake-helper/ao-wake");
+      assert.equal(output, path.join("/project/frontend", "wake-helper", "ao-wake"));
     });
   }
   it("rejects non-macOS and invalid architectures", () => {
