@@ -15,10 +15,15 @@ test('a push to main runs every lane in full', () => {
   assert.deepEqual(pickLanes({ event: 'push' }), { lanes: Object.keys(LANES), full: true, macos: true, vitest: 'all' });
 });
 
-test('drafts and stacked PRs run no lanes, even with ci:full', () => {
+test('ready stacked PRs match paths and drafts opt in with ci:full', () => {
+  const stacked = { base: 'feat/parent' };
   const none = { lanes: [], full: false, macos: false, vitest: '' };
-  assert.deepEqual(pickLanes(pr(['backend/a.go'], { draft: true, labels: ['ci:full'] })), none);
-  assert.deepEqual(pickLanes(pr(['backend/a.go'], { base: 'feat/parent' })), none);
+  assert.deepEqual(pickLanes(pr(['backend/a.go'], { ...stacked, draft: true })), none);
+  assert.deepEqual(pickLanes(pr(['backend/a.go'], stacked)).lanes, ['go', 'cli-e2e']);
+  for (const draft of [false, true]) {
+    const full = pickLanes(pr(['README.md'], { ...stacked, draft, labels: ['ci:full'] }));
+    assert.deepEqual(full, { lanes: Object.keys(LANES), full: true, macos: true, vitest: 'all' });
+  }
 });
 
 test('a docs-only PR runs no lanes', () => {
@@ -28,6 +33,7 @@ test('a docs-only PR runs no lanes', () => {
 test('drafts and stacked PRs from forks', () => {
   assert.deepEqual(pickLanes(pr(['backend/a.go'], { draft: true, base: 'feat/parent', fork: true })).lanes, []);
   assert.throws(() => pickLanes(pr(['backend/a.go'], { base: 'feat/parent', fork: true })), /target main and push again/);
+  assert.throws(() => pickLanes(pr(['backend/a.go'], { draft: true, base: 'feat/parent', fork: true, labels: ['ci:full'] })), /target main and push again/);
   assert.deepEqual(pickLanes(pr(['backend/a.go'], { fork: true })).lanes, ['go', 'cli-e2e']);
 });
 
