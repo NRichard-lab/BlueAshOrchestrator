@@ -11,9 +11,9 @@
 //     one Ollama has always had.
 //
 // Discovery is read-only and local: it lists what an endpoint says it serves
-// and never sends a prompt. Reaching a model is still the harness's job, which
-// is why an endpoint carries a base URL a harness can be pointed at rather than
-// anything AO would call itself.
+// and never sends a prompt. Every request this package makes goes through
+// metadataRequest, which refuses any route that is not on its list of metadata
+// routes. Reaching a model is the harness's job.
 package localproviders
 
 import (
@@ -55,6 +55,10 @@ type Endpoint struct {
 	// Builtin marks an address AO probes without being told about it. Builtin
 	// endpoints are never written to the store.
 	Builtin bool `json:"-"`
+	// APIKey is the key stored for this endpoint in local-models.json, attached
+	// by All and Lookup and sent as a bearer token. It is never serialized with
+	// the endpoint. Never log this field.
+	APIKey string `json:"-"`
 }
 
 // Result is what one probe found.
@@ -309,10 +313,22 @@ func Add(dataDir string, endpoint Endpoint) (Endpoint, error) {
 	endpoint.Name = strings.TrimSpace(endpoint.Name)
 	endpoint.BaseURL, endpoint.Kind, endpoint.Builtin = base, kind, false
 
+	endpoint.APIKey = ""
+
+	moved := false
 	kept := make([]Endpoint, 0, len(Load(dataDir))+1)
 	for _, existing := range Load(dataDir) {
 		if !strings.EqualFold(existing.Name, endpoint.Name) {
 			kept = append(kept, existing)
+			continue
+		}
+		moved = existing.BaseURL != endpoint.BaseURL
+	}
+	if moved {
+		// The stored key was given for the old address. Sending it to a new one
+		// would hand a credential to a server the user never gave it to.
+		if err := dropEndpointKey(dataDir, endpoint.Name); err != nil {
+			return Endpoint{}, err
 		}
 	}
 	kept = append(kept, endpoint)
@@ -340,12 +356,29 @@ func Remove(dataDir, name string) error {
 	if !found {
 		return fmt.Errorf("no local provider named %q", name)
 	}
+	if err := dropEndpointKey(dataDir, trimmed); err != nil {
+		return err
+	}
 	return save(dataDir, kept)
 }
 
 // All returns the endpoints to probe: the built-ins first, then the user's,
-// with a stored endpoint that repeats a built-in URL dropped.
+// with a stored endpoint that repeats a built-in URL dropped. Each carries the
+// key stored for it, if any. A settings file that cannot be read yields no
+// keys rather than no endpoints: discovery of keyless servers still works.
 func All(dataDir string) []Endpoint {
+	out := withoutKeys(dataDir)
+	settings, err := LoadSettings(dataDir)
+	if err != nil {
+		return out
+	}
+	for i := range out {
+		out[i].APIKey = settings.EndpointKey(out[i].Name)
+	}
+	return out
+}
+
+func withoutKeys(dataDir string) []Endpoint {
 	out := Builtin()
 	taken := make(map[string]bool, len(out))
 	for _, endpoint := range out {
@@ -382,12 +415,7 @@ func Probe(ctx context.Context, client *http.Client, endpoint Endpoint) Result {
 	if client == nil {
 		client = &http.Client{Timeout: DefaultTimeout}
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.BaseURL+modelsPath(endpoint.Kind), http.NoBody)
-	if err != nil {
-		result.Error = err.Error()
-		return result
-	}
-	response, err := client.Do(request)
+	response, err := metadataRequest(ctx, client, endpoint, modelsPath(endpoint.Kind), nil)
 	if err != nil {
 		result.Error = err.Error()
 		return result

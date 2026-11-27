@@ -30,6 +30,9 @@ func newLocalProviderCommand(cmdCtx *commandContext) *cobra.Command {
 	cmd.AddCommand(newLocalProviderListCommand(cmdCtx))
 	cmd.AddCommand(newLocalProviderAddCommand())
 	cmd.AddCommand(newLocalProviderRemoveCommand())
+	cmd.AddCommand(newLocalProviderModelsCommand())
+	cmd.AddCommand(newLocalProviderInspectCommand())
+	cmd.AddCommand(newLocalProviderKeyCommand())
 	return cmd
 }
 
@@ -61,7 +64,10 @@ func newLocalProviderListCommand(_ *commandContext) *cobra.Command {
 				}
 			}
 			client := &http.Client{Timeout: localproviders.DefaultTimeout}
-			results := localproviders.ProbeAll(cmd.Context(), client, localproviders.All(dataDir))
+			// Inspected, not just probed, so a model that cannot hold a
+			// conversation (an embedding model) is not listed as one to code
+			// with. Inspection is metadata requests only.
+			results := localproviders.DiscoverAll(cmd.Context(), client, localproviders.All(dataDir), localProviderSettings(cmd, dataDir))
 			if asJSON {
 				encoder := json.NewEncoder(cmd.OutOrStdout())
 				encoder.SetIndent("", "  ")
@@ -74,7 +80,7 @@ func newLocalProviderListCommand(_ *commandContext) *cobra.Command {
 				if result.Reachable {
 					status = "up"
 				}
-				models := summarizeModels(result)
+				models := summarizeModels(result.Result)
 				_, _ = fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", result.Name, result.BaseURL, result.Kind, status, models)
 			}
 			if err := writer.Flush(); err != nil {

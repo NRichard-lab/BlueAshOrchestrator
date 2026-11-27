@@ -1683,6 +1683,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/local-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Probe local model endpoints and list their chat-capable models with detected capabilities */
+        get: operations["listLocalProviders"];
+        put?: never;
+        /** Name a local model endpoint so it is probed and listed */
+        post: operations["addLocalProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/local-providers/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a named local model endpoint and any key stored for it */
+        delete: operations["removeLocalProvider"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/local-providers/{name}/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store the API key sent to a local model endpoint */
+        put: operations["setLocalProviderKey"];
+        post?: never;
+        /** Clear the API key stored for a local model endpoint */
+        delete: operations["clearLocalProviderKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/local-providers/{name}/models/{model}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report what one local model can do, read from metadata routes without loading or prompting it */
+        get: operations["inspectLocalModel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/local-providers/harness-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report the endpoint and model linked to the Local (OpenCode) harness */
+        get: operations["getLocalHarnessLink"];
+        /** Link an endpoint and model to the Local (OpenCode) harness */
+        put: operations["setLocalHarnessLink"];
+        post?: never;
+        /** Unlink the Local (OpenCode) harness */
+        delete: operations["clearLocalHarnessLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mobile/browser-control": {
         parameters: {
             query?: never;
@@ -5159,6 +5248,12 @@ export interface components {
         ActivateConversationBranchResponse: {
             activeBranchId: string;
         };
+        AddLocalProviderRequest: {
+            baseUrl: string;
+            /** @enum {string} */
+            kind?: "openai-compatible" | "ollama";
+            name: string;
+        };
         AddPRToStackRequest: {
             prUrl: string;
         };
@@ -7451,6 +7546,78 @@ export interface components {
         LoadPRDetailsRequest: {
             prUrl: string;
         };
+        LocalHarnessLink: {
+            endpointName?: string;
+            harness: string;
+            hasApiKey: boolean;
+            linked: boolean;
+            model?: string;
+            openCodeModel?: string;
+            requires: string;
+        };
+        LocalModelBoolValue: {
+            source: string;
+            value: boolean;
+        };
+        LocalModelCapabilities: {
+            chat: boolean;
+            context: components["schemas"]["LocalModelIntValue"];
+            digest?: string;
+            endpoint: string;
+            family?: string;
+            id: string;
+            kind: string;
+            loaded: boolean;
+            loadedContext?: number;
+            maxContext?: number;
+            model: string;
+            parameterSize?: string;
+            quantization?: string;
+            reported?: string[];
+            /** Format: int64 */
+            sizeBytes?: number;
+            thinking: components["schemas"]["LocalModelBoolValue"];
+            tools: components["schemas"]["LocalModelBoolValue"];
+            vision: components["schemas"]["LocalModelBoolValue"];
+        };
+        LocalModelIntValue: {
+            source: string;
+            value: number;
+        };
+        LocalProvider: {
+            baseUrl: string;
+            builtin: boolean;
+            embeddingModels?: string[];
+            error?: string;
+            harnessEnv: string;
+            hasApiKey: boolean;
+            kind: string;
+            modelInfo?: components["schemas"]["LocalModelCapabilities"][];
+            models?: string[];
+            name: string;
+            reachable: boolean;
+        };
+        LocalProviderErrorResponse: {
+            error: string;
+        };
+        LocalProviderKeyResponse: {
+            hasApiKey: boolean;
+            name: string;
+        };
+        LocalProviderPreset: {
+            baseUrl: string;
+            kind: string;
+            name: string;
+        };
+        LocalProvidersListResponse: {
+            endpoints: components["schemas"]["LocalProvider"][];
+            harnessLink: components["schemas"]["LocalHarnessLink"];
+            notes: {
+                [key: string]: string;
+            } | null;
+            presets: components["schemas"]["LocalProviderPreset"][];
+            probedAt: string;
+        };
         MarkAllNotificationsReadRequest: {
             /** @description Acknowledge exactly these notifications. Omit to acknowledge every unread notification; paginating clients should send the ids they actually rendered so later pages stay unread. */
             ids?: string[];
@@ -7855,6 +8022,15 @@ export interface components {
             pat: string;
             refreshToken?: string;
             refreshTokenExpiresIn?: number;
+        };
+        PutLocalHarnessLinkRequest: {
+            apiKey?: string;
+            endpointName: string;
+            model: string;
+        };
+        PutLocalProviderKeyRequest: {
+            /** @description Bearer key for the endpoint. Stored locally and never returned. */
+            apiKey: string;
         };
         RecordAgentSignInResponse: {
             releasedKey?: string;
@@ -15237,6 +15413,388 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    listLocalProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProvidersListResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    addLocalProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddLocalProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProvider"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    removeLocalProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Endpoint name, built-in or added */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    setLocalProviderKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Endpoint name, built-in or added */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutLocalProviderKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderKeyResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    clearLocalProviderKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Endpoint name, built-in or added */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderKeyResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    inspectLocalModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Endpoint name, built-in or added */
+                name: string;
+                /** @description Model name as the endpoint lists it, percent-encoded */
+                model: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalModelCapabilities"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+        };
+    };
+    getLocalHarnessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalHarnessLink"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    setLocalHarnessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutLocalHarnessLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalHarnessLink"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    clearLocalHarnessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProviderErrorResponse"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };

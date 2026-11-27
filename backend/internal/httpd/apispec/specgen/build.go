@@ -20,6 +20,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/envelope"
+	"github.com/aoagents/agent-orchestrator/backend/internal/localproviders"
 	"github.com/aoagents/agent-orchestrator/backend/internal/service/agentauth"
 	"github.com/aoagents/agent-orchestrator/backend/internal/service/githubpat"
 	importsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/importer"
@@ -104,6 +105,8 @@ func Build() ([]byte, error) {
 			"Server-side unfurl of external links for the CSP-locked renderer"),
 		*(&openapi31.Tag{Name: "github"}).WithDescription(
 			"Local GitHub personal access token storage and repository listing"),
+		*(&openapi31.Tag{Name: "local-providers"}).WithDescription(
+			"Local model endpoints: discovery, read-only capability inspection, endpoint keys, and the Local (OpenCode) harness link"),
 	}
 
 	for _, op := range operations() {
@@ -696,6 +699,18 @@ var schemaNames = map[string]string{ //nolint:gosec // Public OpenAPI type names
 	"ControllersEndpointsResponse":                "EndpointsResponse",
 	"ControllersLinkPreviewQuery":                 "LinkPreviewQuery",
 	"ControllersLinkPreviewResponse":              "LinkPreviewResponse",
+	"ControllersLocalProviderDTO":                 "LocalProvider",
+	"ControllersLocalProviderPresetDTO":           "LocalProviderPreset",
+	"ControllersLocalProvidersListResponse":       "LocalProvidersListResponse",
+	"ControllersLocalProviderErrorResponse":       "LocalProviderErrorResponse",
+	"ControllersLocalHarnessLinkDTO":              "LocalHarnessLink",
+	"ControllersPutLocalHarnessLinkRequest":       "PutLocalHarnessLinkRequest",
+	"ControllersAddLocalProviderRequest":          "AddLocalProviderRequest",
+	"ControllersPutLocalProviderKeyRequest":       "PutLocalProviderKeyRequest",
+	"ControllersLocalProviderKeyResponse":         "LocalProviderKeyResponse",
+	"LocalprovidersCapabilities":                  "LocalModelCapabilities",
+	"LocalprovidersBoolValue":                     "LocalModelBoolValue",
+	"LocalprovidersIntValue":                      "LocalModelIntValue",
 	"ControllersSessionSearchQuery":               "SessionSearchQuery",
 	"ControllersSessionSearchResponse":            "SessionSearchResponse",
 	"ControllersSessionSearchResult":              "SessionSearchResult",
@@ -855,7 +870,77 @@ func operations() []operation {
 	ops = append(ops, telemetryIdentityOperations()...)
 	ops = append(ops, linkPreviewOperations()...)
 	ops = append(ops, sessionSearchOperations()...)
+	ops = append(ops, localProviderOperations()...)
 	return ops
+}
+
+// localProviderOperations declares discovery and inspection of local model
+// endpoints. Must stay 1:1 with the routes LocalProvidersController.Register
+// mounts (enforced by the parity test). None of these routes makes the daemon
+// send a model a prompt: discovery and inspection use metadata routes only.
+func localProviderOperations() []operation {
+	const tag = "local-providers"
+	name := []any{controllers.LocalProviderNameParam{}}
+	fail := func(statuses ...int) []respUnit {
+		out := make([]respUnit, 0, len(statuses)+1)
+		for _, status := range statuses {
+			out = append(out, respUnit{status, controllers.LocalProviderErrorResponse{}})
+		}
+		return append(out, respUnit{http.StatusNotImplemented, envelope.APIError{}})
+	}
+	return []operation{
+		{
+			method: http.MethodGet, path: "/api/v1/local-providers", id: "listLocalProviders", tag: tag,
+			summary: "Probe local model endpoints and list their chat-capable models with detected capabilities",
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalProvidersListResponse{}}}, fail()...),
+		},
+		{
+			method: http.MethodPost, path: "/api/v1/local-providers", id: "addLocalProvider", tag: tag,
+			summary: "Name a local model endpoint so it is probed and listed",
+			reqBody: controllers.AddLocalProviderRequest{},
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalProviderDTO{}}}, fail(http.StatusBadRequest)...),
+		},
+		{
+			method: http.MethodDelete, path: "/api/v1/local-providers/{name}", id: "removeLocalProvider", tag: tag,
+			summary:    "Forget a named local model endpoint and any key stored for it",
+			pathParams: name,
+			resps:      append([]respUnit{{http.StatusNoContent, nil}}, fail(http.StatusNotFound)...),
+		},
+		{
+			method: http.MethodGet, path: "/api/v1/local-providers/{name}/models/{model}", id: "inspectLocalModel", tag: tag,
+			summary:    "Report what one local model can do, read from metadata routes without loading or prompting it",
+			pathParams: []any{controllers.LocalProviderModelParam{}},
+			resps:      append([]respUnit{{http.StatusOK, localproviders.Capabilities{}}}, fail(http.StatusNotFound, http.StatusBadGateway)...),
+		},
+		{
+			method: http.MethodPut, path: "/api/v1/local-providers/{name}/key", id: "setLocalProviderKey", tag: tag,
+			summary:    "Store the API key sent to a local model endpoint",
+			pathParams: name, reqBody: controllers.PutLocalProviderKeyRequest{},
+			resps: append([]respUnit{{http.StatusOK, controllers.LocalProviderKeyResponse{}}}, fail(http.StatusBadRequest, http.StatusNotFound, http.StatusInternalServerError)...),
+		},
+		{
+			method: http.MethodDelete, path: "/api/v1/local-providers/{name}/key", id: "clearLocalProviderKey", tag: tag,
+			summary:    "Clear the API key stored for a local model endpoint",
+			pathParams: name,
+			resps:      append([]respUnit{{http.StatusOK, controllers.LocalProviderKeyResponse{}}}, fail(http.StatusNotFound, http.StatusInternalServerError)...),
+		},
+		{
+			method: http.MethodGet, path: "/api/v1/local-providers/harness-link", id: "getLocalHarnessLink", tag: tag,
+			summary: "Report the endpoint and model linked to the Local (OpenCode) harness",
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalHarnessLinkDTO{}}}, fail()...),
+		},
+		{
+			method: http.MethodPut, path: "/api/v1/local-providers/harness-link", id: "setLocalHarnessLink", tag: tag,
+			summary: "Link an endpoint and model to the Local (OpenCode) harness",
+			reqBody: controllers.PutLocalHarnessLinkRequest{},
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalHarnessLinkDTO{}}}, fail(http.StatusBadRequest)...),
+		},
+		{
+			method: http.MethodDelete, path: "/api/v1/local-providers/harness-link", id: "clearLocalHarnessLink", tag: tag,
+			summary: "Unlink the Local (OpenCode) harness",
+			resps:   append([]respUnit{{http.StatusNoContent, nil}}, fail(http.StatusInternalServerError)...),
+		},
+	}
 }
 
 func automationOperations() []operation {

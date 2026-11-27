@@ -180,6 +180,11 @@ func VerifyLinkedModel(ctx context.Context, client *http.Client, dataDir string)
 	if client == nil {
 		client = &http.Client{Timeout: DefaultTimeout}
 	}
+	// The endpoint's own key is used when it has one. Otherwise the key saved
+	// with the link is what the harness will send, so the probe sends it too.
+	if endpoint.APIKey == "" {
+		endpoint.APIKey = strings.TrimSpace(link.APIKey)
+	}
 	result := Probe(ctx, client, endpoint)
 	if !result.Reachable {
 		if result.Error != "" {

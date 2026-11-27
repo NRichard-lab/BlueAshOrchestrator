@@ -4279,6 +4279,290 @@ paths:
       summary: Fetch link-preview metadata (Open Graph) for an external URL
       tags:
       - link-preview
+  /api/v1/local-providers:
+    get:
+      operationId: listLocalProviders
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProvidersListResponse'
+          description: OK
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Probe local model endpoints and list their chat-capable models with
+        detected capabilities
+      tags:
+      - local-providers
+    post:
+      operationId: addLocalProvider
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLocalProviderRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProvider'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Bad Request
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Name a local model endpoint so it is probed and listed
+      tags:
+      - local-providers
+  /api/v1/local-providers/{name}:
+    delete:
+      operationId: removeLocalProvider
+      parameters:
+      - description: Endpoint name, built-in or added
+        in: path
+        name: name
+        required: true
+        schema:
+          description: Endpoint name, built-in or added
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Not Found
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Forget a named local model endpoint and any key stored for it
+      tags:
+      - local-providers
+  /api/v1/local-providers/{name}/key:
+    delete:
+      operationId: clearLocalProviderKey
+      parameters:
+      - description: Endpoint name, built-in or added
+        in: path
+        name: name
+        required: true
+        schema:
+          description: Endpoint name, built-in or added
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderKeyResponse'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Clear the API key stored for a local model endpoint
+      tags:
+      - local-providers
+    put:
+      operationId: setLocalProviderKey
+      parameters:
+      - description: Endpoint name, built-in or added
+        in: path
+        name: name
+        required: true
+        schema:
+          description: Endpoint name, built-in or added
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutLocalProviderKeyRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderKeyResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Store the API key sent to a local model endpoint
+      tags:
+      - local-providers
+  /api/v1/local-providers/{name}/models/{model}:
+    get:
+      operationId: inspectLocalModel
+      parameters:
+      - description: Endpoint name, built-in or added
+        in: path
+        name: name
+        required: true
+        schema:
+          description: Endpoint name, built-in or added
+          type: string
+      - description: Model name as the endpoint lists it, percent-encoded
+        in: path
+        name: model
+        required: true
+        schema:
+          description: Model name as the endpoint lists it, percent-encoded
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalModelCapabilities'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Not Found
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Bad Gateway
+      summary: Report what one local model can do, read from metadata routes without
+        loading or prompting it
+      tags:
+      - local-providers
+  /api/v1/local-providers/harness-link:
+    delete:
+      operationId: clearLocalHarnessLink
+      responses:
+        "204":
+          description: No Content
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Unlink the Local (OpenCode) harness
+      tags:
+      - local-providers
+    get:
+      operationId: getLocalHarnessLink
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalHarnessLink'
+          description: OK
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Report the endpoint and model linked to the Local (OpenCode) harness
+      tags:
+      - local-providers
+    put:
+      operationId: setLocalHarnessLink
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutLocalHarnessLinkRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalHarnessLink'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Bad Request
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Link an endpoint and model to the Local (OpenCode) harness
+      tags:
+      - local-providers
   /api/v1/mobile/browser-control:
     post:
       operationId: setMobileBrowserRemoteAccess
@@ -15519,6 +15803,21 @@ components:
       required:
       - activeBranchId
       type: object
+    AddLocalProviderRequest:
+      properties:
+        baseUrl:
+          type: string
+        kind:
+          enum:
+          - openai-compatible
+          - ollama
+          type: string
+        name:
+          type: string
+      required:
+      - name
+      - baseUrl
+      type: object
     AddPRToStackRequest:
       properties:
         prUrl:
@@ -21076,6 +21375,7 @@ components:
           - memcode
           - hermes
           - stakpak
+          - local
           - cloudflared
           - cua-driver
           type: string
@@ -21573,6 +21873,197 @@ components:
           type: string
       required:
       - prUrl
+      type: object
+    LocalHarnessLink:
+      properties:
+        endpointName:
+          type: string
+        harness:
+          type: string
+        hasApiKey:
+          type: boolean
+        linked:
+          type: boolean
+        model:
+          type: string
+        openCodeModel:
+          type: string
+        requires:
+          type: string
+      required:
+      - linked
+      - hasApiKey
+      - harness
+      - requires
+      type: object
+    LocalModelBoolValue:
+      properties:
+        source:
+          type: string
+        value:
+          type: boolean
+      required:
+      - value
+      - source
+      type: object
+    LocalModelCapabilities:
+      properties:
+        chat:
+          type: boolean
+        context:
+          $ref: '#/components/schemas/LocalModelIntValue'
+        digest:
+          type: string
+        endpoint:
+          type: string
+        family:
+          type: string
+        id:
+          type: string
+        kind:
+          type: string
+        loaded:
+          type: boolean
+        loadedContext:
+          type: integer
+        maxContext:
+          type: integer
+        model:
+          type: string
+        parameterSize:
+          type: string
+        quantization:
+          type: string
+        reported:
+          items:
+            type: string
+          type: array
+        sizeBytes:
+          format: int64
+          type: integer
+        thinking:
+          $ref: '#/components/schemas/LocalModelBoolValue'
+        tools:
+          $ref: '#/components/schemas/LocalModelBoolValue'
+        vision:
+          $ref: '#/components/schemas/LocalModelBoolValue'
+      required:
+      - id
+      - endpoint
+      - model
+      - kind
+      - chat
+      - tools
+      - thinking
+      - vision
+      - context
+      - loaded
+      type: object
+    LocalModelIntValue:
+      properties:
+        source:
+          type: string
+        value:
+          type: integer
+      required:
+      - value
+      - source
+      type: object
+    LocalProvider:
+      properties:
+        baseUrl:
+          type: string
+        builtin:
+          type: boolean
+        embeddingModels:
+          items:
+            type: string
+          type: array
+        error:
+          type: string
+        harnessEnv:
+          type: string
+        hasApiKey:
+          type: boolean
+        kind:
+          type: string
+        modelInfo:
+          items:
+            $ref: '#/components/schemas/LocalModelCapabilities'
+          type: array
+        models:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        reachable:
+          type: boolean
+      required:
+      - name
+      - baseUrl
+      - kind
+      - builtin
+      - reachable
+      - harnessEnv
+      - hasApiKey
+      type: object
+    LocalProviderErrorResponse:
+      properties:
+        error:
+          type: string
+      required:
+      - error
+      type: object
+    LocalProviderKeyResponse:
+      properties:
+        hasApiKey:
+          type: boolean
+        name:
+          type: string
+      required:
+      - name
+      - hasApiKey
+      type: object
+    LocalProviderPreset:
+      properties:
+        baseUrl:
+          type: string
+        kind:
+          type: string
+        name:
+          type: string
+      required:
+      - name
+      - baseUrl
+      - kind
+      type: object
+    LocalProvidersListResponse:
+      properties:
+        endpoints:
+          items:
+            $ref: '#/components/schemas/LocalProvider'
+          type: array
+        harnessLink:
+          $ref: '#/components/schemas/LocalHarnessLink'
+        notes:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        presets:
+          items:
+            $ref: '#/components/schemas/LocalProviderPreset'
+          type: array
+        probedAt:
+          type: string
+      required:
+      - endpoints
+      - presets
+      - notes
+      - harnessLink
+      - probedAt
       type: object
     MarkAllNotificationsReadRequest:
       properties:
@@ -22599,6 +23090,26 @@ components:
           type: integer
       required:
       - pat
+      type: object
+    PutLocalHarnessLinkRequest:
+      properties:
+        apiKey:
+          type: string
+        endpointName:
+          type: string
+        model:
+          type: string
+      required:
+      - endpointName
+      - model
+      type: object
+    PutLocalProviderKeyRequest:
+      properties:
+        apiKey:
+          description: Bearer key for the endpoint. Stored locally and never returned.
+          type: string
+      required:
+      - apiKey
       type: object
     RecordAgentSignInResponse:
       properties:
@@ -27319,3 +27830,6 @@ tags:
   name: link-preview
 - description: Local GitHub personal access token storage and repository listing
   name: github
+- description: 'Local model endpoints: discovery, read-only capability inspection,
+    endpoint keys, and the Local (OpenCode) harness link'
+  name: local-providers
