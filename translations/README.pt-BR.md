@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>Pare de vigiar agentes. Comece a fazer merge de trabalho de verdade.</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="Kanban do Orchestrator.inc com sessões de workers agrupadas por status em tempo real" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="Kanban do Blue Ash AI com sessões de workers agrupadas por status em tempo real" width="100%" />
 
 </div>
 
 <br />
 
-## Por que o Orchestrator.inc
+## Por que o Blue Ash AI
 
-Um agente de programação dá conta de uma tarefa. Rodar vários significa dividir o trabalho, evitar conflitos entre branches e acompanhar cada mudança pela CI, pela revisão e pelo merge. O Orchestrator.inc é um workspace desktop local feito para isso: cada tarefa ganha seu próprio agente, branch e worktree, e seu código continua na sua máquina.
+Um agente de programação dá conta de uma tarefa. Rodar vários significa dividir o trabalho, evitar conflitos entre branches e acompanhar cada mudança pela CI, pela revisão e pelo merge. O Blue Ash AI é um workspace desktop local feito para isso: cada tarefa ganha seu próprio agente, branch e worktree, e seu código continua na sua máquina.
 
 ## Recursos
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
 | **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
-Abra o Orchestrator.inc e indique o repositório que você quer que ele gerencie. O aplicativo desktop executa o daemon para você, então não é preciso usar a CLI. Consulte o [guia de instalação](https://docs.orchestrator.inc/installation) para configurar as CLIs dos agentes e resolver problemas.
+Abra o Blue Ash AI e indique o repositório que você quer que ele gerencie. O aplicativo desktop executa o daemon para você, então não é preciso usar a CLI. Consulte o [guia de instalação](https://docs.orchestrator.inc/installation) para configurar as CLIs dos agentes e resolver problemas.
 
 ## Documentação
 
@@ -201,8 +201,8 @@ Participe do [Discord](https://discord.com/invite/UZv7JjxbwG) para receber ajuda
 
 ## Telemetria do produto
 
-O Orchestrator.inc coleta telemetria limitada de uso e confiabilidade, nunca seu código, prompts, conversas com agentes ou credenciais. Ela inclui um ID de instalação e seu nome de usuário do GitHub; se você entrar no AO Cloud, também inclui seu ID de usuário do AO Cloud e o endereço de e-mail dessa conta, definido uma única vez como propriedade de pessoa no PostHog (nunca lido da configuração do git). Desative tudo em Settings > General > Privacy > Share usage analytics, o que abrange o desktop, o daemon e um celular pareado. [Saiba exatamente o que coletamos e como desativar](../docs/telemetry.md).
+O Blue Ash AI coleta telemetria limitada de uso e confiabilidade, nunca seu código, prompts, conversas com agentes ou credenciais. Ela inclui um ID de instalação e seu nome de usuário do GitHub; se você entrar no AO Cloud, também inclui seu ID de usuário do AO Cloud e o endereço de e-mail dessa conta, definido uma única vez como propriedade de pessoa no PostHog (nunca lido da configuração do git). Desative tudo em Settings > General > Privacy > Share usage analytics, o que abrange o desktop, o daemon e um celular pareado. [Saiba exatamente o que coletamos e como desativar](../docs/telemetry.md).
 
 ## Licença
 
-O Orchestrator.inc está disponível sob a [Licença Apache 2.0](../LICENSE).
+O Blue Ash AI está disponível sob a [Licença Apache 2.0](../LICENSE).

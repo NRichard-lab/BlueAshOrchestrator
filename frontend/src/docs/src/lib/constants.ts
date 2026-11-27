@@ -1,3 +1,5 @@
+export const PRODUCT_NAME = "Blue Ash AI";
+
 export const COMPANY = {
   NAME: "Orchestrator.inc",
   MARKETING_URL: "https://orchestrator.inc",

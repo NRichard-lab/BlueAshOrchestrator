@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { visibleProductName } from "@/lib/branding";
-import { COMPANY } from "@/lib/constants";
+import { COMPANY, PRODUCT_NAME } from "@/lib/constants";
 import { docsTree } from "@/lib/docs-tree";
 import { OG_IMAGE_SIZE } from "@/lib/seo";
 import { source } from "@/lib/source";
@@ -84,7 +84,7 @@ export async function GET(_request: Request, props: Props) {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <img src={`data:image/svg+xml;base64,${Buffer.from(logoSvg).toString("base64")}`} width={56} height={56} alt="" />
-          <div style={{ display: "flex", fontSize: 32, fontWeight: 600 }}>{`${COMPANY.NAME}\u00a0Docs`}</div>
+          <div style={{ display: "flex", fontSize: 32, fontWeight: 600 }}>{`${PRODUCT_NAME}\u00a0Docs`}</div>
           {section && <div style={{ display: "flex", fontSize: 28, color: "#e8804a" }}>{`/\u00a0${section.replaceAll(" ", "\u00a0")}`}</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>

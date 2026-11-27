@@ -1,6 +1,6 @@
 # Brand mark
 
-Every Orchestrator icon, logo and mascot image comes from two sources. Change
+Every Blue Ash AI icon, logo and mascot image comes from two sources. Change
 a source, rerun the script, and commit the outputs. Never edit an output by
 hand.
 

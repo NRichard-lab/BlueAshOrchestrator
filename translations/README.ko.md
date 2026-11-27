@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>에이전트를 일일이 돌보지 마세요. 실제 작업을 머지하세요.</h4>
 
@@ -23,7 +23,7 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="워커 세션을 실시간 상태별로 보여주는 Orchestrator.inc Kanban" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="워커 세션을 실시간 상태별로 보여주는 Blue Ash AI Kanban" width="100%" />
 
 </div>
 

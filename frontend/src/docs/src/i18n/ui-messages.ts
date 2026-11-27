@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@/lib/constants";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
@@ -55,5 +56,8 @@ const NAV_LABELS: Record<string, MessageDescriptor> = {
 /** Translates a sidebar label when it is one we know. Others pass through. */
 export function navLabel(i18n: I18n, label: string): string {
   const descriptor = NAV_LABELS[label];
-  return descriptor ? i18n._(descriptor) : label;
+  const translated = descriptor ? i18n._(descriptor) : label;
+  if (label !== "Using Orchestrator") return translated;
+  if (i18n.locale === "tr") return PRODUCT_NAME + "’yı kullanma";
+  return translated.replace(/Orchestrator(?:a|u)?/g, PRODUCT_NAME);
 }

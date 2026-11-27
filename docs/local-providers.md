@@ -1,6 +1,6 @@
 # Local model endpoints
 
-Orchestrator can discover model servers running on this machine, keep the
+Blue Ash AI can discover model servers running on this machine, keep the
 address of any others you name, and **link** one endpoint + model to the
 **Local** coding harness so it appears beside Claude and Cursor in project and
 session pickers.
@@ -20,7 +20,7 @@ ao local-provider rm <name>                            # forget one
 | `llama.cpp` | `http://127.0.0.1:8080`  | `/v1/models`    |
 
 Both are loopback. A local engine normally binds `127.0.0.1`, and probing
-anything else by default would have Orchestrator reaching across your network
+anything else by default would have Blue Ash AI reaching across your network
 without being asked. An engine that is not running is reported as unreachable
 with the reason — that is the ordinary case, not an error.
 
@@ -40,13 +40,13 @@ ao local-provider add remote-ollama http://10.0.0.5:11434 --kind ollama
 - `openai-compatible` (the default) asks `GET <base-url>/v1/models`.
 - `ollama` asks `GET <base-url>/api/tags`.
 
-Named endpoints are stored in `local-providers.json` under the Orchestrator data
+Named endpoints are stored in `local-providers.json` under the Blue Ash AI data
 directory (`AO_DATA_DIR`, default `~/.ao/data`). Built-ins are never written
 there, and a stored endpoint pointing at a built-in's address is listed once.
 
 ### Unverified compatibility
 
-`openai-compatible` is a de-facto interface, not a standard, and Orchestrator
+`openai-compatible` is a de-facto interface, not a standard, and Blue Ash AI
 has **not** verified any particular vendor against it. Discovery is honest about
 this rather than claiming support:
 
@@ -58,7 +58,7 @@ this rather than claiming support:
 **Bionic** (the LM Studio agent app) is supported only in this generic sense: it
 is a name you can give an OpenAI-compatible address, typically
 `http://127.0.0.1:1234` after enabling its Local Model API. Its protocol has
-not been specially verified against Orchestrator, and nothing is hard-coded for
+not been specially verified against Blue Ash AI, and nothing is hard-coded for
 it beyond a Settings preset. If `ao local-provider ls` (or Settings → Local
 models) shows it up with models, the `/v1/models` route works; if it reports
 something else, that is the server's own answer and the endpoint needs a
@@ -72,7 +72,7 @@ use addresses on a network you trust.
 Discovery alone does not generate tokens. To use a local endpoint as a **worker**:
 
 1. Install **OpenCode 2** (Local reuses its workspace tools and permission modes;
-   Orchestrator does not ship a second tool runtime).
+   Blue Ash AI does not ship a second tool runtime).
 2. In Settings → Local models, choose an endpoint and a discovered (or supported
    manual) model, then **Link Local worker**. An optional API key is stored only
    in `local-harness.json` under the data directory (mode `0600` on Unix) and is
@@ -80,7 +80,7 @@ Discovery alone does not generate tokens. To use a local endpoint as a **worker*
 3. Select **Local** in a project worker picker or new-session picker, the same
    way you select Claude or Cursor.
 
-At launch, Orchestrator injects an OpenAI-compatible provider (`ao-local`) into
+At launch, Blue Ash AI injects an OpenAI-compatible provider (`ao-local`) into
 OpenCode’s config with the linked `baseURL` and model. Normal coding turns then
 call that endpoint’s `/v1/chat/completions` (including tool calls). Project
 permission modes (`default`, `accept-edits`, `auto`, `bypass-permissions`) map to
@@ -98,7 +98,7 @@ Capabilities, stated honestly:
 ## What discovery does and does not do
 
 Discovery is read-only: it asks an endpoint what it serves and never sends a
-prompt. The only HTTP requests Orchestrator makes during discovery are:
+prompt. The only HTTP requests Blue Ash AI makes during discovery are:
 
 | Kind | Probe |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Development guide
 
-How to set up, build, run, and test Agent Orchestrator locally.
+How to set up, build, run, and test Blue Ash AI locally.
 
 ## Prerequisites
 

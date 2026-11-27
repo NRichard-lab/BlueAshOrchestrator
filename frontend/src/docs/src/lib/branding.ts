@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from "./constants";
+
 export function visibleProductName(text: string): string {
-  return text.replaceAll("Agent Orchestrator", "Orchestrator").replace(/\bAO\b/g, "Orchestrator");
+  return text.replace(/\b(?:Agent Orchestrator|Orchestrator\.inc|AO)\b/g, PRODUCT_NAME);
 }

@@ -1,11 +1,11 @@
 ---
 name: agent-orchestrator-design-system
-description: "Use for any renderer UI, visual polish, component, layout, theme, motion, or interaction change in Agent Orchestrator. Read before proposing or implementing visual work."
+description: "Use for any renderer UI, visual polish, component, layout, theme, motion, or interaction change in Blue Ash AI. Read before proposing or implementing visual work."
 ---
 
-# Design system — Agent Orchestrator
+# Design system — Blue Ash AI
 
-Agent Orchestrator (AO) is serious desktop software for supervising parallel AI coding work. It makes the state of a project legible: what is running, what needs a human, what is safe to ship, and where intervention will have the most leverage.
+Blue Ash AI (AO) is serious desktop software for supervising parallel AI coding work. It makes the state of a project legible: what is running, what needs a human, what is safe to ship, and where intervention will have the most leverage.
 
 This is a product UI, not a marketing site. It must feel calm under sustained use, reward scanning, and preserve the terminal as a first-class working surface.
 

@@ -1,8 +1,8 @@
 # Product telemetry
 
-Orchestrator.inc collects limited product-usage and reliability data to learn which parts of
+Blue Ash AI collects limited product-usage and reliability data to learn which parts of
 the app are useful and whether releases are working as expected. If you sign in
-to AO Cloud, Orchestrator.inc sends the email address of that account to PostHog
+to AO Cloud, Blue Ash AI sends the email address of that account to PostHog
 as a person property at sign-in and subsequent signed-in launches, along with
 your AO Cloud user ID and GitHub username.
 Without an AO Cloud sign-in, no email address is sent. Some events include a
@@ -154,11 +154,11 @@ sampled by install rather than by event:
   fingerprints, on top of its per-fingerprint budget below. This counter is in
   memory and resets when the daemon restarts.
 
-## What Orchestrator.inc sends
+## What Blue Ash AI sends
 
-Orchestrator.inc sends structured events in a few broad categories:
+Blue Ash AI sends structured events in a few broad categories:
 
-- App usage, such as launching Orchestrator.inc, viewing a coarse area of the interface, or
+- App usage, such as launching Blue Ash AI, viewing a coarse area of the interface, or
   starting a task or agent session
 - Feature outcomes, such as whether creating a project, starting an agent,
   creating an automation, connecting the mobile app, or installing an update succeeded
@@ -167,7 +167,7 @@ Orchestrator.inc sends structured events in a few broad categories:
   repository name, path, or URL. For a personal repository this owner is the
   user's own GitHub username, so this particular value is not anonymous. We use
   it to understand which organizations and developers get the most value from
-  Orchestrator.inc, so we can prioritize improvements and reach out for feedback
+  Blue Ash AI, so we can prioritize improvements and reach out for feedback
 - The GitHub username of the account signed in to Orchestrator.inc's GitHub integration, sent
   on session-start events so we can see which developers are most active and reach
   out for feedback. It is part of product telemetry with no separate control. See
@@ -180,12 +180,12 @@ Orchestrator.inc sends structured events in a few broad categories:
   (`duration_ms`) and the names and line numbers of the four innermost code
   functions that held it (`caller`). It never includes file paths, database
   contents, or message text
-- Basic environment information, such as the Orchestrator.inc version, operating system,
+- Basic environment information, such as the Blue Ash AI version, operating system,
   release channel, and which supported agent types are available. Desktop and
   daemon events carry the operating system name (`$os`) and version
   (`$os_version`), `platform`, CPU architecture (`arch`), and the update
   channel you chose (`release_channel`)
-- How Orchestrator.inc was installed, on every desktop and daemon event:
+- How Blue Ash AI was installed, on every desktop and daemon event:
   `install_source` is one of `npm-bootstrap` (`ao start`), `dmg`, `brew-cask`,
   `exe`, `appimage`, `deb`, `rpm`, `dev`, `unknown`, or `other`, and
   `installed_at` is the UTC day the app first ran. Both come from
@@ -201,7 +201,7 @@ Orchestrator.inc sends structured events in a few broad categories:
   and subsequent signed-in launches from the AO Cloud account itself. It is
   never read from git config and is not attached to individual events. See
   "Signing in to AO Cloud" below
-- Your GitHub username, when Orchestrator.inc can resolve the account signed in
+- Your GitHub username, when Blue Ash AI can resolve the account signed in
   to its GitHub integration, on every desktop and daemon event (previously only
   session-start events)
 - Desktop onboarding progress, such as viewing, completing, or leaving the
@@ -238,7 +238,7 @@ Orchestrator.inc sends structured events in a few broad categories:
 - Desktop onboarding milestones separately record an app open on the install
   day and the first eligible user CLI invocation. Returning on a later day is
   computed from PostHog retention, not sent as an event.
-- The Orchestrator.inc version on every daemon event
+- The Blue Ash AI version on every daemon event
 - A random `install_id` on every desktop and daemon event, the phone's own
   stored `install_id` when available, and a `paired_install_id` on phone events
   while its desktop identity is known,
@@ -247,20 +247,20 @@ Orchestrator.inc sends structured events in a few broad categories:
   opening a notification, or using a core action
 - Coarse geographic location (country, and where available region and city),
   derived by PostHog from the connection's IP address when it receives each
-  event. Orchestrator.inc does not resolve or send precise coordinates, and does not store
+  event. Blue Ash AI does not resolve or send precise coordinates, and does not store
   your IP address itself. PostHog may associate this geography with other
   events from the same installation, including a session-start event that
-  carries a GitHub handle. Orchestrator.inc uses the geography for aggregate analysis, and
+  carries a GitHub handle. Blue Ash AI uses the geography for aggregate analysis, and
   there is no separate opt-out. Turning telemetry off (see below) stops it
   along with everything else
 
-Orchestrator.inc uses [PostHog](https://posthog.com/privacy) to process remote product
+Blue Ash AI uses [PostHog](https://posthog.com/privacy) to process remote product
 telemetry. PostHog receives standard connection and device metadata, including
-the connection's IP address, device type, and operating system, and Orchestrator.inc leaves
+the connection's IP address, device type, and operating system, and Blue Ash AI leaves
 PostHog's IP-based location derivation enabled so this coarse geography is
 available for aggregate analysis.
 
-The installation identifier lets PostHog group activity from one Orchestrator.inc
+The installation identifier lets PostHog group activity from one Blue Ash AI
 installation over time. Hashed project and session identifiers can likewise
 group events for the same project or session without sending those identifiers
 in plain text. These identifiers are distinct from the explicit GitHub account
@@ -439,7 +439,7 @@ New (`historical: false`) PR outcomes add:
 - `review_rounds` (merged and closed): reviews recorded on the PR.
   `ao_review_used`: whether an AO review ran on it.
 - `merged_via` (merged): `desktop`, `mobile`, or `cli` when merged through
-  Orchestrator.inc, and `github` when the merge happened on GitHub. It is
+  Blue Ash AI, and `github` when the merge happened on GitHub. It is
   omitted when the external merge surface is unknown, such as GitLab.
 - `first_for_install` (associated and merged): true only for the
   installation's first new worker PR and first merge, recorded by
@@ -512,7 +512,7 @@ New (`historical: false`) PR outcomes add:
 
 ## Automation usage and creation
 
-When desktop product telemetry is enabled, Orchestrator.inc records visits to the
+When desktop product telemetry is enabled, Blue Ash AI records visits to the
 Automations page with `ao.routes.viewed` and `surface: automations`.
 It also records these events when you create an automation:
 
@@ -571,7 +571,7 @@ Existing events cannot be used to reconstruct historical automation intent.
 
 ## Artifact creation
 
-When desktop product telemetry is enabled, Orchestrator.inc records visits to the
+When desktop product telemetry is enabled, Blue Ash AI records visits to the
 Artifacts page with `ao.routes.viewed` and `surface: artifacts`. It
 also records these events when you start an artifact session from that page:
 
@@ -587,7 +587,7 @@ The automation events do not include the prompt text, automation name, raw
 project identifier, exact schedule, timezone, selected agent, or error message.
 Editing an existing automation does not emit these creation events. Closing the
 create dialog or failing local validation does not emit a separate event.
-Orchestrator.inc uses the outcome events to understand which schedule presets
+Blue Ash AI uses the outcome events to understand which schedule presets
 people choose and whether creation succeeds.
 
 The desktop product-telemetry controls described under "Turn desktop and daemon
@@ -595,7 +595,7 @@ telemetry off" also control these events.
 
 ## Chat import
 
-When desktop product telemetry is enabled, Orchestrator.inc records these events
+When desktop product telemetry is enabled, Blue Ash AI records these events
 when you import chats from other agents:
 
 | Event | When it is sent | Import-specific properties |
@@ -620,7 +620,7 @@ an imported chat.
 No chat title, chat content, folder name, path, project identifier, session
 identifier, or error message is sent.
 
-## What Orchestrator.inc does not intentionally send
+## What Blue Ash AI does not intentionally send
 
 Product telemetry is designed not to include:
 
@@ -634,9 +634,9 @@ Product telemetry is designed not to include:
 
 The explicit account fields are the GitHub owner segment, your authenticated
 GitHub username, and, only if you sign in to AO Cloud, your AO Cloud user ID and
-email address. Both are described under "What Orchestrator.inc sends". The
+email address. Both are described under "What Blue Ash AI sends". The
 owner segment is limited to the owning organization or account and never
-includes the repository, path, or URL. Orchestrator.inc does not intentionally send other
+includes the repository, path, or URL. Blue Ash AI does not intentionally send other
 account identity fields, but PostHog can associate related events when they
 share an installation identifier with a session-start event that carries your
 GitHub handle.
@@ -645,9 +645,9 @@ The optional website waitlist is separate from product telemetry. If you submit
 an email address, company role, and social profile there, they are used to manage
 that waitlist as described in the [privacy policy](https://orchestrator.inc/privacy).
 
-## How Orchestrator.inc limits the data
+## How Blue Ash AI limits the data
 
-- Orchestrator.inc generates a random installation identifier on first run. It is stored at
+- Blue Ash AI generates a random installation identifier on first run. It is stored at
   `~/.ao/data/telemetry_install_id` (or under `AO_DATA_DIR`) and does not encode
   a personal account. Desktop and daemon events include it as `install_id`, even
   when the PostHog `distinct_id` changes at sign-in, sign-out, or reset. It
@@ -719,7 +719,7 @@ that waitlist as described in the [privacy policy](https://orchestrator.inc/priv
   include a `reused` property. Reused sweeps are not events, and
   `trigger_failed` is no longer a subset of `triggered`. The series breaks on
   the merge of this change. Issue #4665 previously counted every attempt.
-- Session recording is disabled in the desktop and mobile apps. Orchestrator.inc does not
+- Session recording is disabled in the desktop and mobile apps. Blue Ash AI does not
   automatically record screens, clicks, or touches.
 - The desktop app loads PostHog feature flags so experiments can target an
   installation. Flags load only while Share usage analytics is on: an
@@ -737,7 +737,7 @@ that waitlist as described in the [privacy policy](https://orchestrator.inc/priv
   described above, so this is not an anonymity guarantee.
 
 Separately from remote telemetry, the daemon can keep a local copy of
-operational events in Orchestrator.inc's SQLite database. While local telemetry is active, Orchestrator.inc
+operational events in Blue Ash AI's SQLite database. While local telemetry is active, Blue Ash AI
 periodically prunes records older than 30 days by default. Set
 `AO_TELEMETRY_RETENTION` on the daemon to a Go duration such as `168h`, or a
 whole number of days such as `7`, to change this window (minimum 24 hours).
@@ -803,16 +803,16 @@ service. Contact us to have an account's data removed.
 
 ## Sharing your GitHub handle
 
-Orchestrator.inc resolves the GitHub account signed in to its GitHub integration (at
+Blue Ash AI resolves the GitHub account signed in to its GitHub integration (at
 daemon start, and again in the desktop app shortly after launch) and includes
 that username on desktop and daemon events as `github_actor`, and on the PostHog
 person as `github_actor` and `github_login`. It is sent both as the event property
-`github_actor` and as a PostHog person property on Orchestrator.inc's shared installation
+`github_actor` and as a PostHog person property on Blue Ash AI's shared installation
 person, which lets us group product activity by GitHub username and reach out to
 active users for feedback. Other events from the same installation can be
 associated with that person in PostHog.
 
-Orchestrator.inc only sends the handle when the signed-in account is a personal (human)
+Blue Ash AI only sends the handle when the signed-in account is a personal (human)
 account; it never sends an organization or a bot token, and if no GitHub token is
 available it sends nothing. The handle is part of product telemetry and has no
 separate switch: turning telemetry off (see below) stops it. Anything already
@@ -880,7 +880,7 @@ error reporting continues without either identity field. These fields do not
 include email or local paths. The environment-variable controls below also
 govern the desktop/daemon product-telemetry paths, for example in managed
 environments. Set all three variables in the environment used to launch
-Orchestrator.inc:
+Blue Ash AI:
 
 ```bash
 export AO_TELEMETRY_RENDERER=off
@@ -888,13 +888,13 @@ export AO_TELEMETRY_EVENTS=off
 export AO_TELEMETRY_REMOTE=off
 ```
 
-Then restart Orchestrator.inc. `AO_TELEMETRY_RENDERER=off` disables events sent directly by
+Then restart Blue Ash AI. `AO_TELEMETRY_RENDERER=off` disables events sent directly by
 the desktop interface. `AO_TELEMETRY_EVENTS=off` disables daemon event capture,
 including its local copy. `AO_TELEMETRY_REMOTE=off` explicitly disables daemon
 export to PostHog.
 
 The values must reach the desktop app process itself. For example, variables in
-a shell startup file may not be inherited when you launch Orchestrator.inc from the macOS
+a shell startup file may not be inherited when you launch Blue Ash AI from the macOS
 Finder or Dock.
 
 If you run the daemon without the desktop app, event capture and remote export

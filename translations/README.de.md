@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>Schluss mit dem Babysitten von Agenten. Echte Arbeit mergen.</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="Orchestrator.inc-Kanban mit Worker-Sessions, gruppiert nach ihrem Live-Status" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="Blue Ash AI-Kanban mit Worker-Sessions, gruppiert nach ihrem Live-Status" width="100%" />
 
 </div>
 
 <br />
 
-## Warum Orchestrator.inc
+## Warum Blue Ash AI
 
-Ein Coding-Agent kann eine Aufgabe erledigen. Mehrere parallel zu betreiben heißt: die Arbeit aufteilen, Branch-Konflikte vermeiden und jede Änderung durch CI, Review und Merge begleiten. Orchestrator.inc ist ein lokaler Desktop-Workspace genau dafür: Jede Aufgabe erhält einen eigenen Agenten, Branch und Worktree, und dein Code bleibt auf deinem Rechner.
+Ein Coding-Agent kann eine Aufgabe erledigen. Mehrere parallel zu betreiben heißt: die Arbeit aufteilen, Branch-Konflikte vermeiden und jede Änderung durch CI, Review und Merge begleiten. Blue Ash AI ist ein lokaler Desktop-Workspace genau dafür: Jede Aufgabe erhält einen eigenen Agenten, Branch und Worktree, und dein Code bleibt auf deinem Rechner.
 
 ## Funktionen
 
@@ -39,7 +39,7 @@ Ein Coding-Agent kann eine Aufgabe erledigen. Mehrere parallel zu betreiben hei�
 
 Sag dem Hauptagenten eines Projekts, was gebaut werden soll. Er plant die Arbeit, startet für jeden Teil einen Worker in einem eigenen Worktree und meldet sich nur, wenn er dich braucht.
 
-<img src="../docs/assets/readme/site/orchestrator.jpg" alt="Der Orchestrator teilt ein Billing-Feature auf drei Worker auf, jeder in einem eigenen Worktree mit einem anderen Coding-Agenten" width="100%" />
+<img src="../docs/assets/readme/site/orchestrator.jpg" alt="Der Blue Ash AI teilt ein Billing-Feature auf drei Worker auf, jeder in einem eigenen Worktree mit einem anderen Coding-Agenten" width="100%" />
 
 ### Ein Board für jede Session
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
 | **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
-Öffne Orchestrator.inc und wähle das Repository aus, das es verwalten soll. Die Desktop-App führt den Daemon für dich aus, eine CLI ist daher nicht erforderlich. Im [Installationsleitfaden](https://docs.orchestrator.inc/installation) findest du Hinweise zur Einrichtung der Agenten-CLI und zur Fehlerbehebung.
+Öffne Blue Ash AI und wähle das Repository aus, das es verwalten soll. Die Desktop-App führt den Daemon für dich aus, eine CLI ist daher nicht erforderlich. Im [Installationsleitfaden](https://docs.orchestrator.inc/installation) findest du Hinweise zur Einrichtung der Agenten-CLI und zur Fehlerbehebung.
 
 ## Dokumentation
 
@@ -201,8 +201,8 @@ Komm auf unseren [Discord](https://discord.com/invite/UZv7JjxbwG), wenn du Hilfe
 
 ## Produkttelemetrie
 
-Orchestrator.inc erfasst begrenzte Nutzungs- und Zuverlässigkeitstelemetrie, niemals deinen Code, deine Prompts, Agenten-Konversationen oder Zugangsdaten. Sie umfasst eine Installations-ID und deinen GitHub-Benutzernamen; wenn du dich bei AO Cloud anmeldest, zusätzlich deine AO-Cloud-Benutzer-ID und die E-Mail-Adresse dieses Kontos, einmalig als PostHog-Personeneigenschaft gesetzt (niemals aus der Git-Konfiguration gelesen). Unter Settings > General > Privacy > Share usage analytics schaltest du alles ab, für Desktop, Daemon und ein gekoppeltes Smartphone. [Genau nachlesen, was wir erfassen und wie du widersprichst](../docs/telemetry.md).
+Blue Ash AI erfasst begrenzte Nutzungs- und Zuverlässigkeitstelemetrie, niemals deinen Code, deine Prompts, Agenten-Konversationen oder Zugangsdaten. Sie umfasst eine Installations-ID und deinen GitHub-Benutzernamen; wenn du dich bei AO Cloud anmeldest, zusätzlich deine AO-Cloud-Benutzer-ID und die E-Mail-Adresse dieses Kontos, einmalig als PostHog-Personeneigenschaft gesetzt (niemals aus der Git-Konfiguration gelesen). Unter Settings > General > Privacy > Share usage analytics schaltest du alles ab, für Desktop, Daemon und ein gekoppeltes Smartphone. [Genau nachlesen, was wir erfassen und wie du widersprichst](../docs/telemetry.md).
 
 ## Lizenz
 
-Orchestrator.inc steht unter der [Apache License 2.0](../LICENSE) zur Verfügung.
+Blue Ash AI steht unter der [Apache License 2.0](../LICENSE) zur Verfügung.

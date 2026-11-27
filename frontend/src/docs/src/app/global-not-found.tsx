@@ -7,7 +7,7 @@ import "./global.css";
 
 export const metadata: Metadata = {
   ...siteMetadata,
-  title: "Page not found | Orchestrator.inc Docs",
+  title: "Page not found | Blue Ash AI Docs",
   robots: { index: false },
 };
 

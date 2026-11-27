@@ -1,12 +1,12 @@
 ---
 title: はじめに
-description: Orchestrator でできること、使いどころ、最初に読むページを紹介します。
+description: Blue Ash AI でできること、使いどころ、最初に読むページを紹介します。
 translatedFrom: bbe596d4eaad
 ---
 
-Orchestrator は、AI コーディングエージェントを監督するためのデスクトップアプリです。ワーカーごとに分離されたワークスペースを用意し、会話やターミナルをいつでも開ける状態に保ち、Git の作業をプルリクエスト、CI、レビュー、マージコンフリクトと結び付けます。
+Blue Ash AI は、AI コーディングエージェントを監督するためのデスクトップアプリです。ワーカーごとに分離されたワークスペースを用意し、会話やターミナルをいつでも開ける状態に保ち、Git の作業をプルリクエスト、CI、レビュー、マージコンフリクトと結び付けます。
 
-コードを書くのはエージェントです。Orchestrator は、プロジェクトとセッションの管理、作業の追跡、指示の送信、変更のレビュー、ブラウザプレビューの表示を手助けします。
+コードを書くのはエージェントです。Blue Ash AI は、プロジェクトとセッションの管理、作業の追跡、指示の送信、変更のレビュー、ブラウザプレビューの表示を手助けします。
 
 <Callout type="info" title="最短の始め方">
 	デスクトップアプリをダウンロードし、リポジトリを追加して、小さなセッションを 1 つ始めます。[インストール](/installation)、続いて[クイックスタート](/quickstart)を参照してください。
@@ -14,7 +14,7 @@ Orchestrator は、AI コーディングエージェントを監督するため�
 
 <span id="what-ao-helps-you-do" />
 <span id="what-orchestrator-helps-you-do" />
-## Orchestrator でできること
+## Blue Ash AI でできること
 
 - 複数のコーディングエージェントを、ファイル、ブランチ、プルリクエストが混ざらないように並行して実行する。
 - セッションごとに、ネイティブのターミナル UI か構造化された Chat を選ぶ。
@@ -25,7 +25,7 @@ Orchestrator は、AI コーディングエージェントを監督するため�
 - Automations で定期的な作業をスケジュールし、Cues でプロジェクトの指示やシェルコマンドを再利用する。
 - Connect Mobile を通じて、モバイルのコンパニオンアプリから状況を確認し、応答する。
 
-Orchestrator が最も力を発揮するのは、各ワーカーに明確でレビューしやすい成果があるときです。たとえば、範囲の絞られたバグ修正、機能追加、リファクタリング、テスト、ドキュメントの更新、レビュー後の対応などです。
+Blue Ash AI が最も力を発揮するのは、各ワーカーに明確でレビューしやすい成果があるときです。たとえば、範囲の絞られたバグ修正、機能追加、リファクタリング、テスト、ドキュメントの更新、レビュー後の対応などです。
 
 <span id="the-basic-loop" />
 ## 基本の流れ
@@ -34,7 +34,7 @@ Orchestrator が最も力を発揮するのは、各ワーカーに明確でレ�
 add project -> start session -> isolated worktree -> pull request -> CI/review -> merge -> cleanup
 ```
 
-セッションは、デスクトップアプリまたは任意の CLI から作成します。Orchestrator は選択したエージェントのインターフェースを起動し、保存されたアクティビティとプルリクエストのデータを組み合わせて、セッションの状態を表示します。
+セッションは、デスクトップアプリまたは任意の CLI から作成します。Blue Ash AI は選択したエージェントのインターフェースを起動し、保存されたアクティビティとプルリクエストのデータを組み合わせて、セッションの状態を表示します。
 
 <span id="chat-and-terminal-ui" />
 ## Chat と Terminal UI
@@ -53,7 +53,7 @@ Chat に対応しているかどうかは、ハーネスとそのインストー
 
 <span id="local-by-design" />
 
-デスクトップアプリは `127.0.0.1` 上で Go のバックグラウンドサービスを動かし、ローカル API を通じてやり取りします。Orchestrator は、アプリのデータとワークツリーのメタデータを、既定で `~/.ao` に保存します。ほとんどの連携は、すでにコンピューターにあるコーディングエージェントとソース管理の認証情報を使います。Orchestrator は外部のエージェントやその認証情報を同梱しません。Unreal Agent は、macOS と Linux で使える Chat 専用の組み込みアダプターです。
+デスクトップアプリは `127.0.0.1` 上で Go のバックグラウンドサービスを動かし、ローカル API を通じてやり取りします。Blue Ash AI は、アプリのデータとワークツリーのメタデータを、既定で `~/.ao` に保存します。ほとんどの連携は、すでにコンピューターにあるコーディングエージェントとソース管理の認証情報を使います。Blue Ash AI は外部のエージェントやその認証情報を同梱しません。Unreal Agent は、macOS と Linux で使える Chat 専用の組み込みアダプターです。
 
 Connect Mobile は、接続パスワードで保護された、オプトインの別のリスナーです。ローカルでのペアリングと安全なリモートペアリングについては、[Connect Mobile](/configuration/remote-access) を参照してください。
 
@@ -64,7 +64,7 @@ Connect Mobile は、接続パスワードで保護された、オプトイン�
 <span id="supported-agents" />
 ## 対応エージェント
 
-Orchestrator は、Claude Code、Codex、Cursor、Aider、OpenCode、Droid、Kimi Code、GitHub Copilot などのコーディングエージェントに対応しています。ワーカー、Chat、レビュー担当の各役割への対応状況はエージェントによって異なります。詳しくは[エージェント一覧](/plugins/agents)を確認してください。Cloud で使える[プロバイダー](/guides/cloud#before-you-start)はこれより少なくなります。
+Blue Ash AI は、Claude Code、Codex、Cursor、Aider、OpenCode、Droid、Kimi Code、GitHub Copilot などのコーディングエージェントに対応しています。ワーカー、Chat、レビュー担当の各役割への対応状況はエージェントによって異なります。詳しくは[エージェント一覧](/plugins/agents)を確認してください。Cloud で使える[プロバイダー](/guides/cloud#before-you-start)はこれより少なくなります。
 
 GitHub と GitLab は、ソース管理の監視と Issue の取り込みに使えます。取り込みはオプトインで、Issue トラッカーに対しては読み取り専用です。Linear と、旧来の Node プラグインパッケージには対応していません。
 

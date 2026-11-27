@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>Arrêtez de surveiller vos agents. Commencez à fusionner du vrai travail.</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="Kanban d'Orchestrator.inc montrant les sessions de workers regroupées selon leur état en direct" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="Kanban de Blue Ash AI montrant les sessions de workers regroupées selon leur état en direct" width="100%" />
 
 </div>
 
 <br />
 
-## Pourquoi Orchestrator.inc
+## Pourquoi Blue Ash AI
 
-Un agent de développement peut prendre en charge une tâche. En faire tourner plusieurs implique de découper le travail, d'éviter les collisions entre branches et de suivre chaque changement à travers la CI, la revue et la fusion. Orchestrator.inc est un espace de travail de bureau local conçu pour cela : chaque tâche reçoit son propre agent, sa propre branche et son propre worktree, et votre code reste sur votre machine.
+Un agent de développement peut prendre en charge une tâche. En faire tourner plusieurs implique de découper le travail, d'éviter les collisions entre branches et de suivre chaque changement à travers la CI, la revue et la fusion. Blue Ash AI est un espace de travail de bureau local conçu pour cela : chaque tâche reçoit son propre agent, sa propre branche et son propre worktree, et votre code reste sur votre machine.
 
 ## Fonctionnalités
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
 | **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
-Ouvrez Orchestrator.inc et sélectionnez le dépôt qu'il doit gérer. L'application de bureau exécute le daemon pour vous, aucune CLI n'est donc nécessaire. Consultez le [guide d'installation](https://docs.orchestrator.inc/installation) pour configurer les CLI des agents et résoudre les problèmes.
+Ouvrez Blue Ash AI et sélectionnez le dépôt qu'il doit gérer. L'application de bureau exécute le daemon pour vous, aucune CLI n'est donc nécessaire. Consultez le [guide d'installation](https://docs.orchestrator.inc/installation) pour configurer les CLI des agents et résoudre les problèmes.
 
 ## Documentation
 
@@ -201,8 +201,8 @@ Rejoignez [Discord](https://discord.com/invite/UZv7JjxbwG) pour obtenir de l'aid
 
 ## Télémétrie produit
 
-Orchestrator.inc collecte une télémétrie limitée d'usage et de fiabilité, jamais votre code, vos prompts, vos conversations avec les agents ni vos identifiants de connexion. Elle inclut un identifiant d'installation et votre nom d'utilisateur GitHub ; si vous vous connectez à AO Cloud, elle inclut aussi votre identifiant utilisateur AO Cloud et l'adresse e-mail de ce compte, définie une seule fois comme propriété de personne PostHog (jamais lue depuis la configuration git). Désactivez-la entièrement dans Settings > General > Privacy > Share usage analytics, ce qui couvre l'application de bureau, le daemon et un téléphone associé. [Découvrez précisément ce que nous collectons et comment la désactiver](../docs/telemetry.md).
+Blue Ash AI collecte une télémétrie limitée d'usage et de fiabilité, jamais votre code, vos prompts, vos conversations avec les agents ni vos identifiants de connexion. Elle inclut un identifiant d'installation et votre nom d'utilisateur GitHub ; si vous vous connectez à AO Cloud, elle inclut aussi votre identifiant utilisateur AO Cloud et l'adresse e-mail de ce compte, définie une seule fois comme propriété de personne PostHog (jamais lue depuis la configuration git). Désactivez-la entièrement dans Settings > General > Privacy > Share usage analytics, ce qui couvre l'application de bureau, le daemon et un téléphone associé. [Découvrez précisément ce que nous collectons et comment la désactiver](../docs/telemetry.md).
 
 ## Licence
 
-Orchestrator.inc est disponible sous [licence Apache 2.0](../LICENSE).
+Blue Ash AI est disponible sous [licence Apache 2.0](../LICENSE).

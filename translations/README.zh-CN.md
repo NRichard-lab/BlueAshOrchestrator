@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>别再照看智能体，开始合并真正的成果。</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="Orchestrator.inc 看板，按实时状态分组显示 worker 会话" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="Blue Ash AI 看板，按实时状态分组显示 worker 会话" width="100%" />
 
 </div>
 
 <br />
 
-## 为什么选择 Orchestrator.inc
+## 为什么选择 Blue Ash AI
 
-一个编程智能体可以完成一项任务。同时运行多个智能体，就意味着要拆分工作、避免分支冲突，并跟踪每项变更走完 CI、评审和合并。Orchestrator.inc 正是为此打造的本地桌面工作区：每项任务都有自己的智能体、分支和 worktree，你的代码始终留在你自己的机器上。
+一个编程智能体可以完成一项任务。同时运行多个智能体，就意味着要拆分工作、避免分支冲突，并跟踪每项变更走完 CI、评审和合并。Blue Ash AI 正是为此打造的本地桌面工作区：每项任务都有自己的智能体、分支和 worktree，你的代码始终留在你自己的机器上。
 
 ## 功能
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux**（Debian/Ubuntu） | `agent-orchestrator-linux-x64.deb` |
 | **Linux**（Fedora/RHEL） | `agent-orchestrator-linux-x64.rpm` |
 
-打开 Orchestrator.inc，并选择你希望它管理的仓库。桌面应用会为你运行守护进程，因此无需使用 CLI。有关智能体 CLI 的设置和故障排除，请参阅[安装指南](https://docs.orchestrator.inc/installation)。
+打开 Blue Ash AI，并选择你希望它管理的仓库。桌面应用会为你运行守护进程，因此无需使用 CLI。有关智能体 CLI 的设置和故障排除，请参阅[安装指南](https://docs.orchestrator.inc/installation)。
 
 ## 文档
 
@@ -201,8 +201,8 @@ Download the installer for your platform from your BlueAsh update server's downl
 
 ## 产品遥测
 
-Orchestrator.inc 收集有限的使用情况和可靠性遥测数据，绝不收集你的代码、提示词、智能体对话或凭据。这些数据包括安装 ID 和你的 GitHub 用户名；如果你登录了 AO Cloud，还会包括你的 AO Cloud 用户 ID 和该账号的电子邮件地址，它们只会作为 PostHog 人员属性设置一次（绝不从 git config 读取）。你可以在 Settings > General > Privacy > Share usage analytics 中将其全部关闭，该设置同时适用于桌面端、守护进程和已配对的手机。[详细了解我们收集哪些数据以及如何选择退出](../docs/telemetry.md)。
+Blue Ash AI 收集有限的使用情况和可靠性遥测数据，绝不收集你的代码、提示词、智能体对话或凭据。这些数据包括安装 ID 和你的 GitHub 用户名；如果你登录了 AO Cloud，还会包括你的 AO Cloud 用户 ID 和该账号的电子邮件地址，它们只会作为 PostHog 人员属性设置一次（绝不从 git config 读取）。你可以在 Settings > General > Privacy > Share usage analytics 中将其全部关闭，该设置同时适用于桌面端、守护进程和已配对的手机。[详细了解我们收集哪些数据以及如何选择退出](../docs/telemetry.md)。
 
 ## 许可证
 
-Orchestrator.inc 基于 [Apache License 2.0](../LICENSE) 提供。
+Blue Ash AI 基于 [Apache License 2.0](../LICENSE) 提供。

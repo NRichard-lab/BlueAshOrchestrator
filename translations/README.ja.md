@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>エージェントの子守りはもう終わり。本物の成果をマージしよう。</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="ワーカーセッションを現在の状態ごとに表示する Orchestrator.inc の Kanban" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="ワーカーセッションを現在の状態ごとに表示する Blue Ash AI の Kanban" width="100%" />
 
 </div>
 
 <br />
 
-## Orchestrator.inc を使う理由
+## Blue Ash AI を使う理由
 
-1 つのコーディングエージェントなら、1 つのタスクを処理できます。しかし複数を動かすとなると、作業を分割し、ブランチの衝突を防ぎ、すべての変更を CI、レビュー、マージまで見届ける必要があります。Orchestrator.inc はそのためのローカルのデスクトップワークスペースです。タスクごとに専用のエージェント、ブランチ、worktree が用意され、コードは手元のマシンから出ません。
+1 つのコーディングエージェントなら、1 つのタスクを処理できます。しかし複数を動かすとなると、作業を分割し、ブランチの衝突を防ぎ、すべての変更を CI、レビュー、マージまで見届ける必要があります。Blue Ash AI はそのためのローカルのデスクトップワークスペースです。タスクごとに専用のエージェント、ブランチ、worktree が用意され、コードは手元のマシンから出ません。
 
 ## 機能
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
 | **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
-Orchestrator.inc を開き、管理させたいリポジトリを指定します。デスクトップアプリがデーモンを実行するため、CLI は不要です。エージェント CLI のセットアップとトラブルシューティングは[インストールガイド](https://docs.orchestrator.inc/installation)を参照してください。
+Blue Ash AI を開き、管理させたいリポジトリを指定します。デスクトップアプリがデーモンを実行するため、CLI は不要です。エージェント CLI のセットアップとトラブルシューティングは[インストールガイド](https://docs.orchestrator.inc/installation)を参照してください。
 
 ## ドキュメント
 
@@ -201,8 +201,8 @@ Orchestrator.inc を開き、管理させたいリポジトリを指定します
 
 ## 製品テレメトリ
 
-Orchestrator.inc は限定的な利用状況と信頼性のテレメトリを収集しますが、コード、プロンプト、エージェントとの会話、認証情報を収集することはありません。収集対象にはインストール ID と GitHub ユーザー名が含まれます。AO Cloud にサインインしている場合は、AO Cloud のユーザー ID とそのアカウントのメールアドレスも含まれ、PostHog の person プロパティとして一度だけ設定されます（git config から読み取ることはありません）。Settings > General > Privacy > Share usage analytics ですべてオフにでき、この設定はデスクトップ、デーモン、ペアリングしたスマートフォンに適用されます。[収集内容とオプトアウト方法の詳細](../docs/telemetry.md)。
+Blue Ash AI は限定的な利用状況と信頼性のテレメトリを収集しますが、コード、プロンプト、エージェントとの会話、認証情報を収集することはありません。収集対象にはインストール ID と GitHub ユーザー名が含まれます。AO Cloud にサインインしている場合は、AO Cloud のユーザー ID とそのアカウントのメールアドレスも含まれ、PostHog の person プロパティとして一度だけ設定されます（git config から読み取ることはありません）。Settings > General > Privacy > Share usage analytics ですべてオフにでき、この設定はデスクトップ、デーモン、ペアリングしたスマートフォンに適用されます。[収集内容とオプトアウト方法の詳細](../docs/telemetry.md)。
 
 ## ライセンス
 
-Orchestrator.inc は [Apache License 2.0](../LICENSE) のもとで提供されています。
+Blue Ash AI は [Apache License 2.0](../LICENSE) のもとで提供されています。
