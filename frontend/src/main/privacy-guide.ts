@@ -1,7 +1,7 @@
 import type { Rect, SettingsWindowSnapshot } from "./settings-window-watch";
 
 // A drop strip docked under System Settings while an app's macOS permissions
-// are missing: CuaDriver.app for the Cua tools, or Orchestrator itself, which
+// are missing: CuaDriver.app for the Cua tools, or Blue Ash AI itself, which
 // macOS charges for computer use run by its sessions' agents. AO cannot reach
 // into System Settings, so the strip follows its window and offers the app as a
 // drag source: dropping it on the privacy list adds it there. The user picks
@@ -278,7 +278,7 @@ export interface PrivacyGuideWindow {
 export interface PrivacyGuideDeps {
 	createWindow(): PrivacyGuideWindow;
 	openExternal(url: string): Promise<unknown>;
-	/** The app a target names; undefined when it has no app bundle to show (Orchestrator run unpackaged). */
+	/** The app a target names; undefined when it has no app bundle to show (Blue Ash AI run unpackaged). */
 	appFor(target: PrivacyGuideTarget): PrivacyGuideApp | undefined;
 	readIcon(appPath: string): Promise<string | undefined>;
 	/** Streams System Settings snapshots; onError means they will not come. Returns a stop. */

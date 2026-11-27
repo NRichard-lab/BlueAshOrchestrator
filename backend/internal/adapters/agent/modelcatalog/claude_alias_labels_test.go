@@ -46,7 +46,7 @@ func TestLabelClaudeAliasVersionsNeverVersionsAFloatingAlias(t *testing.T) {
 		{ID: "claude-fable-5-2-20261101", Label: "Claude Fable 5.2"},
 	}
 	aliases := []ports.AgentModelInfo{
-		{ID: "opus", Label: "Opus 5.5"},  // an earlier guess
+		{ID: "opus", Label: "Opus 5.5"},   // an earlier guess
 		{ID: "fable", Label: "Fable 5.2"}, // the provider's own claim
 		{ID: "opus[1m]", Label: "Opus 5.5 (1M context)"},
 	}

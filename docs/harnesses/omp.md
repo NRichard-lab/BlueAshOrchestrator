@@ -1,6 +1,6 @@
 # OMP Adapter
 
-OMP is integrated into Agent Orchestrator as both an interactive Terminal UI
+OMP is integrated into Blue Ash AI as both an interactive Terminal UI
 harness and a structured Chat harness. AO launches the user's own `omp` binary
 inside the session worktree in either mode.
 

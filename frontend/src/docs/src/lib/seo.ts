@@ -1,7 +1,7 @@
 import { getBreadcrumbItems } from "fumadocs-core/breadcrumb";
 import type { SupportedLocale } from "@/i18n/locales";
 import { localePath, withTrailingSlash } from "@/i18n/paths";
-import { COMPANY } from "./constants";
+import { COMPANY, PRODUCT_NAME } from "./constants";
 import { commitDates } from "./last-modified";
 import { docsTree } from "./docs-tree";
 
@@ -42,7 +42,7 @@ export function absoluteUrl(path: string): string {
 }
 
 /** The site name, e.g. in `og:site_name`. */
-export const SITE_NAME = `${COMPANY.NAME} Docs`;
+export const SITE_NAME = `${PRODUCT_NAME} Docs`;
 
 // The main site describes the company under this ID; the docs only point at it,
 // so there is one description of the company to keep current.

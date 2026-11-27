@@ -3374,13 +3374,13 @@ ipcMain.handle("app:openChromeExtensions", () =>
 	openChromeExtensionsPage(process.platform, (file, args) => promisify(execFile)(file, args)),
 );
 
-// Docks under System Settings while Cua Driver's or Orchestrator's own
+// Docks under System Settings while Cua Driver's or Blue Ash AI's own
 // permissions are missing. It is a non-activating, always-on-top panel so
 // System Settings keeps focus; its only script is a preload that turns a drag
 // of the app tile into a native file drag, and its links are intercepted here.
 let privacyGuideContents: WebContents | undefined;
 const privacyGuideIcons = new Map<string, Electron.NativeImage>();
-// Orchestrator's own bundle; a dev build runs from Electron.app, which macOS
+// Blue Ash AI's own bundle; a dev build runs from Electron.app, which macOS
 // then charges for its sessions instead.
 function orchestratorApp(): PrivacyGuideApp | undefined {
 	const bundle = appBundlePath(process.execPath);
@@ -3456,7 +3456,7 @@ ipcMain.on("privacyGuide:startDrag", (event) => {
 	if (!privacyGuideContents || event.sender !== privacyGuideContents || !target || !icon || icon.isEmpty()) return;
 	event.sender.startDrag({ file: target.path, icon });
 });
-// Orchestrator's own Accessibility and Screen Recording grants, which Claude
+// Blue Ash AI's own Accessibility and Screen Recording grants, which Claude
 // Code's built-in computer use in a terminal session needs. Undefined off
 // macOS, or when they cannot be read.
 const readOrchestratorPrivacy = () => readAppPrivacy(execFileAsync);
@@ -3472,7 +3472,7 @@ ipcMain.handle("app:requestAppPrivacy", async (event): Promise<AppPrivacyGrants 
 	if (!granted) return undefined;
 	await requestAppPrivacy(granted, {
 		accessibility: () => { systemPreferences.isTrustedAccessibilityClient(true); },
-		// Listing the screens is a screen capture: macOS prompts and lists Orchestrator.
+		// Listing the screens is a screen capture: macOS prompts and lists Blue Ash AI.
 		screenRecording: async () => { await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 0, height: 0 } }).catch(() => undefined); },
 	});
 	return readOrchestratorPrivacy();

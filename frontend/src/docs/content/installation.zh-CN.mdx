@@ -1,8 +1,10 @@
 ---
 title: 安装
-description: 下载 Orchestrator 桌面应用，并连接你的编程工具。
-translatedFrom: 7460247266d0
+description: 下载 Blue Ash AI 桌面应用，并连接你的编程工具。
+translatedFrom: 3811ffc2a1dd
 ---
+
+Blue Ash AI ?????? `~/.blueashai`?`~/.ao` ????????????
 
 如需最新的稳定版桌面构建，请从 [Orchestrator 官方下载页面](https://orchestrator.inc/download/)开始。该页面还列出了每夜构建和移动应用。如果你想直接获取桌面安装包，请从下面选择：
 
@@ -35,14 +37,15 @@ brew upgrade --cask agentwrapper/tap/agent-orchestrator
 | --- | --- | --- |
 | Git | 仓库项目 | 创建和管理隔离的工作树与分支。 |
 | GitHub CLI `gh` | GitHub 项目 | 使用你现有的认证执行仓库和拉取请求操作。 |
-| 外部编程代理（在 Orchestrator 中称为 harness） | 使用已安装 CLI 的代理会话 | 安装受支持的工具，例如 Claude Code、Codex、Cursor、Aider 或 OpenCode。当前列表和界面支持情况请参阅[代理目录](/plugins/agents)。Unreal Agent 内置于 Orchestrator，可在 macOS 和 Linux 上用于 Chat。 |
+| 外部编程代理（在 Blue Ash AI 中称为 harness） | 使用已安装 CLI 的代理会话 | 安装受支持的工具，例如 Claude Code、Codex、Cursor、Aider 或 OpenCode。当前列表和界面支持情况请参阅[代理目录](/plugins/agents)。Unreal Agent 内置于 Blue Ash AI，可在 macOS 和 Linux 上用于 Chat。 |
 | tmux | macOS 预检，以及旧版或回退的终端会话 | macOS 和 Linux 的桌面安装包已包含它。从源码启动时可能需要系统中的 tmux；请参阅 [Runtime](/plugins/runtimes)。 |
 
-Orchestrator 使用你电脑上已经安装并登录的编程代理。**Settings → Harness** 提供受支持代理的设置和就绪检查；有些代理需要在 Orchestrator 之外安装或登录。Unreal Agent 是一个例外：它是内置的、仅用于 Chat 的代理，有自己的平台和权限限制。请参阅[代理目录](/plugins/agents)。
+Blue Ash AI 使用你电脑上已经安装并登录的编程代理。**Settings → Harness** 提供受支持代理的设置和就绪检查；有些代理需要在 Blue Ash AI 之外安装或登录。Unreal Agent 是一个例外：它是内置的、仅用于 Chat 的代理，有自己的平台和权限限制。请参阅[代理目录](/plugins/agents)。
 
 <span id="set-up-ao" />
 <span id="set-up-orchestrator" />
-## 设置 Orchestrator
+<span id="set-up-blue-ash-ai" />
+## 设置 Blue Ash AI
 
 <Steps>
 <Step>
@@ -50,7 +53,7 @@ Orchestrator 使用你电脑上已经安装并登录的编程代理。**Settings
 <span id="install-and-open-the-desktop-app" />
 ### 安装并打开桌面应用
 
-在上方选择适合你平台的下载，安装后打开 **Orchestrator**。应用会自动启动并监督本地的 Go 守护进程。
+在上方选择适合你平台的下载，安装后打开 **Blue Ash AI**。应用会自动启动并监督本地的 Go 守护进程。
 
 </Step>
 <Step>
@@ -77,7 +80,7 @@ gh auth status
 <span id="install-and-sign-in-to-an-external-agent" />
 ### 安装并登录外部代理
 
-对于外部安装的 harness，请先安装，然后在 Orchestrator 之外运行一次以完成登录。Orchestrator 会在你创建会话时检测可用的 harness。如果你使用内置的 Unreal Agent，可以跳过这一步，在受支持的 macOS 或 Linux 上创建 Chat 会话时直接选择它。
+对于外部安装的 harness，请先安装，然后在 Blue Ash AI 之外运行一次以完成登录。Blue Ash AI 会在你创建会话时检测可用的 harness。如果你使用内置的 Unreal Agent，可以跳过这一步，在受支持的 macOS 或 Linux 上创建 Chat 会话时直接选择它。
 
 是否支持 Chat 取决于 harness 及其已安装的版本；请参阅[代理能力目录](/plugins/agents#chat-versus-terminal-ui)。
 
@@ -87,7 +90,7 @@ gh auth status
 <span id="add-a-project" />
 ### 添加项目
 
-在桌面应用中选择 **Add project**，然后选择一个现有的本地 Git 仓库。Orchestrator 会登记该仓库，但不会移动你原来的检出目录。每个 worker 会话都有自己独立的工作树。
+在桌面应用中选择 **Add project**，然后选择一个现有的本地 Git 仓库。Blue Ash AI 会登记该仓库，但不会移动你原来的检出目录。每个 worker 会话都有自己独立的工作树。
 
 </Step>
 </Steps>
@@ -122,16 +125,17 @@ ao start
 
 <span id="where-ao-stores-data" />
 <span id="where-orchestrator-stores-data" />
-## Orchestrator 的数据存放位置
+<span id="where-blue-ash-ai-stores-data" />
+## Blue Ash AI 的数据存放位置
 
-Orchestrator 的所有应用状态默认都存放在 `~/.ao` 下，包括守护进程数据库、运行文件（run file）、托管的工作树、Electron 浏览器数据和移动端配对配置。高级安装可以用 `AO_DATA_DIR` 和 `AO_RUN_FILE` 覆盖守护进程的路径。
+Blue Ash AI 的所有应用状态默认都存放在 `~/.ao` 下，包括守护进程数据库、运行文件（run file）、托管的工作树、Electron 浏览器数据和移动端配对配置。高级安装可以用 `AO_DATA_DIR` 和 `AO_RUN_FILE` 覆盖守护进程的路径。
 
 <span id="common-installation-problems" />
 ## 常见安装问题
 
 <Accordions>
 	<Accordion title="没有可用的代理">
-		对于外部 harness，请安装它并运行一次以完成认证，然后重启 Orchestrator，让从桌面启动的守护进程获得更新后的登录 shell 环境。Unreal Agent 内置于 Orchestrator，可在受支持的 macOS 和 Linux 上用于 Chat；直接选择它即可，无需安装 CLI。
+		对于外部 harness，请安装它并运行一次以完成认证，然后重启 Blue Ash AI，让从桌面启动的守护进程获得更新后的登录 shell 环境。Unreal Agent 内置于 Blue Ash AI，可在受支持的 macOS 和 Linux 上用于 Chat；直接选择它即可，无需安装 CLI。
 	</Accordion>
 	<Accordion title="缺少 GitHub 数据">
 		运行 `gh auth status`。确认当前账户能够访问该仓库及其拉取请求。
@@ -143,7 +147,7 @@ Orchestrator 的所有应用状态默认都存放在 `~/.ao` 下，包括守护�
 		桌面应用不需要这个命令。只有在你有意使用已冻结的旧版 CLI 时，才需要排查包管理器的全局 bin 路径。
 	</Accordion>
 	<Accordion title="macOS 提示无法验证开发者">
-		在访达中右键点按 Orchestrator，选择“打开”，然后在确认对话框中再次选择“打开”。如果 macOS 仍然阻止该应用，请运行以下诊断命令，并在提交 issue 时附上输出：
+		在访达中右键点按 Blue Ash AI，选择“打开”，然后在确认对话框中再次选择“打开”。如果 macOS 仍然阻止该应用，请运行以下诊断命令，并在提交 issue 时附上输出：
 		```bash
 		sw_vers
 		codesign -dvvv "/Applications/Agent Orchestrator.app"

@@ -3,6 +3,7 @@
 import { useLingui } from "@lingui/react";
 import { msg } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
+import { PRODUCT_NAME } from "@/lib/constants";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 /** Points out that the article is English when the interface is not. */
@@ -18,15 +19,15 @@ export function EnglishArticleNotice() {
 
 /**
  * Keeps the tab title in the interface language. The prerendered title is
- * `${source} | Orchestrator.inc Docs`; `title` is the name to show instead,
+ * `${source} | ${PRODUCT_NAME} Docs`; `title` is the name to show instead,
  * already translated (defaults to `source`).
  */
 export function LocalizedTitle({ source, title = source }: { source: string; title?: string }) {
   const { i18n } = useLingui();
   const written = useRef<string | null>(null);
   useEffect(() => {
-    const english = `${source} | Orchestrator.inc Docs`;
-    const localized = i18n._(msg`${title} | Orchestrator.inc Docs`);
+    const english = `${source} | ${PRODUCT_NAME} Docs`;
+    const localized = i18n._(msg`${title} | Orchestrator.inc Docs`).replace(/Orchestrator\.inc(?=[^|]*$)/, PRODUCT_NAME);
     // Only replace this page's own title (English, or our earlier
     // translation), never another page's that a navigation just wrote.
     const apply = () => {

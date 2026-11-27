@@ -1,6 +1,6 @@
-# Agent Orchestrator architecture
+# Blue Ash AI architecture
 
-Agent Orchestrator is a long-running Go daemon that supervises multiple
+Blue Ash AI is a long-running Go daemon that supervises multiple
 parallel AI coding-agent sessions. Project sessions own isolated Git
 worktrees. Projectless standalone workers own AO-managed plain-directory
 workspaces. Every session uses one interface mode at a time.
@@ -1296,7 +1296,7 @@ architectural assumptions:
 
 ## Summary
 
-Agent Orchestrator's architecture is designed around:
+Blue Ash AI's architecture is designed around:
 
 - **Separation of concerns:** Observation, persistence, and display are distinct layers.
 - **Port-based design:** Core code depends on interfaces, not implementations.

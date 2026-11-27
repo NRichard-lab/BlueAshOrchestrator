@@ -46,7 +46,7 @@ existing tests and builds are unchanged):
 
 | | Orchestrator (legacy) | BlueAshAI |
 | --- | --- | --- |
-| Visible name / exe / installer | Orchestrator.inc / `agent-orchestrator.exe` / `Agent Orchestrator Setup <v>.exe` | BlueAshAI / `BlueAshAI.exe` / `BlueAshAI Setup <v>.exe` |
+| Visible name / exe / installer | Orchestrator.inc / `agent-orchestrator.exe` / `Agent Orchestrator Setup <v>.exe` | Blue Ash AI / `BlueAshAI.exe` / `BlueAshAI Setup <v>.exe` |
 | Windows asset alias (`ao start`, conductor) | `agent-orchestrator-win32-x64.exe` | `BlueAshAI-win32-x64.exe` |
 | NSIS appId (install key GUID) | `dev.agent-orchestrator.desktop` (`d06535a3-…`) | `ai.blueash.desktop` (`7ebb2fd8-9d4d-5b06-b9b3-8cce0c92e0db`) |
 | AppUserModelID | `dev.agent-orchestrator.desktop` | `ai.blueash.desktop` |

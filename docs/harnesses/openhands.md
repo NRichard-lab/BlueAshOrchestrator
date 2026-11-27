@@ -1,6 +1,6 @@
 # OpenHands Adapter
 
-OpenHands is integrated into Agent Orchestrator as an interactive Terminal UI
+OpenHands is integrated into Blue Ash AI as an interactive Terminal UI
 harness. AO launches the user's own `openhands` binary (the
 [OpenHands CLI](https://github.com/OpenHands/OpenHands-CLI)) inside the session
 worktree.

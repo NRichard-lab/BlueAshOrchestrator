@@ -23,7 +23,7 @@ const releaseNoteComponents: Components = {
 		</blockquote>
 	),
 	code: ({ children }) => <code className="font-mono text-[0.92em]">{children}</code>,
-	// Release notes open in the user's own browser, never the Orchestrator
+	// Release notes open in the user's own browser, never the Blue Ash AI
 	// Browser, whichever way the link is activated.
 	a: ({ href, children }) => href ? (
 		<AppLink

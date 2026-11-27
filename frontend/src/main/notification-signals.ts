@@ -33,7 +33,7 @@ export function shouldSignalAttention(type: string | undefined): boolean {
  * The renderer computes `watched` narrowly: the notification's own session is
  * the current route, the document is visible AND focused, and the worker
  * terminal is the one on screen. Window focus alone is deliberately not
- * consulted here. Working inside Orchestrator on one session while a different
+ * consulted here. Working inside Blue Ash AI on one session while a different
  * one blocks on input is the ordinary case, and counting any focus as "looking"
  * silenced both the sound and the toast for it, so a waiting agent produced no
  * signal at all.

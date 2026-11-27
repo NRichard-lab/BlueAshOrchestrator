@@ -43,9 +43,9 @@ async function fetchInstallJob(): Promise<InstallJob> {
  * through the daemon's fixed installer allowlist like the agent CLIs do, then
  * shows the facts that decide whether agents can use it: the background
  * service and, on macOS, the privacy permissions CuaDriver.app holds. On macOS
- * a second section, native computer use, holds Orchestrator's own permissions,
+ * a second section, native computer use, holds Blue Ash AI's own permissions,
  * which agents' built-in computer use (Claude Code's, Codex's) needs in
- * terminal sessions: macOS checks Orchestrator, not the agent, for everything
+ * terminal sessions: macOS checks Blue Ash AI, not the agent, for everything
  * a session runs.
  */
 export function ComputerUseSection({ titleHidden }: { titleHidden?: boolean }) {
@@ -78,7 +78,7 @@ export function ComputerUseSection({ titleHidden }: { titleHidden?: boolean }) {
 		refetchInterval: (query) => (query.state.data?.permissions?.granting || guiding === "cuaDriver" ? GRANT_POLL_MS : false),
 	});
 	const mac = isMac();
-	// Orchestrator's own grants, read fresh on each fetch (and on window focus,
+	// Blue Ash AI's own grants, read fresh on each fetch (and on window focus,
 	// as the user comes back from System Settings); null when macOS cannot be
 	// asked, and the row then says so.
 	const appPrivacy = useQuery({
@@ -171,7 +171,7 @@ export function ComputerUseSection({ titleHidden }: { titleHidden?: boolean }) {
 		// The request lists CuaDriver in System Settings; point the user at it.
 		if (data.permissions) await showGuide("cuaDriver", grantedMap(data.permissions));
 	});
-	// Asks macOS for whatever Orchestrator is missing, which lists it in those
+	// Asks macOS for whatever Blue Ash AI is missing, which lists it in those
 	// panes, then docks the guide there; with everything granted it opens the
 	// guide to review them.
 	const grantApp = () => run("appGrant", async () => {
@@ -322,8 +322,8 @@ export function ComputerUseSection({ titleHidden }: { titleHidden?: boolean }) {
 				</div>
 			) : null}
 
-			{/* Agents' own computer use (Claude Code's, Codex's) runs as Orchestrator,
-			    so macOS checks Orchestrator's grants, not Cua Driver's. */}
+			{/* Agents' own computer use (Claude Code's, Codex's) runs as Blue Ash AI,
+			    so macOS checks Blue Ash AI's grants, not Cua Driver's. */}
 			{mac ? (
 				<SettingsSection title={t("settings.computerUse.native")} description={t("settings.computerUse.nativeDescription")} sectionId="nativeComputerUse" titleHidden={titleHidden} grouped>
 					<SettingsRow

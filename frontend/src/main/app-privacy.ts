@@ -1,9 +1,9 @@
 import { PRIVACY_PANES, type PrivacyPane } from "./privacy-guide";
 
-// Orchestrator's own macOS privacy grants. macOS charges every process in a
-// session (the agent CLI and whatever it starts) to Orchestrator, so Claude
+// Blue Ash AI's own macOS privacy grants. macOS charges every process in a
+// session (the agent CLI and whatever it starts) to Blue Ash AI, so Claude
 // Code's built-in computer use in a terminal session works only once
-// Orchestrator holds Accessibility and Screen Recording, whatever the error
+// Blue Ash AI holds Accessibility and Screen Recording, whatever the error
 // shown in the session names.
 
 export type AppPrivacyGrants = Record<PrivacyPane, boolean>;
@@ -17,15 +17,15 @@ const OSASCRIPT = "/usr/bin/osascript";
 export const APP_PRIVACY_TIMEOUT_MS = 5_000;
 
 // Asked in a fresh process every time: a running process keeps the Screen
-// Recording answer it first got until it restarts, so Orchestrator cannot ask
-// itself. osascript is Orchestrator's child, so macOS answers for Orchestrator.
+// Recording answer it first got until it restarts, so Blue Ash AI cannot ask
+// itself. osascript is Blue Ash AI's child, so macOS answers for Blue Ash AI.
 export const APP_PRIVACY_SCRIPT = [
 	"ObjC.import('ApplicationServices');",
 	"ObjC.bindFunction('CGPreflightScreenCaptureAccess', ['bool', []]);",
 	"JSON.stringify({ accessibility: $.AXIsProcessTrusted(), screenRecording: $.CGPreflightScreenCaptureAccess() });",
 ].join("\n");
 
-/** Orchestrator's current grants; undefined when they cannot be read. */
+/** Blue Ash AI's current grants; undefined when they cannot be read. */
 export async function readAppPrivacy(run: RunFile): Promise<AppPrivacyGrants | undefined> {
 	try {
 		const { stdout } = await run(OSASCRIPT, ["-l", "JavaScript", "-e", APP_PRIVACY_SCRIPT], { timeout: APP_PRIVACY_TIMEOUT_MS });
@@ -47,14 +47,14 @@ export function parseAppPrivacy(stdout: string): AppPrivacyGrants | undefined {
 }
 
 export interface AppPrivacyPrompts {
-	/** Shows macOS's Accessibility prompt for Orchestrator and lists it under Accessibility. */
+	/** Shows macOS's Accessibility prompt for Blue Ash AI and lists it under Accessibility. */
 	accessibility(): void;
-	/** Shows macOS's Screen Recording prompt for Orchestrator and lists it under Screen Recording. */
+	/** Shows macOS's Screen Recording prompt for Blue Ash AI and lists it under Screen Recording. */
 	screenRecording(): Promise<void>;
 }
 
 /**
- * Asks macOS for each missing grant, which lists Orchestrator in that pane.
+ * Asks macOS for each missing grant, which lists Blue Ash AI in that pane.
  * macOS shows each prompt once per app; after that the request only lists it,
  * and the user turns its switch on in System Settings.
  */

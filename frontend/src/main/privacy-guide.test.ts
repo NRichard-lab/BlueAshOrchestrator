@@ -334,9 +334,9 @@ describe("PrivacyGuide", () => {
 	it("ignores grants polled for an app it no longer shows", async () => {
 		const { guide: subject, window } = guide();
 		await subject.show(request);
-		// Switching to Orchestrator; a Cua Driver poll lands before the page
+		// Switching to Blue Ash AI; a Cua Driver poll lands before the page
 		// learns the strip changed apps. Cua Driver holding both permissions
-		// must not close Orchestrator's strip.
+		// must not close Blue Ash AI's strip.
 		const switching = subject.show({ ...request, target: "orchestrator" });
 		await expect(subject.update("cuaDriver", { accessibility: true, screenRecording: true })).resolves.toBe(true);
 		await switching;

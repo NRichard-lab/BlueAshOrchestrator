@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../docs/assets/readme/logo.png" alt="Orchestrator.inc logo" width="96" height="96" />
+<img src="../docs/assets/readme/logo.png" alt="Blue Ash AI logo" width="96" height="96" />
 
-### Orchestrator.inc
+### Blue Ash AI
 
 <h4>Deja de hacer de niñera de tus agentes. Empieza a integrar trabajo real.</h4>
 
@@ -23,15 +23,15 @@
 
 <br />
 
-<img src="../docs/assets/readme/hero.png" alt="Kanban de Orchestrator.inc con sesiones de workers agrupadas por estado en vivo" width="100%" />
+<img src="../docs/assets/readme/hero.png" alt="Kanban de Blue Ash AI con sesiones de workers agrupadas por estado en vivo" width="100%" />
 
 </div>
 
 <br />
 
-## Por qué Orchestrator.inc
+## Por qué Blue Ash AI
 
-Un agente de programación puede encargarse de una tarea. Ejecutar varios implica dividir el trabajo, evitar que las ramas choquen y seguir cada cambio a través de la CI, la revisión y la integración. Orchestrator.inc es un espacio de trabajo local de escritorio pensado para eso: cada tarea tiene su propio agente, rama y worktree, y tu código se queda en tu máquina.
+Un agente de programación puede encargarse de una tarea. Ejecutar varios implica dividir el trabajo, evitar que las ramas choquen y seguir cada cambio a través de la CI, la revisión y la integración. Blue Ash AI es un espacio de trabajo local de escritorio pensado para eso: cada tarea tiene su propio agente, rama y worktree, y tu código se queda en tu máquina.
 
 ## Funciones
 
@@ -160,7 +160,7 @@ Download the installer for your platform from your BlueAsh update server's downl
 | **Linux** (Debian/Ubuntu) | `agent-orchestrator-linux-x64.deb` |
 | **Linux** (Fedora/RHEL) | `agent-orchestrator-linux-x64.rpm` |
 
-Abre Orchestrator.inc y selecciona el repositorio que quieres que gestione. La aplicación de escritorio ejecuta el daemon por ti, así que no necesitas ninguna CLI. Consulta la [guía de instalación](https://docs.orchestrator.inc/installation) para configurar las CLI de los agentes y resolver problemas.
+Abre Blue Ash AI y selecciona el repositorio que quieres que gestione. La aplicación de escritorio ejecuta el daemon por ti, así que no necesitas ninguna CLI. Consulta la [guía de instalación](https://docs.orchestrator.inc/installation) para configurar las CLI de los agentes y resolver problemas.
 
 ## Documentación
 
@@ -201,8 +201,8 @@ Si necesitas ayuda para describir un problema, únete al [canal de triaje de bug
 
 ## Telemetría del producto
 
-Orchestrator.inc recopila telemetría limitada de uso y fiabilidad, nunca tu código, prompts, conversaciones con agentes ni credenciales. Incluye un ID de instalación y tu nombre de usuario de GitHub; si inicias sesión en AO Cloud, también incluye tu ID de usuario de AO Cloud y la dirección de correo de esa cuenta, que se registra una sola vez como propiedad de persona en PostHog (nunca se lee de la configuración de git). Desactívala por completo en Settings > General > Privacy > Share usage analytics; esto abarca el escritorio, el daemon y un teléfono vinculado. [Consulta exactamente qué recopilamos y cómo desactivarlo](../docs/telemetry.md).
+Blue Ash AI recopila telemetría limitada de uso y fiabilidad, nunca tu código, prompts, conversaciones con agentes ni credenciales. Incluye un ID de instalación y tu nombre de usuario de GitHub; si inicias sesión en AO Cloud, también incluye tu ID de usuario de AO Cloud y la dirección de correo de esa cuenta, que se registra una sola vez como propiedad de persona en PostHog (nunca se lee de la configuración de git). Desactívala por completo en Settings > General > Privacy > Share usage analytics; esto abarca el escritorio, el daemon y un teléfono vinculado. [Consulta exactamente qué recopilamos y cómo desactivarlo](../docs/telemetry.md).
 
 ## Licencia
 
-Orchestrator.inc está disponible bajo la [licencia Apache 2.0](../LICENSE).
+Blue Ash AI está disponible bajo la [licencia Apache 2.0](../LICENSE).

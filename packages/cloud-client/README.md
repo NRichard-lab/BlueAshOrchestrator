@@ -1,6 +1,6 @@
 # `@aoagents/cloud-client`
 
-Runtime-neutral TypeScript contracts and a small fetch-based client for Orchestrator
+Runtime-neutral TypeScript contracts and a small fetch-based client for Blue Ash AI
 Cloud's public API. The package defines the client boundary; this repository
 does not implement the Cloud routes.
 

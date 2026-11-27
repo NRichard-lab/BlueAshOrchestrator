@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE } from "@/i18n/locales";
-import { COMPANY } from "./constants";
+import { COMPANY, PRODUCT_NAME } from "./constants";
 import { source } from "./source";
 import { articlePath } from "./translations";
 
@@ -8,7 +8,7 @@ type Node = ReturnType<typeof source.getPageTree>["children"][number];
 
 /** A short summary of the product, at the top of llms.txt. */
 export const PRODUCT_SUMMARY =
-  "Orchestrator, also known as Agent Orchestrator or AO, is a desktop app for supervising AI coding agents. It gives each worker an isolated workspace, keeps its conversation or terminal available, and connects Git work to pull requests, CI, reviews, and merge conflicts.";
+  `${PRODUCT_NAME} is a desktop app for supervising AI coding agents. It gives each worker an isolated workspace, keeps its conversation or terminal available, and connects Git work to pull requests, CI, reviews, and merge conflicts.`;
 
 /** The Markdown copy of an English article, e.g. `/quickstart.md`. The home page is `/index.md`. */
 export function markdownPath(slugs: string[]): string {
@@ -69,7 +69,7 @@ function sections(): { title: string; pages: Page[] }[] {
  * sidebar section, each linking to its Markdown copy.
  */
 export function llmsIndex(): string {
-  const out = ["# Orchestrator.inc Docs", "", `> ${PRODUCT_SUMMARY}`, ""];
+  const out = [`# ${PRODUCT_NAME} Docs`, "", `> ${PRODUCT_SUMMARY}`, ""];
   out.push(
     `Each link below is the Markdown version of a page. ${link("llms-full.txt", `${COMPANY.DOCS_URL}/llms-full.txt`)} has every page in one file.`,
   );

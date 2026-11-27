@@ -1,12 +1,12 @@
 # `@aoagents/product-ui`
 
-Portable Orchestrator product presentation models, pure formatting helpers, and reusable
+Portable Blue Ash AI product presentation models, pure formatting helpers, and reusable
 React leaf components for desktop and cloud clients.
 
 ## Boundary
 
 This package intentionally does not know about generated API clients, Electron,
-the Orchestrator daemon, renderer stores, or any application's i18n singleton. Consumers
+the Blue Ash AI daemon, renderer stores, or any application's i18n singleton. Consumers
 adapt wire data into the exported neutral models and inject translated labels or
 asset URLs at their application boundary.
 
@@ -23,7 +23,7 @@ const status = getSessionStatusView(session.status, (key) => t(key));
 
 The package ships JavaScript and declarations in `dist`. Tailwind consumers
 should include `@aoagents/product-ui/dist` in their source scan because the
-components use Orchestrator design-system utility classes and semantic tokens.
+components use Blue Ash AI design-system utility classes and semantic tokens.
 
 `SessionsBoardGridView` and `SessionCardView` accept
 neutral presentation models plus focused action/asset slots. Hosts retain data

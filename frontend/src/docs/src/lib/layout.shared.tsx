@@ -2,7 +2,7 @@ import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { LanguageSelect, LanguageSelectText } from "@/components/language-select";
-import { COMPANY } from "./constants";
+import { COMPANY, PRODUCT_NAME } from "./constants";
 
 export function baseOptions(i18n: I18n, homeUrl = "/"): BaseLayoutProps {
   return {
@@ -13,7 +13,7 @@ export function baseOptions(i18n: I18n, homeUrl = "/"): BaseLayoutProps {
           {/* The logo carries the company name, so the label only says "Docs". */}
           <img
             src={`${COMPANY.MARKETING_URL}/ao-logo.svg`}
-            alt={COMPANY.NAME}
+            alt={PRODUCT_NAME}
             width={20}
             height={20}
             className="size-5 shrink-0"

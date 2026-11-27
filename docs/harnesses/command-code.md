@@ -1,6 +1,6 @@
 # Command Code Adapter
 
-Command Code is integrated into Agent Orchestrator as an interactive Terminal UI
+Command Code is integrated into Blue Ash AI as an interactive Terminal UI
 harness. AO launches the user's own `cmd` binary inside the session worktree and
 leaves the session open for further work.
 

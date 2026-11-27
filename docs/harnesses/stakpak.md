@@ -1,7 +1,7 @@
 # Stakpak Adapter
 
 [Stakpak Agent](https://github.com/stakpak/agent) is integrated into Agent
-Orchestrator as an interactive Terminal UI harness. AO launches the user's own
+Blue Ash AI as an interactive Terminal UI harness. AO launches the user's own
 `stakpak` binary inside the session worktree. Qualified against Stakpak 0.3.88.
 
 ## Install

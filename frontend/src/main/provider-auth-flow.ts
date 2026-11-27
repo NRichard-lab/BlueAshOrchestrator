@@ -480,7 +480,7 @@ const claudeAuthFlow: ProviderAuthFlow = {
 	},
 };
 
-// GitHub OAuth scopes requested by Agent Orchestrator:
+// GitHub OAuth scopes requested by Blue Ash AI:
 //   repo        – full control of public and private repos (clone, push, pull, PRs, issues, hooks)
 //   read:org    – read org membership and team membership
 //   repo_hook   – full control of repo webhooks (needed for some cloud features)

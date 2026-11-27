@@ -732,7 +732,7 @@ type claudePostToolUseOutput struct {
 const claudeComputerUseToolPrefix = "mcp__computer-use__"
 
 // envDesktopApp mirrors sessionmanager.EnvDesktopApp: "1" on sessions whose
-// daemon the Orchestrator desktop app started.
+// daemon the Blue Ash AI desktop app started.
 const envDesktopApp = "AO_DESKTOP_APP"
 
 const computerUsePermissionNotice = "Computer use needs Orchestrator to have Accessibility and Screen Recording: macOS checks Orchestrator for " +
@@ -774,10 +774,10 @@ func computerUsePermissionDenied(payload []byte) bool {
 
 // emitComputerUsePermissionNotice answers a Claude Code computer-use result
 // that macOS refused: the user sees where to grant the permissions, and the
-// model is told to name Orchestrator, whose grants macOS checks for the
+// model is told to name Blue Ash AI, whose grants macOS checks for the
 // session, instead of the Claude desktop app its own result names.
 func (c *commandContext) emitComputerUsePermissionNotice(agent, event, sessionID string, payload []byte) {
-	// Only under a desktop-started daemon does macOS check Orchestrator; under
+	// Only under a desktop-started daemon does macOS check Blue Ash AI; under
 	// one started from a terminal, Claude's own advice names the right app.
 	if domain.AgentHarness(agent) != domain.HarnessClaudeCode || os.Getenv(envDesktopApp) != "1" {
 		return
