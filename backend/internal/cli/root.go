@@ -253,6 +253,7 @@ func NewRootCommand(deps Deps) *cobra.Command {
 	root.AddCommand(newChatHostCommand())
 	root.AddCommand(newUnrealProviderCommand())
 	root.AddCommand(newLocalProviderCommand(ctx))
+	root.AddCommand(newLocalAgentCommand())
 	root.AddCommand(newLaunchCommand(ctx))
 	root.AddCommand(newPtyHostCommand())
 	root.AddCommand(newCodexLoginCommand(ctx))

@@ -124,6 +124,11 @@ func (m *Manager) runBackgroundTask(ctx context.Context, id domain.SessionID, sy
 }
 
 func (m *Manager) runRecordBackgroundTask(ctx context.Context, rec domain.SessionRecord, systemPrompt, prompt string, run func(context.Context, domain.AgentHarness, ports.ChatStartConfig, string) (string, error)) (string, error) {
+	if rec.Harness.NoBackgroundPrompts() {
+		// Refused before any workspace or process exists: on these harnesses
+		// Orchestrator sends a model nothing a person did not start.
+		return "", ports.ErrBackgroundPromptsDisabled
+	}
 	releaseHarness, err := m.beginHarnessUse(rec.Harness)
 	if err != nil {
 		return "", err

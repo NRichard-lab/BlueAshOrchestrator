@@ -106,7 +106,7 @@ func Build() ([]byte, error) {
 		*(&openapi31.Tag{Name: "github"}).WithDescription(
 			"Local GitHub personal access token storage and repository listing"),
 		*(&openapi31.Tag{Name: "local-providers"}).WithDescription(
-			"Local model endpoints: discovery, read-only capability inspection, endpoint keys, and the Local (OpenCode) harness link"),
+			"Local model endpoints: discovery, read-only capability inspection, endpoint keys, the Local (OpenCode) harness link, and the Local Models harness settings"),
 	}
 
 	for _, op := range operations() {
@@ -711,6 +711,10 @@ var schemaNames = map[string]string{ //nolint:gosec // Public OpenAPI type names
 	"LocalprovidersCapabilities":                  "LocalModelCapabilities",
 	"LocalprovidersBoolValue":                     "LocalModelBoolValue",
 	"LocalprovidersIntValue":                      "LocalModelIntValue",
+	"LocalprovidersModelOverride":                 "LocalModelOverride",
+	"LocalprovidersReadiness":                     "LocalModelsReadiness",
+	"ControllersLocalModelsSettingsResponse":      "LocalModelsSettingsResponse",
+	"ControllersPutLocalModelsSettingsRequest":    "PutLocalModelsSettingsRequest",
 	"ControllersSessionSearchQuery":               "SessionSearchQuery",
 	"ControllersSessionSearchResponse":            "SessionSearchResponse",
 	"ControllersSessionSearchResult":              "SessionSearchResult",
@@ -939,6 +943,17 @@ func localProviderOperations() []operation {
 			method: http.MethodDelete, path: "/api/v1/local-providers/harness-link", id: "clearLocalHarnessLink", tag: tag,
 			summary: "Unlink the Local (OpenCode) harness",
 			resps:   append([]respUnit{{http.StatusNoContent, nil}}, fail(http.StatusInternalServerError)...),
+		},
+		{
+			method: http.MethodGet, path: "/api/v1/local-models/settings", id: "getLocalModelsSettings", tag: tag,
+			summary: "Report the Local Models harness settings: default model, instructions level, overrides and readiness",
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalModelsSettingsResponse{}}}, fail(http.StatusInternalServerError)...),
+		},
+		{
+			method: http.MethodPut, path: "/api/v1/local-models/settings", id: "setLocalModelsSettings", tag: tag,
+			summary: "Change the Local Models harness settings; absent fields are left as they are",
+			reqBody: controllers.PutLocalModelsSettingsRequest{},
+			resps:   append([]respUnit{{http.StatusOK, controllers.LocalModelsSettingsResponse{}}}, fail(http.StatusBadRequest, http.StatusInternalServerError)...),
 		},
 	}
 }

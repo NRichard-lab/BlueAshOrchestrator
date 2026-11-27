@@ -33,6 +33,9 @@ func newLocalProviderCommand(cmdCtx *commandContext) *cobra.Command {
 	cmd.AddCommand(newLocalProviderModelsCommand())
 	cmd.AddCommand(newLocalProviderInspectCommand())
 	cmd.AddCommand(newLocalProviderKeyCommand())
+	cmd.AddCommand(newLocalProviderUseCommand())
+	cmd.AddCommand(newLocalProviderInstructionsCommand())
+	cmd.AddCommand(newLocalProviderStatusCommand())
 	return cmd
 }
 

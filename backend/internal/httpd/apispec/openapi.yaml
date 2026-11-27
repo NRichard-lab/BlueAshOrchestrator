@@ -4279,6 +4279,69 @@ paths:
       summary: Fetch link-preview metadata (Open Graph) for an external URL
       tags:
       - link-preview
+  /api/v1/local-models/settings:
+    get:
+      operationId: getLocalModelsSettings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalModelsSettingsResponse'
+          description: OK
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: 'Report the Local Models harness settings: default model, instructions
+        level, overrides and readiness'
+      tags:
+      - local-providers
+    put:
+      operationId: setLocalModelsSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutLocalModelsSettingsRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalModelsSettingsResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalProviderErrorResponse'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Change the Local Models harness settings; absent fields are left as
+        they are
+      tags:
+      - local-providers
   /api/v1/local-providers:
     get:
       operationId: listLocalProviders
@@ -20590,6 +20653,7 @@ components:
           - hermes
           - stakpak
           - local
+          - local-models
           - fake
           type: string
         approvalMode:
@@ -21376,6 +21440,7 @@ components:
           - hermes
           - stakpak
           - local
+          - local-models
           - cloudflared
           - cua-driver
           type: string
@@ -21968,6 +22033,69 @@ components:
       required:
       - value
       - source
+      type: object
+    LocalModelOverride:
+      properties:
+        context:
+          type:
+          - "null"
+          - integer
+        thinking:
+          type:
+          - "null"
+          - boolean
+        tools:
+          type:
+          - "null"
+          - boolean
+        vision:
+          type:
+          - "null"
+          - boolean
+      type: object
+    LocalModelsReadiness:
+      properties:
+        chatModels:
+          type: integer
+        reachable:
+          type: integer
+        reason:
+          type: string
+        state:
+          type: string
+      required:
+      - state
+      - reachable
+      - chatModels
+      type: object
+    LocalModelsSettingsResponse:
+      properties:
+        default:
+          type: string
+        endpointsWithKeys:
+          items:
+            type: string
+          type: array
+        instructions:
+          enum:
+          - standard
+          - compact
+          - none
+          type: string
+        instructionsLevels:
+          items:
+            type: string
+          type: array
+        models:
+          additionalProperties:
+            $ref: '#/components/schemas/LocalModelOverride'
+          type: object
+        readiness:
+          $ref: '#/components/schemas/LocalModelsReadiness'
+      required:
+      - instructions
+      - instructionsLevels
+      - readiness
       type: object
     LocalProvider:
       properties:
@@ -23102,6 +23230,27 @@ components:
       required:
       - endpointName
       - model
+      type: object
+    PutLocalModelsSettingsRequest:
+      properties:
+        default:
+          type:
+          - "null"
+          - string
+        instructions:
+          enum:
+          - standard
+          - compact
+          - none
+          type:
+          - "null"
+          - string
+        models:
+          additionalProperties:
+            $ref: '#/components/schemas/LocalModelOverride'
+          type:
+          - "null"
+          - object
       type: object
     PutLocalProviderKeyRequest:
       properties:
@@ -25839,6 +25988,7 @@ components:
           - hermes
           - stakpak
           - local
+          - local-models
           type: string
         issueId:
           type: string
@@ -27831,5 +27981,6 @@ tags:
 - description: Local GitHub personal access token storage and repository listing
   name: github
 - description: 'Local model endpoints: discovery, read-only capability inspection,
-    endpoint keys, and the Local (OpenCode) harness link'
+    endpoint keys, the Local (OpenCode) harness link, and the Local Models harness
+    settings'
   name: local-providers

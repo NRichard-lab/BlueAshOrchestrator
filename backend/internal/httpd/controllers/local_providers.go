@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -39,6 +40,8 @@ func (c *LocalProvidersController) Register(r chi.Router) {
 	r.Get("/local-providers/{name}/models/{model}", c.inspect)
 	r.Put("/local-providers/{name}/key", c.putKey)
 	r.Delete("/local-providers/{name}/key", c.deleteKey)
+	r.Get("/local-models/settings", c.getSettings)
+	r.Put("/local-models/settings", c.putSettings)
 }
 
 // LocalProviderDTO is one local model endpoint and what a probe found there.
@@ -164,7 +167,8 @@ func (c *LocalProvidersController) list(w http.ResponseWriter, r *http.Request) 
 		Notes: map[string]string{
 			"bionic":       "Bionic (LM Studio agent app) is treated as a generic OpenAI-compatible server on :1234. Its protocol is not specially verified; if /v1/models answers, discovery lists its models.",
 			"lan":          "Non-loopback addresses are only probed after you add them. Use a network you trust.",
-			"local":        "Link an endpoint and model to the Local worker harness (OpenCode 2) to use it alongside Claude and Cursor in project and session pickers. Local issues real chat/completions to that endpoint; discovery alone does not.",
+			"local":        "Link an endpoint and model to the Local (OpenCode) worker harness to use it alongside Claude and Cursor in project and session pickers. It runs OpenCode 2 against that endpoint; discovery alone sends a model nothing.",
+			"localModels":  "The Local Models harness needs no link and no install: pick it in a project or session picker, then pick any listed model. It sends a model only the turns you start.",
 			"capabilities": "Capabilities are read from each server's metadata routes. Discovery never loads a model and never sends one a prompt. A value marked assumed was not reported by the server.",
 		},
 		HarnessLink: c.linkDTO(),
@@ -346,4 +350,121 @@ func (c *LocalProvidersController) setKey(w http.ResponseWriter, name, key strin
 	}
 	// Never echo the key back.
 	envelope.WriteJSON(w, http.StatusOK, LocalProviderKeyResponse{Name: endpoint.Name, HasAPIKey: strings.TrimSpace(key) != ""})
+}
+
+// LocalModelsSettingsResponse is the Local Models harness's settings. Endpoint
+// keys are never part of it: only the names of the endpoints that have one.
+type LocalModelsSettingsResponse struct {
+	// Default is the <endpoint>/<model> used when a session names none.
+	Default string `json:"default,omitempty"`
+	// Instructions is what goes in front of the conversation.
+	Instructions string `json:"instructions" enum:"standard,compact,none"`
+	// InstructionsLevels are the accepted values, in the order to offer them.
+	InstructionsLevels []string `json:"instructionsLevels"`
+	// Models holds the user's overrides of detected capabilities, keyed by
+	// <endpoint>/<model>.
+	Models            map[string]localproviders.ModelOverride `json:"models,omitempty"`
+	EndpointsWithKeys []string                                `json:"endpointsWithKeys,omitempty"`
+	// Readiness comes from metadata routes; no model is prompted to check it.
+	Readiness localproviders.Readiness `json:"readiness"`
+}
+
+// PutLocalModelsSettingsRequest changes the Local Models settings. A field
+// that is absent is left as it is.
+type PutLocalModelsSettingsRequest struct {
+	// Default sets the default model. An empty string clears it.
+	Default *string `json:"default,omitempty"`
+	// Instructions sets the standing-instructions level.
+	Instructions *string `json:"instructions,omitempty" enum:"standard,compact,none"`
+	// Models replaces the whole set of capability overrides.
+	Models *map[string]localproviders.ModelOverride `json:"models,omitempty"`
+}
+
+func (c *LocalProvidersController) settingsDTO(r *http.Request, settings localproviders.Settings) LocalModelsSettingsResponse {
+	levels := make([]string, 0, len(localproviders.InstructionsLevels))
+	for _, level := range localproviders.InstructionsLevels {
+		levels = append(levels, string(level))
+	}
+	dto := LocalModelsSettingsResponse{
+		Default: settings.Default, Instructions: string(settings.InstructionsLevel()), InstructionsLevels: levels,
+		Models: settings.Models, Readiness: localproviders.CheckReadiness(r.Context(), c.client(), c.DataDir),
+	}
+	for name := range settings.Endpoints {
+		dto.EndpointsWithKeys = append(dto.EndpointsWithKeys, name)
+	}
+	sort.Strings(dto.EndpointsWithKeys)
+	return dto
+}
+
+func (c *LocalProvidersController) getSettings(w http.ResponseWriter, r *http.Request) {
+	settings, err := localproviders.LoadSettings(c.DataDir)
+	if err != nil {
+		writeLocalProviderError(w, http.StatusInternalServerError, err)
+		return
+	}
+	envelope.WriteJSON(w, http.StatusOK, c.settingsDTO(r, settings))
+}
+
+func (c *LocalProvidersController) putSettings(w http.ResponseWriter, r *http.Request) {
+	var body PutLocalModelsSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeLocalProviderError(w, http.StatusBadRequest, errInvalidJSONBody)
+		return
+	}
+	// Validated before anything is written, so a bad field changes nothing.
+	var level localproviders.Instructions
+	if body.Instructions != nil {
+		if strings.TrimSpace(*body.Instructions) == "" {
+			writeLocalProviderError(w, http.StatusBadRequest, errors.New("instructions must be standard, compact or none"))
+			return
+		}
+		parsed, err := localproviders.ValidateInstructions(*body.Instructions)
+		if err != nil {
+			writeLocalProviderError(w, http.StatusBadRequest, err)
+			return
+		}
+		level = parsed
+	}
+	defaultModel := ""
+	if body.Default != nil {
+		defaultModel = strings.TrimSpace(*body.Default)
+		if defaultModel != "" {
+			endpointName, model, err := localproviders.ParseModelID(defaultModel)
+			if err != nil {
+				writeLocalProviderError(w, http.StatusBadRequest, err)
+				return
+			}
+			endpoint, err := localproviders.Lookup(c.DataDir, endpointName)
+			if err != nil {
+				writeLocalProviderError(w, http.StatusBadRequest, err)
+				return
+			}
+			defaultModel = localproviders.ModelID(endpoint.Name, model)
+		}
+	}
+	changed := false
+	settings, err := localproviders.UpdateSettings(c.DataDir, func(settings *localproviders.Settings) error {
+		if body.Default != nil {
+			settings.Default = defaultModel
+		}
+		if body.Instructions != nil {
+			settings.Instructions = level
+		}
+		if body.Models != nil {
+			settings.Models = *body.Models
+		}
+		changed = true
+		return nil
+	})
+	if err != nil {
+		status := http.StatusBadRequest
+		if !changed {
+			// The stored file could not be read: nothing the request said is
+			// at fault.
+			status = http.StatusInternalServerError
+		}
+		writeLocalProviderError(w, status, err)
+		return
+	}
+	envelope.WriteJSON(w, http.StatusOK, c.settingsDTO(r, settings))
 }

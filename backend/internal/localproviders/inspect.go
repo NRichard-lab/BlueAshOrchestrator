@@ -573,3 +573,30 @@ func DiscoverAll(ctx context.Context, client *http.Client, endpoints []Endpoint,
 	}
 	return out
 }
+
+// CheckReadiness reports whether the Local Models harness has something to
+// talk to. Like everything in this package it makes metadata requests only: a
+// model is never loaded or prompted to find out whether it works. Whether it
+// does is learned from the first real turn.
+func CheckReadiness(ctx context.Context, client *http.Client, dataDir string) Readiness {
+	settings, err := LoadSettings(dataDir)
+	if err != nil {
+		settings = Settings{}
+	}
+	readiness := Readiness{State: ReadinessNeedsSetup}
+	for _, discovery := range DiscoverAll(ctx, client, All(dataDir), settings) {
+		if discovery.Reachable {
+			readiness.Reachable++
+			readiness.ChatModels += len(discovery.Models)
+		}
+	}
+	switch {
+	case readiness.Reachable == 0:
+		readiness.Reason = "No local model server is answering. Start one (Ollama, llama.cpp, LM Studio), or add its address with `ao local-provider add`."
+	case readiness.ChatModels == 0:
+		readiness.Reason = "A local model server is answering but lists no chat model. Pull or load one first."
+	default:
+		readiness.State = ReadinessConfigured
+	}
+	return readiness
+}

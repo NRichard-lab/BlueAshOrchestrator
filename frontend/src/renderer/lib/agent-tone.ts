@@ -43,6 +43,7 @@ const AGENT_HUES: Record<AgentId, number | null> = {
 	hermes: 75,
 	stakpak: 215,
 	local: 165,
+	"local-models": 185,
 };
 
 export function agentTone(harness: string): string {

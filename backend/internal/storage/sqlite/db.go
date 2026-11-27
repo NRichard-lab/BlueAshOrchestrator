@@ -2206,7 +2206,10 @@ func reconcileHarnessConstraint(db *sql.DB) error {
 	needsCommandCode := !strings.Contains(schema, "'command-code'")
 	needsStakpak := !strings.Contains(schema, "'stakpak'")
 	needsMiniMaxCode := !strings.Contains(schema, "'minimax-code'")
-	if !needsNativeAssistant && !needsMemcode && !needsStakpak && !needsMuse && !needsKimchi && !needsPrimeAgent && !needsOMP && !needsGemini && !needsUnreal && !needsCodewhale && !needsMiMo && !needsDeepSeek && !needsOpenHands && !needsCommandCode && !needsDockerAgent && !needsFX && !needsOpenCodeV2 && !needsMiniMaxCode {
+	// "'local'" cannot match inside "'local-models'": the closing quote differs.
+	needsLocal := !strings.Contains(schema, "'local'")
+	needsLocalModels := !strings.Contains(schema, "'local-models'")
+	if !needsLocal && !needsLocalModels && !needsNativeAssistant && !needsMemcode && !needsStakpak && !needsMuse && !needsKimchi && !needsPrimeAgent && !needsOMP && !needsGemini && !needsUnreal && !needsCodewhale && !needsMiMo && !needsDeepSeek && !needsOpenHands && !needsCommandCode && !needsDockerAgent && !needsFX && !needsOpenCodeV2 && !needsMiniMaxCode {
 		return nil
 	}
 	if _, err := db.Exec(`PRAGMA writable_schema = ON`); err != nil {
@@ -2246,6 +2249,21 @@ func reconcileHarnessConstraint(db *sql.DB) error {
 			return fmt.Errorf("schema repair: normalize MiniMax Code constraint: %w", err)
 		}
 		needsMiniMaxCode = true
+	}
+	if !needsLocal {
+		// The local harnesses' migration is the newest, so they are last before
+		// 'fake' on a fresh database. Remove them the same way and append them
+		// again after MiniMax Code, in the migration's order.
+		if _, err := db.Exec(`UPDATE sqlite_master SET sql = replace(sql, '''local'', ', '') WHERE type = 'table' AND name = 'sessions'`); err != nil {
+			return fmt.Errorf("schema repair: normalize Local constraint: %w", err)
+		}
+		needsLocal = true
+	}
+	if !needsLocalModels {
+		if _, err := db.Exec(`UPDATE sqlite_master SET sql = replace(sql, '''local-models'', ', '') WHERE type = 'table' AND name = 'sessions'`); err != nil {
+			return fmt.Errorf("schema repair: normalize Local Models constraint: %w", err)
+		}
+		needsLocalModels = true
 	}
 	type replacement struct {
 		old string
@@ -2380,6 +2398,13 @@ func reconcileHarnessConstraint(db *sql.DB) error {
 	if needsMiniMaxCode {
 		repairs = append(repairs, replacement{"'fake'))", "'minimax-code', 'fake'))"})
 	}
+	// The local harnesses' migration runs after MiniMax Code's, so they follow it.
+	if needsLocal {
+		repairs = append(repairs, replacement{"'fake'))", "'local', 'fake'))"})
+	}
+	if needsLocalModels {
+		repairs = append(repairs, replacement{"'fake'))", "'local-models', 'fake'))"})
+	}
 	for _, r := range repairs {
 		if _, err := db.Exec(
 			`UPDATE sqlite_master
@@ -2446,6 +2471,12 @@ WHERE type = 'table' AND name = 'sessions'`,
 	}
 	if !strings.Contains(schema, "'stakpak'") {
 		return fmt.Errorf("schema repair: sessions harness constraint is missing Stakpak")
+	}
+	if !strings.Contains(schema, "'local'") {
+		return fmt.Errorf("schema repair: sessions harness constraint is missing Local")
+	}
+	if !strings.Contains(schema, "'local-models'") {
+		return fmt.Errorf("schema repair: sessions harness constraint is missing Local Models")
 	}
 	return nil
 }

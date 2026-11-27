@@ -44,10 +44,10 @@ var _ ports.AgentBinaryResolver = (*Plugin)(nil)
 // linked local endpoint/model.
 func (p *Plugin) Manifest() adapters.Manifest {
 	return adapters.Manifest{
-		ID:          string(domain.HarnessLocal),
-		Name:        "Local",
-		Description: "Run coding workers against a linked Ollama, llama.cpp, or OpenAI-compatible endpoint via OpenCode 2.",
-		Version:     "0.0.1",
+		ID:           string(domain.HarnessLocal),
+		Name:         "Local (OpenCode)",
+		Description:  "Run coding workers against a linked Ollama, llama.cpp, or OpenAI-compatible endpoint via OpenCode 2.",
+		Version:      "0.0.1",
 		Capabilities: []adapters.Capability{adapters.CapabilityAgent},
 	}
 }

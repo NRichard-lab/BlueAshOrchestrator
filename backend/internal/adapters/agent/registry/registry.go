@@ -35,6 +35,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/kimi"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/kiro"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/local"
+	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/localmodels"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/memcode"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/mimocode"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/minimaxcode"
@@ -101,6 +102,7 @@ func Constructors() []adapters.Adapter {
 		dockeragent.New(),
 		stakpak.New(),
 		local.New(),
+		localmodels.New(),
 	}
 }
 

@@ -23,7 +23,7 @@ export type RoleSession = Pick<WorkspaceSession, "id" | "provider" | "kind" | "c
 // months ago must not outvote what the user reaches for now.
 export const ROLE_HISTORY_WINDOW_MS = 48 * 60 * 60 * 1000;
 
-export const DEFAULT_AGENT_PRIORITY = ["claude-code", "codex", "cursor", "local", "opencode", "opencode-v2", "aider"] as const;
+export const DEFAULT_AGENT_PRIORITY = ["claude-code", "codex", "cursor", "local-models", "local", "opencode", "opencode-v2", "aider"] as const;
 export const DEFAULT_AGENT_PRIORITY_RANK = new Map<string, number>(
 	DEFAULT_AGENT_PRIORITY.map((agent, index) => [agent, index]),
 );

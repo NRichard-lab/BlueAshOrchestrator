@@ -39,6 +39,12 @@ func (s *Service) PromptSuggestion(ctx context.Context, id domain.SessionID, tur
 	if err != nil {
 		return "", err
 	}
+	if snapshot.Harness.NoBackgroundPrompts() {
+		// A suggestion is a prompt Orchestrator writes and sends on its own. On
+		// these harnesses only turns a person started reach a model, so there
+		// is simply no suggestion.
+		return "", nil
+	}
 	if s.runPromptSuggestion == nil {
 		return "", ports.ErrChatUnsupported
 	}

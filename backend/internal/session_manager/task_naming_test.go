@@ -56,6 +56,18 @@ func TestTaskNamingAllShippedAgents(t *testing.T) {
 			cfg.AgentConfig.Model = "selected-model"
 			wait, stop := m.startTaskNaming(cfg, domain.SessionRecord{ID: "mer-1", Harness: agent.Harness}, st.projects["mer"].Config)
 			defer stop()
+			if agent.Harness.NoBackgroundPrompts() {
+				// A local model is only sent turns a person started, so nothing
+				// asks it for a name: the name comes from the prompt's own words
+				// and the launcher is never reached.
+				if got := wait(); got.Slug != "fix-login-redirect" {
+					t.Fatalf("name = %+v, want the prompt-derived fallback", got)
+				}
+				if len(launcher.background) != 0 {
+					t.Fatalf("a background naming task reached a local model: %+v", launcher.backgroundPrompts)
+				}
+				return
+			}
 			if got := wait(); got.Slug != want {
 				t.Fatalf("name = %+v, want %q", got, want)
 			}

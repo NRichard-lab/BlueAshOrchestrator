@@ -251,7 +251,7 @@ func Manual(agentID string) ports.AgentModelCatalog {
 func customModelEntryMode(agentID string) ports.CustomModelEntryMode {
 	switch agentID {
 	case "claude-code", "codex", "opencode", "opencode-v2", "grok", "cursor", "qwen", "gemini",
-		"kimi", "muse", "aider", "goose", "autohand", "fx", "unreal-agent", "codewhale", "mimo-code", "deepseek-harness", "openhands", "devin", "hermes", "stakpak":
+		"kimi", "muse", "aider", "goose", "autohand", "fx", "unreal-agent", "codewhale", "mimo-code", "deepseek-harness", "openhands", "devin", "hermes", "stakpak", localModelsAgentID:
 		return ports.CustomModelEntryDirect
 	case "docker-agent", "minimax-code", "continue", "cline", "kilocode", "vibe", "pi", "kimchi", "prime-agent":
 		return ports.CustomModelEntryConfigured
@@ -471,6 +471,9 @@ func discoverCommandCatalog(ctx context.Context, agentID, binary, workingDir str
 	base := Base(agentID)
 	if agentID == "unreal-agent" {
 		return discoverUnrealCatalog(env), nil
+	}
+	if agentID == localModelsAgentID {
+		return discoverLocalModelsCatalog(ctx, env)
 	}
 	if hasConfigDiscoverySource(agentID) {
 		return discoverConfigCatalog(agentID, workingDir, env)
@@ -771,6 +774,9 @@ func hasDiscoverySource(agentID string) bool {
 	// configuration catalog for Cline, DeepSeek Harness, Devin, and Docker Agent.
 	case "claude-code", "codex", "deepseek-harness", "devin", "docker-agent":
 		return true
+	case localModelsAgentID:
+		// Its catalog is read from local endpoints' metadata routes.
+		return true
 	}
 	if hasConfigDiscoverySource(agentID) {
 		return true
@@ -939,6 +945,9 @@ func discoveryConfigInputs(ctx context.Context, agentID, workingDir string, env 
 	if agentID == "unreal-agent" {
 		provider, selected := unrealConfiguredModel(env)
 		return "provider=" + provider + ";model=" + selected
+	}
+	if agentID == localModelsAgentID {
+		return "config=" + localModelsDiscoveryFingerprint(ctx, env)
 	}
 	if agentID == "claude-code" {
 		return "config=" + claudeCodeDiscoveryFingerprint(ctx, workingDir, env)

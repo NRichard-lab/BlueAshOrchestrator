@@ -14,6 +14,11 @@ import (
 // RunBackgroundTask executes a short provider turn without publishing a Chat
 // controller or conversation into AO's durable session history.
 func (s *Service) RunBackgroundTask(ctx context.Context, harness domain.AgentHarness, cfg ports.ChatStartConfig, prompt string) (_ string, err error) {
+	if harness.NoBackgroundPrompts() {
+		// The last gate before a driver is started. Every background model call
+		// (suggestions, titles, branch names) ends here.
+		return "", ports.ErrBackgroundPromptsDisabled
+	}
 	if strings.TrimSpace(prompt) == "" {
 		return "", errors.New("background task prompt is empty")
 	}

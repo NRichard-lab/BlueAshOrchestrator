@@ -214,6 +214,10 @@ func (s *Service) refineDelegatedTaskTitleInBackground(workerID domain.SessionID
 
 func (s *Service) refineDelegatedTaskTitle(ctx context.Context, workerID domain.SessionID, in DelegateTaskInput) error {
 	raw, err := s.manager.RunBackgroundTask(ctx, workerID, delegatedTaskTitleSystemPrompt, in.Brief)
+	if errors.Is(err, ports.ErrBackgroundPromptsDisabled) {
+		// The worker keeps the title taken from the brief itself.
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("generate title with worker harness: %w", err)
 	}

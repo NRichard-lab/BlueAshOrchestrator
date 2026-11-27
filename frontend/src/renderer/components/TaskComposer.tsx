@@ -106,7 +106,7 @@ const CHAT_PREFLIGHT_CODES = new Set([
 ]);
 
 // Harnesses without a terminal interface; mirrors the backend's ChatOnly.
-const CHAT_ONLY_AGENTS = new Set(["unreal-agent", "docker-agent"]);
+const CHAT_ONLY_AGENTS = new Set(["unreal-agent", "docker-agent", "local-models"]);
 
 function isChatOnlyAgent(agent: string | null | undefined): boolean {
 	return Boolean(agent && CHAT_ONLY_AGENTS.has(agent));

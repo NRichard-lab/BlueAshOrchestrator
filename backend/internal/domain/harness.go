@@ -49,6 +49,10 @@ const (
 	// HarnessLocal runs coding workers against a linked Ollama / llama.cpp /
 	// OpenAI-compatible endpoint via OpenCode 2.
 	HarnessLocal AgentHarness = "local"
+	// HarnessLocalModels runs local models through the runner built into the
+	// ao binary. It needs no third-party CLI, offers every chat model on every
+	// known endpoint, and sends a model nothing a person did not start.
+	HarnessLocalModels AgentHarness = "local-models"
 	// HarnessFake is retained for existing test fixtures and historical session
 	// rows, but is not user-selectable.
 	HarnessFake AgentHarness = "fake"
@@ -64,13 +68,33 @@ var AllHarnesses = []AgentHarness{
 	HarnessKimchi, HarnessPrimeAgent, HarnessAutohand,
 	HarnessOMP, HarnessFX, HarnessUnreal, HarnessCodewhale, HarnessMiMoCode, HarnessMiniMaxCode, HarnessDeepSeek, HarnessOpenHands,
 	HarnessCommandCode, HarnessDockerAgent, HarnessMemcode, HarnessHermes, HarnessStakpak,
-	HarnessLocal,
+	HarnessLocal, HarnessLocalModels,
 }
 
 // ChatOnly reports whether h has no terminal interface, so every session on it
 // runs in Chat.
 func (h AgentHarness) ChatOnly() bool {
-	return h == HarnessUnreal || h == HarnessDockerAgent
+	return h == HarnessUnreal || h == HarnessDockerAgent || h == HarnessLocalModels
+}
+
+// NoBackgroundPrompts reports whether Orchestrator must never send this
+// harness's model a prompt of its own. On these harnesses the only requests
+// that reach a model are turns a person started: no next-message suggestions,
+// no model-written titles or branch names, no summaries.
+//
+// Both local harnesses declare it. A local model is the user's own hardware,
+// often a single slot that a background request would occupy or reload, and
+// the user asked that nothing be sent on Orchestrator's initiative.
+func (h AgentHarness) NoBackgroundPrompts() bool {
+	return h == HarnessLocal || h == HarnessLocalModels
+}
+
+// ForwardsLifecycleMessagesByDefault reports whether a new session on h starts
+// with CI failures and review comments forwarded to it. They are messages
+// Orchestrator writes, so Local Models starts with them off; the session's
+// existing switches turn them on.
+func (h AgentHarness) ForwardsLifecycleMessagesByDefault() bool {
+	return h != HarnessLocalModels
 }
 
 // IsKnown reports whether h is one of the supported harnesses.

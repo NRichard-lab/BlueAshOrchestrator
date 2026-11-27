@@ -54,6 +54,11 @@ var agentDocumentationURLs = map[Target]string{
 	TargetDockerAgent: "https://docs.docker.com/ai/docker-agent/getting-started/installation/",
 	TargetHermes:      "https://github.com/NousResearch/hermes-agent",
 	TargetStakpak:     "https://github.com/stakpak/agent#installation",
+	// Local (OpenCode) runs on OpenCode 2, so its documentation is OpenCode's.
+	TargetLocal: "https://opencode.ai/v2/docs",
+	// Local Models is built in. The one thing a person may still need is a
+	// model server, so the link goes to the most common one.
+	TargetLocalModels: "https://ollama.com/download",
 }
 
 func (s requestPlanner) agentMethodPlans(target Target, operation AgentOperation) []Plan {
@@ -257,6 +262,18 @@ func (s requestPlanner) agentMethodPlans(target Target, operation AgentOperation
 		plans = []Plan{{
 			Target: target, Unsupported: true, Method: "manual",
 			Reason: "Unreal Agent is built into Orchestrator; update Orchestrator to update the harness.",
+		}}
+	case TargetLocalModels:
+		plans = []Plan{{
+			Target: target, Unsupported: true, Method: "manual",
+			Reason:  "Local Models is built into Orchestrator and needs nothing else installed; update Orchestrator to update the harness. It talks to a model server you run yourself, such as Ollama, llama.cpp or LM Studio.",
+			DocsURL: agentDocumentationURLs[target],
+		}}
+	case TargetLocal:
+		plans = []Plan{{
+			Target: target, Unsupported: true, Method: "manual",
+			Reason:  "Local (OpenCode) has no CLI of its own: it runs on OpenCode 2. Install or update OpenCode 2 from its own row.",
+			DocsURL: agentDocumentationURLs[target],
 		}}
 	case TargetMiniMaxCode:
 		// The official installers install npm latest into ~/.minimax-code

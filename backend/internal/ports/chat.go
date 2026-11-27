@@ -26,6 +26,12 @@ import (
 // Errors a Chat driver returns. They map to stable API error codes, so a client
 // can tell "this harness cannot do Chat" from "Codex is not logged in".
 var (
+	// ErrBackgroundPromptsDisabled means the harness sends a model only turns a
+	// person started, so Orchestrator will not run a prompt of its own on it:
+	// no next-message suggestion, no model-written title or branch name, no
+	// summary. Callers treat it as "this optional feature is off here", not as
+	// a failure. See domain.AgentHarness.NoBackgroundPrompts.
+	ErrBackgroundPromptsDisabled = errors.New("this harness sends a model only turns a person started")
 	// ErrChatUnsupported means the harness has no Chat driver at all.
 	ErrChatUnsupported = errors.New("chat mode unsupported for harness")
 	// ErrChatDriverUnavailable means the driver exists but its binary or

@@ -43,7 +43,9 @@ func (m *Manager) startTaskNaming(cfg ports.SpawnConfig, rec domain.SessionRecor
 	m.setBranchNaming(rec.ID, true)
 	settled := func() { m.setBranchNaming(rec.ID, false) }
 	runner, ok := m.chat.(chatBackgroundTaskRunner)
-	if !ok {
+	if !ok || rec.Harness.NoBackgroundPrompts() {
+		// No model is asked to name the task: the name comes from the prompt's
+		// own words.
 		return func() generatedTaskName { return fallback }, settled
 	}
 	namingCtx, cancelNaming := context.WithTimeout(m.backgroundContext, taskNamingTimeout)

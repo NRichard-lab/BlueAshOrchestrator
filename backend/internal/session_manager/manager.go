@@ -6211,8 +6211,11 @@ func seedRecord(cfg ports.SpawnConfig, projectConfig domain.ProjectConfig, now t
 		RequestedOutput:   cfg.RequestedOutput,
 		OutputType:        domain.SessionOutputNone,
 		AutoReviewEnabled: projectConfig.AutoReview,
-		AutoInjectReview:  true,
-		AutoInjectCI:      true,
+		// CI failures and review comments are messages Orchestrator writes. A
+		// harness that sends a model only what a person started begins with
+		// them off; the session's own switches turn them on.
+		AutoInjectReview: cfg.Harness.ForwardsLifecycleMessagesByDefault(),
+		AutoInjectCI:     cfg.Harness.ForwardsLifecycleMessagesByDefault(),
 	}
 }
 

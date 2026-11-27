@@ -303,3 +303,54 @@ func dropEndpointKey(dataDir, name string) error {
 	})
 	return err
 }
+
+// DataDirEnv names the variable that overrides where Orchestrator keeps its
+// data.
+const DataDirEnv = "AO_DATA_DIR"
+
+// DataDir resolves the Orchestrator data directory the way config.Load does:
+// the override in env, then the process environment, then ~/.ao/data. Agent
+// adapters use it because they are handed an environment, not a config.
+func DataDir(env map[string]string) string {
+	dir := strings.TrimSpace(env[DataDirEnv])
+	if dir == "" {
+		dir = strings.TrimSpace(os.Getenv(DataDirEnv))
+	}
+	if dir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(home, ".ao", "data")
+	}
+	if absolute, err := filepath.Abs(dir); err == nil {
+		return absolute
+	}
+	return dir
+}
+
+// ReadinessState is how ready the Local Models harness is to hold a
+// conversation.
+type ReadinessState string
+
+// The readiness states. Being installed is not one of them: the runner is part
+// of the binary.
+const (
+	// ReadinessNeedsSetup means no endpoint answers, or none lists a model
+	// that can chat.
+	ReadinessNeedsSetup ReadinessState = "needs-setup"
+	// ReadinessConfigured means an endpoint answers and lists a chat-capable
+	// model. Presence is not validity: no turn has confirmed it works.
+	ReadinessConfigured ReadinessState = "configured"
+)
+
+// Readiness is the result of a readiness check.
+type Readiness struct {
+	State ReadinessState `json:"state"`
+	// Reachable is how many endpoints answered.
+	Reachable int `json:"reachable"`
+	// ChatModels is how many chat-capable models they list between them.
+	ChatModels int `json:"chatModels"`
+	// Reason says what is missing when State is ReadinessNeedsSetup.
+	Reason string `json:"reason,omitempty"`
+}

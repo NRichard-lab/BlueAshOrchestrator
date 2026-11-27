@@ -24,6 +24,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/kimchi"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/kimi"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/local"
+	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/localmodels"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/omp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/opencode"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/opencodev2"
@@ -44,6 +45,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/kimchiacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/kimiacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/localacp"
+	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/localmodelsacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/ompacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/opencodeacp"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/opencodev2acp"
@@ -86,6 +88,8 @@ func New(drivers ...ports.ChatDriver) *Registry {
 // resolved by each existing agent plugin. No path scrapes terminal output or
 // packages a second provider CLI.
 // Unreal Agent is compiled into AO and runs behind the same detached host seam.
+// Local Models is compiled in too: its driver launches AO's own binary as an
+// ACP agent, so it needs no provider CLI at all.
 //
 // Every other harness stays TUI-only until the same is true of it. The driver
 // reuses the harness's existing agent plugin for binary resolution and auth, so
@@ -139,6 +143,8 @@ func Build(log *slog.Logger, onClaudeAuthRejected func()) *Registry {
 	add(hermesacp.New(hermesPlugin, log), hermesPlugin)
 	localPlugin := local.New()
 	add(localacp.New(localPlugin, log), localPlugin)
+	localModelsPlugin := localmodels.New()
+	add(localmodelsacp.New(localModelsPlugin, log), localModelsPlugin)
 	return r
 }
 

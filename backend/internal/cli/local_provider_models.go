@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -250,4 +251,214 @@ func newLocalProviderKeyCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&clearKey, "clear", false, "Remove the stored key instead of reading one")
 	return cmd
+}
+
+// newLocalProviderUseCommand sets the model the Local Models harness uses
+// when a session names none.
+func newLocalProviderUseCommand() *cobra.Command {
+	var clearDefault bool
+	cmd := &cobra.Command{
+		Use:   "use <endpoint>/<model>",
+		Short: "Set the default model for the Local Models harness",
+		Long: "Set the model the Local Models harness uses when a session names none.\n\n" +
+			"A session's own model (`ao spawn --model`, or the model control in Chat) and a " +
+			"project's role model both win over this default.\n\n" +
+			"The endpoint is checked over its metadata routes when it is reachable. The model " +
+			"is not loaded and is sent nothing. Use --clear to remove the default.",
+		Args: func(_ *cobra.Command, args []string) error {
+			if clearDefault && len(args) == 0 {
+				return nil
+			}
+			if len(args) != 1 || clearDefault {
+				return usageError{errors.New("use requires one <endpoint>/<model>, or --clear alone")}
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dataDir, err := localProviderDataDir()
+			if err != nil {
+				return err
+			}
+			if clearDefault {
+				if _, err := localproviders.UpdateSettings(dataDir, func(settings *localproviders.Settings) error {
+					settings.Default = ""
+					return nil
+				}); err != nil {
+					return err
+				}
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Cleared the Local Models default")
+				return nil
+			}
+			endpointName, model, err := localproviders.ParseModelID(args[0])
+			if err != nil {
+				return usageError{err}
+			}
+			endpoint, err := localproviders.Lookup(dataDir, endpointName)
+			if err != nil {
+				return usageError{err}
+			}
+			id := localproviders.ModelID(endpoint.Name, model)
+			client := &http.Client{Timeout: localproviders.DefaultTimeout}
+			capabilities, inspectErr := localproviders.Inspect(cmd.Context(), client, endpoint, model)
+			switch {
+			case errors.Is(inspectErr, localproviders.ErrModelNotFound):
+				return usageError{fmt.Errorf("%s does not have a model named %q; `ao local-provider models %s` lists what it serves", endpoint.Name, model, endpoint.Name)}
+			case inspectErr == nil && !capabilities.Chat:
+				return usageError{fmt.Errorf("%s is an embedding model and cannot hold a conversation", id)}
+			}
+			if _, err := localproviders.UpdateSettings(dataDir, func(settings *localproviders.Settings) error {
+				settings.Default = id
+				return nil
+			}); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Local Models default is now %s\n", id)
+			if inspectErr != nil {
+				// Saved anyway: a server that is off now may be on later.
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not check the model: %s\n", inspectErr)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&clearDefault, "clear", false, "Remove the default instead of setting one")
+	return cmd
+}
+
+// newLocalProviderInstructionsCommand shows or sets what the Local Models
+// harness puts in front of the conversation.
+func newLocalProviderInstructionsCommand() *cobra.Command {
+	levels := make([]string, 0, len(localproviders.InstructionsLevels))
+	for _, level := range localproviders.InstructionsLevels {
+		levels = append(levels, string(level))
+	}
+	return &cobra.Command{
+		Use:   "instructions [" + strings.Join(levels, "|") + "]",
+		Short: "Show or set the standing-instructions level for the Local Models harness",
+		Long: "Show or set what the Local Models harness puts in front of the conversation.\n\n" +
+			"  standard  the full standing instructions every other harness gets (about 6,000 tokens)\n" +
+			"  compact   a short role note written for small models (the default)\n" +
+			"  none      nothing: the model sees only the conversation\n\n" +
+			"With none the model does not know about reports, pull request rules or artifacts, " +
+			"so the session is a plain assistant, not a managed worker.",
+		Args: atMostOneArg,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dataDir, err := localProviderDataDir()
+			if err != nil {
+				return err
+			}
+			if len(args) == 0 {
+				settings, err := localproviders.LoadSettings(dataDir)
+				if err != nil {
+					return err
+				}
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), settings.InstructionsLevel())
+				return nil
+			}
+			if strings.TrimSpace(args[0]) == "" {
+				return usageError{errors.New("instructions level must be one of " + strings.Join(levels, ", "))}
+			}
+			level, err := localproviders.ValidateInstructions(args[0])
+			if err != nil {
+				return usageError{err}
+			}
+			if _, err := localproviders.UpdateSettings(dataDir, func(settings *localproviders.Settings) error {
+				settings.Instructions = level
+				return nil
+			}); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Local Models instructions level is now %s\n", level)
+			return nil
+		},
+	}
+}
+
+// localModelsStatus is what `ao local-provider status` reports.
+type localModelsStatus struct {
+	Default      string                                  `json:"default,omitempty"`
+	Instructions localproviders.Instructions             `json:"instructions"`
+	Readiness    localproviders.Readiness                `json:"readiness"`
+	Overrides    map[string]localproviders.ModelOverride `json:"overrides,omitempty"`
+	// EndpointsWithKeys names the endpoints a key is stored for. The keys
+	// themselves are never printed.
+	EndpointsWithKeys []string `json:"endpointsWithKeys,omitempty"`
+}
+
+// newLocalProviderStatusCommand reports how the Local Models harness is set
+// up. Readiness comes from metadata routes: no model is prompted to find out
+// whether it works.
+func newLocalProviderStatusCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "Show the Local Models harness setup: default model, instructions level and readiness",
+		Args:  noArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			dataDir, err := localProviderDataDir()
+			if err != nil {
+				return err
+			}
+			settings, err := localproviders.LoadSettings(dataDir)
+			if err != nil {
+				return err
+			}
+			client := &http.Client{Timeout: localproviders.DefaultTimeout}
+			status := localModelsStatus{
+				Default: settings.Default, Instructions: settings.InstructionsLevel(),
+				Readiness: localproviders.CheckReadiness(cmd.Context(), client, dataDir), Overrides: settings.Models,
+			}
+			for name := range settings.Endpoints {
+				status.EndpointsWithKeys = append(status.EndpointsWithKeys, name)
+			}
+			sort.Strings(status.EndpointsWithKeys)
+			if asJSON {
+				encoder := json.NewEncoder(cmd.OutOrStdout())
+				encoder.SetIndent("", "  ")
+				return encoder.Encode(status)
+			}
+			writer := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
+			defaultModel := status.Default
+			if defaultModel == "" {
+				defaultModel = "none (each session must name a model)"
+			}
+			_, _ = fmt.Fprintf(writer, "Default model\t%s\n", defaultModel)
+			_, _ = fmt.Fprintf(writer, "Instructions\t%s\n", status.Instructions)
+			if status.Readiness.State == localproviders.ReadinessConfigured {
+				_, _ = fmt.Fprintf(writer, "Readiness\tconfigured (unverified): %d endpoint(s) answering, %d chat model(s)\n",
+					status.Readiness.Reachable, status.Readiness.ChatModels)
+			} else {
+				_, _ = fmt.Fprintf(writer, "Readiness\tneeds setup: %s\n", status.Readiness.Reason)
+			}
+			if len(status.EndpointsWithKeys) > 0 {
+				_, _ = fmt.Fprintf(writer, "Keys stored for\t%s\n", strings.Join(status.EndpointsWithKeys, ", "))
+			}
+			ids := make([]string, 0, len(status.Overrides))
+			for id := range status.Overrides {
+				ids = append(ids, id)
+			}
+			sort.Strings(ids)
+			for _, id := range ids {
+				_, _ = fmt.Fprintf(writer, "Override\t%s  %s\n", id, describeOverride(status.Overrides[id]))
+			}
+			return writer.Flush()
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Print the status as JSON")
+	return cmd
+}
+
+func describeOverride(override localproviders.ModelOverride) string {
+	var parts []string
+	if override.Context != nil {
+		parts = append(parts, "context="+strconv.Itoa(*override.Context))
+	}
+	flag := func(name string, value *bool) {
+		if value != nil {
+			parts = append(parts, name+"="+strconv.FormatBool(*value))
+		}
+	}
+	flag("tools", override.Tools)
+	flag("thinking", override.Thinking)
+	flag("vision", override.Vision)
+	return strings.Join(parts, " ")
 }

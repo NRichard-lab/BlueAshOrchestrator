@@ -16,8 +16,20 @@ func TestEverySupportedHarnessHasAccountSetupMethod(t *testing.T) {
 	accountOnly := map[domain.AgentHarness]bool{
 		domain.HarnessAgy: true, domain.HarnessAuggie: true, domain.HarnessMiMoCode: true,
 	}
+	// A local model server has no account to sign in to and no provider key in
+	// the environment. An endpoint that wants a key gets one with
+	// `ao local-provider key`, stored per endpoint.
+	noAccount := map[domain.AgentHarness]bool{
+		domain.HarnessLocal: true, domain.HarnessLocalModels: true,
+	}
 	for _, harness := range domain.AllHarnesses {
 		methods := loginMethods(string(harness))
+		if noAccount[harness] {
+			if len(methods) != 0 {
+				t.Errorf("%s offers account setup methods %v, but a local model has no account", harness, methods)
+			}
+			continue
+		}
 		if len(methods) == 0 {
 			t.Errorf("%s has no Account setup method", harness)
 		}
