@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/controllers"
 )
 
 func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
@@ -27,9 +28,9 @@ func TestLocalProvidersListIncludesBuiltinsAndPresets(t *testing.T) {
 		t.Fatalf("status = %d, body=%s", rec.Code, rec.Body.String())
 	}
 	var body struct {
-		Endpoints []map[string]any `json:"endpoints"`
+		Endpoints []map[string]any    `json:"endpoints"`
 		Presets   []map[string]string `json:"presets"`
-		Notes     map[string]string `json:"notes"`
+		Notes     map[string]string   `json:"notes"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode: %v", err)
@@ -147,7 +148,7 @@ func TestLocalProvidersHarnessLinkRoundTrip(t *testing.T) {
 		t.Fatal("API key must not appear in list response")
 	}
 	var listBody struct {
-		HarnessLink map[string]any `json:"harnessLink"`
+		HarnessLink map[string]any    `json:"harnessLink"`
 		Notes       map[string]string `json:"notes"`
 	}
 	if err := json.Unmarshal(listRec.Body.Bytes(), &listBody); err != nil {

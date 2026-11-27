@@ -1,4 +1,4 @@
-﻿// Package codex implements the Codex agent adapter: launching new sessions,
+// Package codex implements the Codex agent adapter: launching new sessions,
 // resuming hook-tracked sessions, installing workspace-local hooks, and reading
 // hook-derived session info.
 //

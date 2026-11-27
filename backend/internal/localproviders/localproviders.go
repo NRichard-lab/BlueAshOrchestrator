@@ -297,7 +297,7 @@ func Probe(ctx context.Context, client *http.Client, endpoint Endpoint) Result {
 	if client == nil {
 		client = &http.Client{Timeout: DefaultTimeout}
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.BaseURL+modelsPath(endpoint.Kind), nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.BaseURL+modelsPath(endpoint.Kind), http.NoBody)
 	if err != nil {
 		result.Error = err.Error()
 		return result

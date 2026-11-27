@@ -1442,16 +1442,16 @@ WHERE sessions.harness = 'cursor'
 	if err != nil {
 		return nil, fmt.Errorf("list cursor driver usage: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []domain.UsageReportEvent
 	for rows.Next() {
 		var (
-			updatedAt                              time.Time
-			modelID                                string
+			updatedAt                               time.Time
+			modelID                                 string
 			inputTokens, cachedTokens, outputTokens sql.NullInt64
-			sessionID                              domain.SessionID
-			projectID                              sql.NullString
-			title                                  string
+			sessionID                               domain.SessionID
+			projectID                               sql.NullString
+			title                                   string
 		)
 		if err := rows.Scan(&updatedAt, &modelID, &inputTokens, &cachedTokens, &outputTokens, &sessionID, &projectID, &title); err != nil {
 			return nil, fmt.Errorf("scan cursor driver usage: %w", err)

@@ -1,4 +1,4 @@
-﻿package codexappserver
+package codexappserver
 
 import (
 	"context"

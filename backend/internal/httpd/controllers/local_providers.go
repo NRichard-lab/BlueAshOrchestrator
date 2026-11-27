@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/envelope"
 	"github.com/aoagents/agent-orchestrator/backend/internal/localproviders"
-	"github.com/go-chi/chi/v5"
 )
 
 // LocalProvidersController exposes discovery of local model endpoints to the
@@ -25,6 +26,7 @@ func (c *LocalProvidersController) client() *http.Client {
 	return &http.Client{Timeout: localproviders.DefaultTimeout}
 }
 
+// Register mounts the local provider routes on r.
 func (c *LocalProvidersController) Register(r chi.Router) {
 	r.Get("/local-providers", c.list)
 	r.Post("/local-providers", c.add)
@@ -81,13 +83,13 @@ func (c *LocalProvidersController) list(w http.ResponseWriter, r *http.Request) 
 }
 
 type localHarnessLinkDTO struct {
-	Linked       bool   `json:"linked"`
-	EndpointName string `json:"endpointName,omitempty"`
-	Model        string `json:"model,omitempty"`
-	HasAPIKey    bool   `json:"hasApiKey"`
+	Linked        bool   `json:"linked"`
+	EndpointName  string `json:"endpointName,omitempty"`
+	Model         string `json:"model,omitempty"`
+	HasAPIKey     bool   `json:"hasApiKey"`
 	OpenCodeModel string `json:"openCodeModel,omitempty"`
-	Harness      string `json:"harness"`
-	Requires     string `json:"requires"`
+	Harness       string `json:"harness"`
+	Requires      string `json:"requires"`
 }
 
 func (c *LocalProvidersController) linkDTO() localHarnessLinkDTO {
