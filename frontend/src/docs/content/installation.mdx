@@ -40,6 +40,7 @@ brew upgrade --cask agentwrapper/tap/agent-orchestrator
 Blue Ash AI uses the coding agents and sign-ins already installed on your computer. **Settings → Harness** offers setup and readiness checks for supported agents; some need to be installed or signed in outside Blue Ash AI. Unreal Agent is a built-in Chat-only exception with its own platform and permission limits. See the [agent catalog](/plugins/agents).
 
 <span id="set-up-ao" />
+<span id="set-up-orchestrator" />
 ## Set up Blue Ash AI
 
 <Steps>
@@ -114,6 +115,7 @@ New users should install the desktop app directly instead.
 </details>
 
 <span id="where-ao-stores-data" />
+<span id="where-orchestrator-stores-data" />
 ## Where Blue Ash AI stores data
 
 All Blue Ash AI application state lives under `~/.ao` by default, including the daemon database, run file, managed worktrees, Electron browser data, and mobile pairing configuration. Advanced installations can override daemon paths with `AO_DATA_DIR` and `AO_RUN_FILE`.
