@@ -23,13 +23,13 @@ const ALL_VITEST = /^(frontend\/(package(-lock)?\.json|vite[^/]*\.ts|vitest[^/]*
 const FILE_LIMIT = 3000;
 
 export function pickLanes({ event, draft = false, base = 'main', fork = false, labels = [], files = [] }) {
-  if (event === 'pull_request' && !draft && base !== 'main' && fork) {
-    throw new Error(`This fork PR targets ${base}. CI cannot re-run it when it moves to main, so ci-ok stays red: target main and push again.`);
-  }
-  if (event === 'pull_request' && (draft || base !== 'main')) {
+  const full = event !== 'pull_request' || labels.includes('ci:full');
+  if (event === 'pull_request' && draft && !full) {
     return { lanes: [], full: false, macos: false, vitest: '' };
   }
-  const full = event !== 'pull_request' || labels.includes('ci:full');
+  if (event === 'pull_request' && base !== 'main' && fork) {
+    throw new Error(`This fork PR targets ${base}. CI cannot re-run it when it moves to main, so ci-ok stays red: target main and push again.`);
+  }
   const paths = files.flatMap(file => [file.filename, file.previous_filename].filter(Boolean));
   const every = full || files.length >= FILE_LIMIT || paths.some(path => EVERY_LANE.test(path));
   const hit = lane => paths.some(path => LANES[lane].some(rule => rule.test(path)));
