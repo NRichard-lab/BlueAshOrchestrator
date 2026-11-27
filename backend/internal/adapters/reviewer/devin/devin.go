@@ -11,6 +11,7 @@ import (
 	"time"
 
 	workerdevin "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/devin"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -85,7 +86,7 @@ func initialMessage(inv ports.ReviewInvocation) (string, error) {
 		return "", errors.New("devin reviewer: system prompt file is required")
 	}
 	return fmt.Sprintf(
-		"Read and follow the Orchestrator reviewer role in `%s`, then %s",
+		brand.Text("Read and follow the Orchestrator reviewer role in `%s`, then %s"),
 		filepath.ToSlash(inv.SystemPromptFile),
 		strings.TrimSpace(inv.Prompt),
 	), nil

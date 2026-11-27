@@ -53,6 +53,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/agentbase"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/binaryutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -221,7 +222,7 @@ func headlessTask(prompt, standing string) (string, error) {
 	if strings.TrimSpace(standing) == "" {
 		return prompt, nil
 	}
-	return "Standing instructions from Agent Orchestrator. Follow them for this whole session:\n<ao_standing_instructions>\n" +
+	return brand.Text("Standing instructions from Agent Orchestrator. Follow them for this whole session:\n<ao_standing_instructions>\n") +
 		strings.TrimSpace(standing) + "\n</ao_standing_instructions>\n\nTask:\n" + prompt, nil
 }
 

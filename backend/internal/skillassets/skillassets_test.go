@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	yaml "gopkg.in/yaml.v3"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 func TestEmbeddedSkillFrontmatterIsValidYAML(t *testing.T) {
@@ -288,6 +290,29 @@ func TestArtifactGuidanceUsesPathsThatWorkInLocalSessions(t *testing.T) {
 	for _, want := range []string{"ao artifact add report.html", "`artifact: true` in `html_render`"} {
 		if !strings.Contains(guidance, want) {
 			t.Fatalf("artifact guidance missing %q", want)
+		}
+	}
+}
+
+func TestBrandedSkillKeepsUpstreamNames(t *testing.T) {
+	original := brand.VisibleName
+	brand.VisibleName = "Blue Ash AI"
+	t.Cleanup(func() { brand.VisibleName = original })
+
+	for path, wants := range map[string][]string{
+		"using-ao/SKILL.md":            {"Blue Ash AI CLI Catalog", "legacy Orchestrator install", "Orchestrator account"},
+		"using-ao/commands/browser.md": {"Blue Ash AI's Browser panel", "Orchestrator Browser Bridge", "Orchestrator · <session>"},
+		"using-ao/commands/import.md":  {"Blue Ash AI can import", "legacy Agent Orchestrator flat-file store", "~/.agent-orchestrator"},
+	} {
+		source, err := files.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rendered := string(renderSkill(path, source))
+		for _, want := range wants {
+			if !strings.Contains(rendered, want) {
+				t.Errorf("%s: branded skill missing %q", path, want)
+			}
 		}
 	}
 }

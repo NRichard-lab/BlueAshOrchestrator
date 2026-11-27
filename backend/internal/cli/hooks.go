@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -735,13 +736,13 @@ const claudeComputerUseToolPrefix = "mcp__computer-use__"
 // daemon the Orchestrator desktop app started.
 const envDesktopApp = "AO_DESKTOP_APP"
 
-const computerUsePermissionNotice = "Computer use needs Orchestrator to have Accessibility and Screen Recording: macOS checks Orchestrator for " +
-	"everything this session runs, not Claude. Grant them in Orchestrator under Settings > Computer use agents > Native computer use > Grant macOS permissions to Orchestrator, " +
+var computerUsePermissionNotice = brand.Text("Computer use needs Orchestrator to have Accessibility and Screen Recording: macOS checks Orchestrator for ") +
+	brand.Text("everything this session runs, not Claude. Grant them in Orchestrator under Settings > Computer use agents > Native computer use > Grant macOS permissions to Orchestrator, ") +
 	"then restart this session's agent if it still says not granted."
 
-const computerUsePermissionContext = "This session runs inside Orchestrator, so macOS checks Orchestrator's permissions, not the Claude desktop app's " +
+var computerUsePermissionContext = brand.Text("This session runs inside Orchestrator, so macOS checks Orchestrator's permissions, not the Claude desktop app's ") +
 	"or a terminal's, for everything it runs. Ignore the advice to grant Claude: tell the user to grant Accessibility and Screen Recording to " +
-	"Orchestrator in Orchestrator's Settings > Computer use agents > Native computer use > Grant macOS permissions to Orchestrator, and that if it still says not granted afterwards, " +
+	brand.Text("Orchestrator in Orchestrator's Settings > Computer use agents > Native computer use > Grant macOS permissions to Orchestrator, and that if it still says not granted afterwards, ") +
 	"this session's agent needs a restart to see them."
 
 // computerUsePermissionDenied reports whether a tool result is Claude Code's
@@ -803,7 +804,7 @@ func (c *commandContext) emitComputerUsePermissionNotice(agent, event, sessionID
 	}
 }
 
-const reviewerPermissionDenyMessage = "Orchestrator headless reviewer: no human can answer permission prompts. " +
+var reviewerPermissionDenyMessage = brand.Text("Orchestrator headless reviewer: no human can answer permission prompts. ") +
 	"Use only the allowlisted read commands (git diff/log/show/status, gh pr view/diff/checks, Read, Grep, Glob) " +
 	"and the exact single-line `printf '%s' '<json>' | ...` submit commands from the review task."
 

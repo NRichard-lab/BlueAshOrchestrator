@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -193,7 +194,7 @@ func installCopilotAgent(workspacePath, sessionID, inlinePrompt, promptFile stri
 func copilotAgentProfile(agentName, sessionID, systemPrompt string) string {
 	return "---\n" +
 		"name: " + agentName + "\n" +
-		"description: Orchestrator role profile for session " + strings.TrimSpace(sessionID) + ". Use for all work in this session.\n" +
+		brand.Text("description: Orchestrator role profile for session ") + strings.TrimSpace(sessionID) + ". Use for all work in this session.\n" +
 		"target: github-copilot\n" +
 		"---\n\n" +
 		hookutil.CopilotAgentProfileSentinel + "\n\n" +

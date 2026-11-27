@@ -15,7 +15,7 @@ import (
 
 // HostTrustWarning documents that Crush relies on its normal interactive
 // approval flow rather than its broad --yolo mode.
-var HostTrustWarning = brand.Text("experimental user-approved reviewer: Crush uses normal permission prompts; Orchestrator deliberately does not enable --yolo")
+var HostTrustWarning = brand.Text(brand.Text("experimental user-approved reviewer: Crush uses normal permission prompts; Orchestrator deliberately does not enable --yolo"))
 
 // Reviewer builds Crush's persistent interactive reviewer command.
 type Reviewer struct {
@@ -47,7 +47,7 @@ func (r *Reviewer) ReviewCommand(ctx context.Context, inv ports.ReviewInvocation
 	if strings.TrimSpace(inv.TaskPromptRoot) == "" {
 		return ports.ReviewCommandSpec{Argv: []string{binary}}, nil
 	}
-	message := fmt.Sprintf("Read and follow the Orchestrator reviewer role in `%s`, then %s", filepath.ToSlash(inv.SystemPromptFile), strings.TrimSpace(inv.Prompt))
+	message := fmt.Sprintf(brand.Text("Read and follow the Orchestrator reviewer role in `%s`, then %s"), filepath.ToSlash(inv.SystemPromptFile), strings.TrimSpace(inv.Prompt))
 	return ports.ReviewCommandSpec{Argv: []string{binary, "--cwd", inv.WorkspacePath}, InitialMessage: message}, nil
 }
 

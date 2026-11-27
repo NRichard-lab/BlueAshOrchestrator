@@ -5,6 +5,7 @@ import (
 	"context"
 
 	workeraider "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/aider"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -51,7 +52,7 @@ func (r *Reviewer) ReviewCommand(ctx context.Context, inv ports.ReviewInvocation
 	}
 	message := ""
 	if inv.TaskPromptFile != "" {
-		message = "Follow the Orchestrator reviewer role and review task loaded as read-only context."
+		message = brand.Text("Follow the Orchestrator reviewer role and review task loaded as read-only context.")
 	}
 	return ports.ReviewCommandSpec{Argv: argv, InitialMessage: message}, nil
 }

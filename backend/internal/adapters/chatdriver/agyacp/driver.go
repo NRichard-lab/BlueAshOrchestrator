@@ -23,6 +23,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/agy"
 	acpdriver "github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/acp"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -234,7 +235,7 @@ func sessionPreamble(cfg acpdriver.LaunchConfig) []acpsdk.ContentBlock {
 		return nil
 	}
 	return []acpsdk.ContentBlock{acpsdk.TextBlock(
-		"Standing instructions from Agent Orchestrator. Follow them for this whole session:\n" +
+		brand.Text("Standing instructions from Agent Orchestrator. Follow them for this whole session:\n") +
 			"<ao_standing_instructions>\n" + standing + "\n</ao_standing_instructions>",
 	)}
 }

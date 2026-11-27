@@ -1,3 +1,4 @@
+import { productText } from "../../shared/brand-text";
 import type { DaemonStatus } from "../../shared/daemon-status";
 import { appI18n } from "../i18n";
 import { useUiStore } from "../stores/ui-store";
@@ -18,7 +19,14 @@ export type ReportProblemDiagnostics = {
 
 // Sent as an agent instruction, so it stays in English in every locale. A session's
 // PATH is pinned to its daemon's own ao, so this reaches the right install.
-export const REPORT_PROBLEM_PROMPT = "Use the bug-triage skill to help me report a problem with Orchestrator. Run `ao triage --no-launch`, then read the prompt file it prints and follow it.";
+const LEGACY_REPORT_PROBLEM_PROMPT = "Use the bug-triage skill to help me report a problem with Orchestrator. Run `ao triage --no-launch`, then read the prompt file it prints and follow it.";
+
+export const REPORT_PROBLEM_PROMPT = productText(LEGACY_REPORT_PROBLEM_PROMPT);
+
+function reportPromptPrefix(text: string): string | undefined {
+	if (text.startsWith(REPORT_PROBLEM_PROMPT)) return REPORT_PROBLEM_PROMPT;
+	return text.startsWith(LEGACY_REPORT_PROBLEM_PROMPT) ? LEGACY_REPORT_PROBLEM_PROMPT : undefined;
+}
 
 const REDACTED_LOCAL_PATH = "[redacted-local-path]";
 const REDACTED_LOCAL_URL = "[redacted-local-url]";
@@ -60,14 +68,15 @@ export function sanitizeReportText(value: string): string {
 
 /** What a session started from this brief is called: a report goes by its action, not its long prompt. */
 export function sessionNameFromBrief(brief: string): string {
-	return brief.startsWith(REPORT_PROBLEM_PROMPT) ? appI18n.t("settings.reportProblem") : brief.trim().slice(0, 100);
+	return reportPromptPrefix(brief) ? appI18n.t("settings.reportProblem") : brief.trim().slice(0, 100);
 }
 
 /** Drafts are shared per host, so a normal new chat takes the report prompt out and keeps what was typed. */
 export function dropReportPrompt(scope: ChatDraftScope) {
 	const draft = readChatSessionDraft(scope).composer.text;
-	if (!draft.startsWith(REPORT_PROBLEM_PROMPT)) return;
-	if (!writeChatComposerText(scope, draft.slice(REPORT_PROBLEM_PROMPT.length).trimStart()).ok) return;
+	const prefix = reportPromptPrefix(draft);
+	if (!prefix) return;
+	if (!writeChatComposerText(scope, draft.slice(prefix.length).trimStart()).ok) return;
 	useUiStore.setState((state) => ({ newChatDraftRevision: state.newChatDraftRevision + 1 }));
 }
 
@@ -75,8 +84,10 @@ export function dropReportPrompt(scope: ChatDraftScope) {
 function openReportAgent() {
 	const scope = newChatDraftScope();
 	const draft = readChatSessionDraft(scope).composer.text;
-	if (!draft.startsWith(REPORT_PROBLEM_PROMPT)) {
-		const written = writeChatComposerText(scope, draft.trim() ? `${REPORT_PROBLEM_PROMPT}\n\n${draft}` : REPORT_PROBLEM_PROMPT);
+	const prefix = reportPromptPrefix(draft);
+	if (prefix !== REPORT_PROBLEM_PROMPT) {
+		const suffix = prefix ? draft.slice(prefix.length) : draft.trim() ? `\n\n${draft}` : "";
+		const written = writeChatComposerText(scope, REPORT_PROBLEM_PROMPT + suffix);
 		if (!written.ok) throw new Error("The new chat draft could not be saved.");
 	}
 	useUiStore.setState((state) => ({ newChatDraftRevision: state.newChatDraftRevision + 1 }));

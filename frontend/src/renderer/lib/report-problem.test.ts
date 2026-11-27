@@ -102,6 +102,17 @@ describe("startProblemReport", () => {
 		expect(draft()).toBe(`${REPORT_PROBLEM_PROMPT}\n\nkeep this draft`);
 	});
 
+	it("recognizes and refreshes a saved report drafted under the legacy name", async () => {
+		const legacy = "Use the bug-triage skill to help me report a problem with Orchestrator. Run `ao triage --no-launch`, then read the prompt file it prints and follow it.";
+		const suffix = "\n\nkeep this draft";
+		writeChatComposerText(newChatDraftScope(), legacy + suffix);
+		expect(sessionNameFromBrief(draft())).toBe("Report a problem");
+		await startProblemReport("ready");
+		expect(draft()).toBe(REPORT_PROBLEM_PROMPT + suffix);
+		dropReportPrompt(newChatDraftScope());
+		expect(draft()).toBe("keep this draft");
+	});
+
 	it("does not stack the prompt when run twice but reloads the composer", async () => {
 		await startProblemReport("ready");
 		await startProblemReport("ready");
