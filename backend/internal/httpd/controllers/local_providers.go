@@ -26,7 +26,7 @@ func (c *LocalProvidersController) client() *http.Client {
 	return &http.Client{Timeout: localproviders.DefaultTimeout}
 }
 
-// Register mounts the local-provider routes on r.
+// Register mounts the local provider routes on r.
 func (c *LocalProvidersController) Register(r chi.Router) {
 	r.Get("/local-providers", c.list)
 	r.Post("/local-providers", c.add)
