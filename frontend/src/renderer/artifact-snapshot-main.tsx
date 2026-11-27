@@ -17,6 +17,9 @@ import { applyDocumentTheme, applyDocumentThemeStyle } from "./lib/theme";
 import { isThemeStyle, DEFAULT_THEME_STYLE } from "./lib/theme-palettes";
 import type { ArtifactRow } from "./lib/artifacts";
 import { ARTIFACT_SNAPSHOT_HEIGHT, ARTIFACT_SNAPSHOT_WIDTH, type ArtifactSnapshotJob } from "../shared/artifact-snapshot";
+import { productText } from "../shared/brand-text";
+
+document.title = productText("Orchestrator artifact snapshot");
 
 type State = "loading" | "ready" | "unavailable" | "error";
 
