@@ -73,6 +73,7 @@ func SaveLink(dataDir string, link Link) (Link, error) {
 	if err := os.MkdirAll(dataDir, 0o700); err != nil {
 		return Link{}, fmt.Errorf("local harness link: %w", err)
 	}
+	//nolint:gosec // G117: persisting the optional API key to this 0600 local file is the deliberate, documented purpose of SaveLink (see its doc comment).
 	data, err := json.MarshalIndent(link, "", "  ")
 	if err != nil {
 		return Link{}, err
