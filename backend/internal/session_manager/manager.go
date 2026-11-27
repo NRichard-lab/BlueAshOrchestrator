@@ -6277,7 +6277,7 @@ func isDefaultDevDataDir(dataDir string) bool {
 	if err != nil {
 		return false
 	}
-	want, err := filepath.Abs(filepath.Join(home, ".ao", "dev", "data"))
+	want, err := filepath.Abs(filepath.Join(home, brand.StateDirName, "dev", "data"))
 	if err != nil {
 		return false
 	}

@@ -610,7 +610,8 @@ const isDev = !app.isPackaged;
 // a concurrently running installed-app daemon. The subdir also isolates supervise.sock
 // on Unix (backend derives it as dir(RunFilePath)/supervise.sock) and the named pipe
 // on Windows (supervisorPipeFromRunFile derives it from the same dir basename).
-const DEV_DAEMON_PORT = 3002;
+// One above the product default (3002 for Orchestrator), so dev builds of two products do not share a port.
+const DEV_DAEMON_PORT = BRAND.defaultPort + 1;
 const DEV_STATE_SUBDIR = "dev"; // ~/.ao/dev/
 
 const RENDERER_SCHEME = "app";
