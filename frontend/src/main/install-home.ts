@@ -12,7 +12,7 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { BRAND } from "../shared/brand";
+import { BRAND, ENV } from "../shared/brand";
 
 /** Marker the Windows installer (and settings) leave beside the packaged exe. */
 export const INSTALL_HOME_MARKER = "ao-home.json";
@@ -141,7 +141,7 @@ export function resolveInstallHomePaths(input: {
 	execDir?: string | null;
 	marker?: InstallHomeRecord | null;
 }): InstallHomePaths {
-	const configured = input.env.AO_DATA_DIR?.trim();
+	const configured = input.env[ENV.DATA_DIR]?.trim();
 	if (configured) {
 		const dataDir = path.resolve(input.launchWorkingDirectory, configured);
 		return {

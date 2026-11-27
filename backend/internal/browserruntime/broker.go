@@ -20,7 +20,18 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
+)
+
+// Instance variables: their names come from the brand (see brand.Env).
+var (
+	// RuntimeTokenStdinEnv tells an app-spawned daemon to read its token once
+	// from the inherited private stdin pipe instead of an environment variable.
+	RuntimeTokenStdinEnv = brand.Env("AO_BROWSER_RUNTIME_TOKEN_STDIN") //nolint:gosec // Environment variable name, not a credential.
+	// RuntimeAddressEnv carries the exact listener address into running.json so
+	// Electron never has to duplicate the backend's platform-specific naming.
+	RuntimeAddressEnv = brand.Env("AO_BROWSER_RUNTIME_ADDRESS")
 )
 
 const (
@@ -31,16 +42,10 @@ const (
 	// minSupportedProtocolVersion is the oldest hello the broker accepts, so a
 	// freshly built daemon keeps working against a not-yet-upgraded desktop app.
 	minSupportedProtocolVersion = 2
-	// RuntimeTokenStdinEnv tells an app-spawned daemon to read its token once
-	// from the inherited private stdin pipe instead of an environment variable.
-	RuntimeTokenStdinEnv = "AO_BROWSER_RUNTIME_TOKEN_STDIN" //nolint:gosec // Environment variable name, not a credential.
-	// RuntimeAddressEnv carries the exact listener address into running.json so
-	// Electron never has to duplicate the backend's platform-specific naming.
-	RuntimeAddressEnv     = "AO_BROWSER_RUNTIME_ADDRESS"
-	helloTimeout          = 5 * time.Second
-	helloReplyTimeout     = time.Second
-	runtimeReconnectGrace = 2 * time.Second
-	maxRuntimeFrameBytes  = 8 << 20
+	helloTimeout                = 5 * time.Second
+	helloReplyTimeout           = time.Second
+	runtimeReconnectGrace       = 2 * time.Second
+	maxRuntimeFrameBytes        = 8 << 20
 )
 
 // ReadRuntimeToken reads the one-line token handoff used by the desktop app.

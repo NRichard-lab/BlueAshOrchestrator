@@ -4,7 +4,7 @@ import path from "node:path";
 import { randomInt, randomUUID } from "node:crypto";
 import type { TelemetryPolicySnapshot } from "./telemetry-policy";
 import { detectCiEnvironment, installDay, normalizeInstallSource, safeOsVersion } from "./install-environment";
-import { BRAND } from "./brand";
+import { BRAND, ENV } from "./brand";
 
 /**
  * Segmentation the renderer cannot see for itself: CPU architecture, the real
@@ -119,7 +119,8 @@ export function defaultDataDir(
 	homeDir: string,
 ): string | null {
 	void platform;
-	if (env.AO_DATA_DIR) return env.AO_DATA_DIR;
+	const configured = env[ENV.DATA_DIR];
+	if (configured) return configured;
 	if (!homeDir) return null;
 	return path.join(homeDir, BRAND.stateDirName, "data");
 }

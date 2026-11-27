@@ -24,6 +24,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/modelcatalog"
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
 	"github.com/aoagents/agent-orchestrator/backend/internal/attachmentstore"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -206,14 +207,8 @@ const (
 	// this launch. When it exits, tmux must park on a non-interpreting input sink
 	// instead of exposing its historical interactive-shell fallback.
 	EnvSupervisedProcess = "AO_SUPERVISED_PROCESS"
-	// EnvDataDir tells a spawned agent's AO hook commands where the store lives.
-	EnvDataDir = "AO_DATA_DIR"
 	// EnvPermissionMode tells hook commands which AO approval policy applies.
 	EnvPermissionMode = "AO_PERMISSION_MODE"
-	// EnvRunFile tells spawned AO hook commands which live daemon owns the
-	// session. AO_DATA_DIR is durable storage, not daemon discovery; custom and
-	// isolated daemons therefore need this coordinate explicitly.
-	EnvRunFile = "AO_RUN_FILE"
 	// EnvDesktopApp is "1" when the Orchestrator desktop app started the
 	// daemon, so macOS charges the session's privacy checks to Orchestrator.
 	// A daemon started from a terminal (`ao start`) leaves it unset: macOS
@@ -229,12 +224,23 @@ const (
 	// EnvAgentBrowserToken is that browser service's credential, paired with
 	// EnvAgentBrowserURL.
 	EnvAgentBrowserToken = "AO_AGENT_BROWSER_TOKEN" //nolint:gosec // Environment variable name, not a credential.
+)
+
+// Instance variables: they locate one product's daemon, so their names come from
+// the brand (AO_* for Orchestrator, BLUEASH_* for BlueAshAI; see brand.Env).
+var (
+	// EnvDataDir tells a spawned agent's AO hook commands where the store lives.
+	EnvDataDir = brand.Env("AO_DATA_DIR")
+	// EnvRunFile tells spawned AO hook commands which live daemon owns the
+	// session. AO_DATA_DIR is durable storage, not daemon discovery; custom and
+	// isolated daemons therefore need this coordinate explicitly.
+	EnvRunFile = brand.Env("AO_RUN_FILE")
 	// EnvBrowserRuntimeToken must never be inherited by a worker. It authenticates
 	// the privileged Electron runtime, not session-scoped browser callers.
-	EnvBrowserRuntimeToken = "AO_BROWSER_RUNTIME_TOKEN" //nolint:gosec // Environment variable name, not a credential.
+	EnvBrowserRuntimeToken = brand.Env("AO_BROWSER_RUNTIME_TOKEN") //nolint:gosec // Environment variable name, not a credential.
 	// EnvBrowserRuntimeTokenStdin is the daemon-only token handoff marker and
 	// must be cleared before a worker process is spawned.
-	EnvBrowserRuntimeTokenStdin = "AO_BROWSER_RUNTIME_TOKEN_STDIN" //nolint:gosec // Environment variable name, not a credential.
+	EnvBrowserRuntimeTokenStdin = brand.Env("AO_BROWSER_RUNTIME_TOKEN_STDIN") //nolint:gosec // Environment variable name, not a credential.
 )
 
 type lifecycleRecorder interface {
@@ -7872,7 +7878,7 @@ func (m *Manager) validateRuntimePrerequisites() error {
 	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
 		return nil
 	}
-	if resolution, err := tmuxbin.ResolveWith(os.Getenv("AO_TMUX_BINARY"), m.executable, m.lookPath); err != nil || resolution.Path == "" {
+	if resolution, err := tmuxbin.ResolveWith(os.Getenv(brand.Env("AO_TMUX_BINARY")), m.executable, m.lookPath); err != nil || resolution.Path == "" {
 		return fmt.Errorf("%w: tmux required on macOS but Orchestrator's configured, bundled, or system tmux was not found", ports.ErrRuntimePrerequisite)
 	}
 	return nil

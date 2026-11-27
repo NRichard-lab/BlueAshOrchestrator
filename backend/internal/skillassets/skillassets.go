@@ -23,6 +23,8 @@ import (
 	"strings"
 
 	"embed"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 //go:embed using-ao bug-triage
@@ -84,6 +86,9 @@ func materialize(name, destDir string) error {
 		if err != nil {
 			return fmt.Errorf("read embedded %q: %w", p, err)
 		}
+		// The guides name the data-dir and run-file variables; show the names
+		// this build actually reads (see brand.Env).
+		b = brand.RewriteEnvNames(b)
 		if err := os.WriteFile(target, b, 0o600); err != nil {
 			return fmt.Errorf("write %q: %w", target, err)
 		}

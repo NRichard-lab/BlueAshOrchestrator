@@ -26,6 +26,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/claudecode"
 	acpdriver "github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/acp"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -619,7 +620,7 @@ func resolveRuntime(ctx context.Context) (runtimeLaunch, error) {
 		return runtimeLaunch{command: resolved}, nil
 	}
 
-	runtimeDir := strings.TrimSpace(os.Getenv("AO_ACP_RUNTIME_DIR"))
+	runtimeDir := strings.TrimSpace(os.Getenv(brand.Env("AO_ACP_RUNTIME_DIR")))
 	if runtimeDir == "" {
 		runtimeDir = runtimeDirectoryBesideExecutable()
 	}

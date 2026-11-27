@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 var errTmuxNotFound = errors.New("tmux executable not found")
@@ -45,7 +47,7 @@ type Resolution struct {
 
 // Resolve applies the production lookup order.
 func Resolve() (Resolution, error) {
-	return ResolveWith(os.Getenv("AO_TMUX_BINARY"), os.Executable, exec.LookPath)
+	return ResolveWith(os.Getenv(brand.Env("AO_TMUX_BINARY")), os.Executable, exec.LookPath)
 }
 
 // ResolveWith is Resolve with process lookups injected for callers and tests.

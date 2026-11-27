@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/daemonmeta"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
@@ -55,6 +56,7 @@ type probeResult struct {
 	PID              int    `json:"pid"`
 	ExecutablePath   string `json:"executablePath,omitempty"`
 	WorkingDirectory string `json:"workingDirectory,omitempty"`
+	Product          string `json:"product,omitempty"`
 }
 
 func newStatusCommand(ctx *commandContext) *cobra.Command {
@@ -91,6 +93,11 @@ func (c *commandContext) inspectDaemon(ctx context.Context) (daemonStatus, error
 	}
 	if info == nil {
 		return st, nil
+	}
+	// A run file written by another product's daemon is not ours to report on,
+	// stop, replace or overwrite, alive or not.
+	if err := brand.ForeignDaemonError(info.Product, cfg.RunFilePath); err != nil {
+		return daemonStatus{}, err
 	}
 
 	st.PID = info.PID
@@ -177,6 +184,9 @@ func verifyProbeOwner(probe probeResult, wantPID int, path string) error {
 	}
 	if probe.PID != wantPID {
 		return fmt.Errorf("%s: daemon pid %d does not match run-file pid %d", path, probe.PID, wantPID)
+	}
+	if brand.ForeignProduct(probe.Product) {
+		return fmt.Errorf("%s: the daemon belongs to %s, not %s", path, brand.ProductName(probe.Product), brand.DisplayName)
 	}
 	return nil
 }

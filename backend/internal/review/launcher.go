@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/providerkeys"
@@ -25,7 +26,7 @@ const defaultReviewerInitialDelay = 500 * time.Millisecond
 const reviewerTaskMessagePrefix = "Read and follow the AO review task in `"
 
 // EnvRunFile points reviewer-local AO CLI calls at the live daemon run-file.
-const EnvRunFile = "AO_RUN_FILE"
+var EnvRunFile = brand.Env("AO_RUN_FILE")
 
 // EnvAOCommandWarning records why AO could not guarantee a reviewer-local `ao`
 // command. Review launch remains best-effort so provider reviews can still be

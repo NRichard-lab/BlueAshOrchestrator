@@ -191,7 +191,7 @@ func Run(buildVersion string) (retErr error) {
 	lifecycle := lifecyclelog.Open(logRoot, cfg.Telemetry.AppVersion)
 	startedAt := time.Now()
 	startFields := lifecyclelog.ProcessContext()
-	startFields["owner"] = os.Getenv("AO_OWNER")
+	startFields["owner"] = os.Getenv(brand.Env("AO_OWNER"))
 	startFields["port"] = cfg.Port
 	if err := lifecycle.InstallCrashOutput(); err != nil {
 		startFields["crashOutput"] = "unavailable"
@@ -245,6 +245,9 @@ func Run(buildVersion string) (retErr error) {
 	if live, err := runfile.CheckStale(cfg.RunFilePath); err != nil {
 		return fmt.Errorf("inspect run-file: %w", err)
 	} else if live != nil && runFileOwnerServing(&http.Client{Timeout: staleProbeTimeout}, config.LoopbackHost, live) {
+		if err := brand.ForeignDaemonError(live.Product, cfg.RunFilePath); err != nil {
+			return fmt.Errorf("%w (pid %d, port %d)", err, live.PID, live.Port)
+		}
 		return fmt.Errorf("daemon already running (pid %d, port %d); refusing to start", live.PID, live.Port)
 	}
 
@@ -690,7 +693,7 @@ func Run(buildVersion string) (retErr error) {
 		// whole host, so PID 1 is never a root.
 		AppRootPIDs: func() []int {
 			roots := []int{os.Getpid()}
-			if p := os.Getppid(); p > 1 && os.Getenv("AO_OWNER") == "app" {
+			if p := os.Getppid(); p > 1 && os.Getenv(brand.Env("AO_OWNER")) == "app" {
 				roots = append(roots, p)
 			}
 			// The tmux server behind AO's sessions detaches and reparents to
@@ -1220,10 +1223,10 @@ func Run(buildVersion string) (retErr error) {
 	}
 	if mobilebridge.KeepAwakeSupported() {
 		ka := mobilebridge.NewKeepAwake(os.Getpid())
-		ka.SetLidController(mobilebridge.NewLidAwake(os.Getpid(), os.Getenv("AO_WAKE_HELPER"), cfg.DataDir))
+		ka.SetLidController(mobilebridge.NewLidAwake(os.Getpid(), os.Getenv(brand.Env("AO_WAKE_HELPER")), cfg.DataDir))
 		bs.KeepAwake = ka
 	}
-	awakeHost := awakesvc.NewHost(os.Getpid(), os.Getenv("AO_WAKE_HELPER"), cfg.DataDir)
+	awakeHost := awakesvc.NewHost(os.Getpid(), os.Getenv(brand.Env("AO_WAKE_HELPER")), cfg.DataDir)
 	awakeSvc, stopAwake := startAwake(ctx, store, awakeHost, awakesvc.BindingFuncs{
 		Session: func(ctx context.Context, id string) (bool, error) {
 			row, found, err := store.GetSession(ctx, domain.SessionID(id))

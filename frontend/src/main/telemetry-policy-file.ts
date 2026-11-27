@@ -8,7 +8,7 @@ import {
 	type TelemetryPolicyDiskRecord,
 	type TelemetryPolicySnapshot,
 } from "../shared/telemetry-policy";
-import { BRAND } from "../shared/brand";
+import { BRAND, ENV } from "../shared/brand";
 
 export const TELEMETRY_POLICY_FILE = "telemetry_policy.json";
 
@@ -44,7 +44,7 @@ export function resolveDesktopDataDir(
 	launchWorkingDirectory: string,
 	isPackaged: boolean,
 ): string {
-	const configured = env.AO_DATA_DIR?.trim();
+	const configured = env[ENV.DATA_DIR]?.trim();
 	if (configured) return path.resolve(launchWorkingDirectory, configured);
 	return path.resolve(homeDir, BRAND.stateDirName, isPackaged ? "data" : path.join("dev", "data"));
 }

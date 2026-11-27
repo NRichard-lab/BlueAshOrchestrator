@@ -16,6 +16,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/hookutil"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/chatdriver/processenv"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
@@ -118,7 +119,7 @@ func (p *Plugin) PrepareRuntimeLaunch(ctx context.Context, cfg ports.WorkspaceHo
 	dataDir := strings.TrimSpace(cfg.DataDir)
 	sessionID := strings.TrimSpace(cfg.SessionID)
 	launchID := strings.TrimSpace(cfg.Env["AO_RUNTIME_LAUNCH_ID"])
-	runFilePath := strings.TrimSpace(cfg.Env["AO_RUN_FILE"])
+	runFilePath := strings.TrimSpace(cfg.Env[brand.Env("AO_RUN_FILE")])
 	if dataDir == "" || sessionID == "" || launchID == "" || runFilePath == "" {
 		return errors.New("codewhale.PrepareRuntimeLaunch: data dir, session id, launch id, and run file are required")
 	}

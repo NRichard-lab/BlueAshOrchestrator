@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync/atomic"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // stableExecutable is the ao AO-owned commands run instead of this process's
@@ -29,7 +31,7 @@ func Executable() (string, error) {
 // started before a restart keep reaching the running app's ao. Anywhere else
 // Executable returns this process's own path.
 func UseStableExecutable(dataDir string, getenv func(string) string) error {
-	if getenv("AO_APPIMAGE") == "" {
+	if getenv(brand.Env("AO_APPIMAGE")) == "" {
 		stableExecutable.Store(nil)
 		return nil
 	}

@@ -16,8 +16,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
+
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 )
 
 // Intel Macs (#3879, #6621): V8 on x64 makes JIT code executable with
@@ -280,10 +281,10 @@ func defaultCodesignNode(ctx context.Context, node, entitlements string) error {
 // defaultJITRepairRoot keeps the re-signed copy under AO's data dir
 // (AO_DATA_DIR, default ~/.ao/data), never an OS app-data location.
 func defaultJITRepairRoot() (string, error) {
-	if dir := strings.TrimSpace(os.Getenv("AO_DATA_DIR")); dir != "" {
+	if dir := strings.TrimSpace(os.Getenv(brand.Env("AO_DATA_DIR"))); dir != "" {
 		abs, err := filepath.Abs(dir)
 		if err != nil {
-			return "", fmt.Errorf("resolve AO_DATA_DIR: %w", err)
+			return "", fmt.Errorf("resolve %s: %w", brand.Env("AO_DATA_DIR"), err)
 		}
 		return filepath.Join(abs, "acp-runtime", "node-jit"), nil
 	}

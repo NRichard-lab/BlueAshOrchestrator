@@ -9,6 +9,7 @@ import (
 
 	workeragent "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/codex"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/reviewer/agentrestore"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -124,11 +125,11 @@ func codexReadOnlyArgs(inv ports.ReviewInvocation) ([]string, error) {
 	// Shell commands inherit only Codex's core environment by default. Preserve
 	// the AO location overrides the reviewer needs to submit to this daemon.
 	values := map[string]string{
-		"AO_PORT":     os.Getenv("AO_PORT"),
-		"AO_DATA_DIR": firstNonEmpty(inv.DataDir, os.Getenv("AO_DATA_DIR")),
-		"AO_RUN_FILE": firstNonEmpty(inv.RunFilePath, os.Getenv("AO_RUN_FILE")),
+		brand.Env("AO_PORT"):     os.Getenv(brand.Env("AO_PORT")),
+		brand.Env("AO_DATA_DIR"): firstNonEmpty(inv.DataDir, os.Getenv(brand.Env("AO_DATA_DIR"))),
+		brand.Env("AO_RUN_FILE"): firstNonEmpty(inv.RunFilePath, os.Getenv(brand.Env("AO_RUN_FILE"))),
 	}
-	for _, name := range []string{"AO_PORT", "AO_DATA_DIR", "AO_RUN_FILE"} {
+	for _, name := range []string{brand.Env("AO_PORT"), brand.Env("AO_DATA_DIR"), brand.Env("AO_RUN_FILE")} {
 		value := values[name]
 		if value == "" {
 			continue

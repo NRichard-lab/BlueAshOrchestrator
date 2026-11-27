@@ -5,6 +5,7 @@ import { app } from "electron";
 import { resolveDaemonLaunch } from "../shared/daemon-launch";
 import { launchCommand } from "./launch-command";
 import { terminalCommand } from "./terminal-command";
+import { ENV } from "../shared/brand";
 
 export type TriageErrorKey = "report.terminalFailed" | "report.desktopRequired";
 export type TriageResult = { ok: true } | { ok: false; error: TriageErrorKey; command?: string };
@@ -43,8 +44,10 @@ export async function launchTriageInTerminal(
 		// Pass them even at their defaults so the shell's own exports cannot
 		// point triage at another instance.
 		const env: Record<string, string> = {};
-		if (stateEnv.AO_DATA_DIR) env.AO_DATA_DIR = stateEnv.AO_DATA_DIR;
-		if (stateEnv.AO_RUN_FILE) env.AO_RUN_FILE = stateEnv.AO_RUN_FILE;
+		for (const name of [ENV.DATA_DIR, ENV.RUN_FILE]) {
+			const value = stateEnv[name];
+			if (value) env[name] = value;
+		}
 		const overrides = Object.entries(env);
 		let argv: string[];
 		if (process.platform === "win32") {

@@ -7,12 +7,12 @@ import { findRemote, removeSavedRemote, toHostViews, updateSavedRemote } from ".
 import type { RemoteRegistry } from "./remote-registry";
 import { ACCOUNT_TOKEN, DEVICE_TOKEN_PREFIX, addRemote, holdsAccountToken, holdsPairingPassword, readRemotes, updateRemote, type RemoteChanges, type RemoteEntry } from "./remotes-store";
 import { ExpectedIpcError } from "./main-error-capture";
-import { BRAND } from "../shared/brand";
+import { BRAND, ENV } from "../shared/brand";
 
 // An isolated desktop run must not read or write the real user's credentials.
 // Without an override, keep the existing ~/.ao location.
 export function remotesFilePath(): string {
-	return path.join(process.env.AO_DATA_DIR?.trim() || path.join(os.homedir(), BRAND.stateDirName), "remotes.json");
+	return path.join(process.env[ENV.DATA_DIR]?.trim() || path.join(os.homedir(), BRAND.stateDirName), "remotes.json");
 }
 
 type RunFile = (file: string, args: string[], options: { timeout: number }) => Promise<{ stdout: string }>;

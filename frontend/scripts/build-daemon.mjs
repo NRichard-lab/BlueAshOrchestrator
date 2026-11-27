@@ -69,6 +69,11 @@ if (process.env.AO_BRAND === "blueashai") {
 	ldflags.push(`-X ${brandPackage}.WindowsAssetName=${b.windowsAssetName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsInstallDirName=${b.windowsInstallDirName}`);
 	ldflags.push(`-X ${brandPackage}.WindowsExeName=${b.executableName}.exe`);
+	// Product identity (running.json / health payload) and the instance-variable prefix, so the
+	// daemon and CLI read and export BLUEASH_RUN_FILE and friends instead of Orchestrator's AO_* names.
+	ldflags.push(`-X ${brandPackage}.ID=${b.id}`);
+	ldflags.push(`-X ${brandPackage}.DisplayName=${b.displayName}`);
+	ldflags.push(`-X ${brandPackage}.EnvPrefix=${b.envPrefix}`);
 	// Compile-time feature switches (brands.json). Three separate flags so egress attribution stays clean.
 	ldflags.push(`-X ${brandPackage}.UpdatesEnabled=${b.updatesEnabled === false ? "false" : "true"}`);
 	ldflags.push(`-X ${brandPackage}.RemoteTelemetryEnabled=${b.remoteTelemetryEnabled === false ? "false" : "true"}`);

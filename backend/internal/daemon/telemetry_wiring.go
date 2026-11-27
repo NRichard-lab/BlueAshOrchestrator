@@ -8,6 +8,7 @@ import (
 	"time"
 
 	telemetryadapter "github.com/aoagents/agent-orchestrator/backend/internal/adapters/telemetry"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/observe/sentryobs"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -207,7 +208,7 @@ func storeHasPriorState(store *sqlite.Store) func(context.Context) bool {
 // The common client property stays "cli" for every daemon event, so this is
 // how install events split desktop from CLI-only installs.
 func daemonLauncher(getenv func(string) string) string {
-	if getenv("AO_OWNER") != "" {
+	if getenv(brand.Env("AO_OWNER")) != "" {
 		return "desktop"
 	}
 	return "cli"

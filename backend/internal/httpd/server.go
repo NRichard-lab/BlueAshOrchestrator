@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
 	"github.com/aoagents/agent-orchestrator/backend/internal/terminal"
@@ -147,10 +148,11 @@ func (s *Server) run(ctx context.Context, onReady func()) error {
 		PID:                   os.Getpid(),
 		Port:                  s.boundPort(),
 		StartedAt:             time.Now().UTC(),
-		Owner:                 os.Getenv("AO_OWNER"),
+		Owner:                 os.Getenv(brand.Env("AO_OWNER")),
 		AppRunID:              s.cfg.AppRunID,
-		BrowserRuntimeAddress: os.Getenv("AO_BROWSER_RUNTIME_ADDRESS"),
-		BrowserStreamAddress:  os.Getenv("AO_BROWSER_STREAM_ADDRESS"),
+		BrowserRuntimeAddress: os.Getenv(brand.Env("AO_BROWSER_RUNTIME_ADDRESS")),
+		BrowserStreamAddress:  os.Getenv(brand.Env("AO_BROWSER_STREAM_ADDRESS")),
+		Product:               brand.ID,
 	}
 	if err := runfile.Write(s.cfg.RunFilePath, info); err != nil {
 		_ = s.listen.Close()
@@ -237,7 +239,7 @@ func (s *Server) RequestShutdown() { s.requestShutdown() }
 // including Force Quit. A shutdown already requested for replacement wins.
 func (s *Server) RequestShutdownAfterDesktopExit() {
 	s.shutdownOnce.Do(func() {
-		if os.Getenv("AO_OWNER") == "app" && s.cfg.AppRunID != "" {
+		if os.Getenv(brand.Env("AO_OWNER")) == "app" && s.cfg.AppRunID != "" {
 			s.stopAgents.Store(true)
 		}
 		close(s.shutdownRequested)
@@ -245,7 +247,7 @@ func (s *Server) RequestShutdownAfterDesktopExit() {
 }
 
 func (s *Server) requestAgentShutdown(appRunID string) bool {
-	if appRunID == "" || appRunID != s.cfg.AppRunID || os.Getenv("AO_OWNER") != "app" {
+	if appRunID == "" || appRunID != s.cfg.AppRunID || os.Getenv(brand.Env("AO_OWNER")) != "app" {
 		return false
 	}
 	s.stopAgents.Store(true)

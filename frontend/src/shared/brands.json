@@ -13,6 +13,7 @@
 		"stateDirName": ".ao",
 		"defaultPort": 3001,
 		"protocolScheme": "ao-app",
+		"envPrefix": "AO",
 		"updatesEnabled": true,
 		"remoteTelemetryEnabled": true,
 		"pricingCatalogSyncEnabled": true
@@ -31,6 +32,7 @@
 		"stateDirName": ".blueashai",
 		"defaultPort": 3101,
 		"protocolScheme": "blueashai",
+		"envPrefix": "BLUEASH",
 		"updatesEnabled": false,
 		"remoteTelemetryEnabled": false,
 		"pricingCatalogSyncEnabled": false
