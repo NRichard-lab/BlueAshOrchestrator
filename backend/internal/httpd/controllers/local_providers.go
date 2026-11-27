@@ -81,13 +81,13 @@ func (c *LocalProvidersController) list(w http.ResponseWriter, r *http.Request) 
 }
 
 type localHarnessLinkDTO struct {
-	Linked       bool   `json:"linked"`
-	EndpointName string `json:"endpointName,omitempty"`
-	Model        string `json:"model,omitempty"`
-	HasAPIKey    bool   `json:"hasApiKey"`
+	Linked        bool   `json:"linked"`
+	EndpointName  string `json:"endpointName,omitempty"`
+	Model         string `json:"model,omitempty"`
+	HasAPIKey     bool   `json:"hasApiKey"`
 	OpenCodeModel string `json:"openCodeModel,omitempty"`
-	Harness      string `json:"harness"`
-	Requires     string `json:"requires"`
+	Harness       string `json:"harness"`
+	Requires      string `json:"requires"`
 }
 
 func (c *LocalProvidersController) linkDTO() localHarnessLinkDTO {
