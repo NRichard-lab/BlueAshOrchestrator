@@ -626,7 +626,7 @@ function ghStep(args: string[]): CommandStep {
 }
 
 /**
- * A step the agent takes only to learn how to drive Orchestrator: reading the
+ * A step the agent takes only to learn how to drive Blue Ash AI: reading the
  * guides that ship with it, or `ao … --help`. It is not work on the user's task,
  * so the chat leaves it out.
  */
@@ -662,7 +662,7 @@ export function isOrchestratorPlumbing(activity: ConversationActivity): boolean 
 	return stages > 0;
 }
 
-/** One stage that only reads Orchestrator's guides or asks `ao` for help. */
+/** One stage that only reads Blue Ash AI's guides or asks `ao` for help. */
 function isPlumbingStage(segment: Segment): boolean {
 	if (segment.writeTarget) return false;
 	if (segment.binary === "ao") return segment.args.includes("--help") || segment.args.includes("-h") || segment.args[0] === "help";
@@ -690,7 +690,7 @@ function isOrchestratorGuide(path: string): boolean {
 
 
 /**
- * Orchestrator's own CLI. It is plumbing the agent drives for the user, so a row
+ * Blue Ash AI's own CLI. It is plumbing the agent drives for the user, so a row
  * says what it did ("Previewed hello.html"), never "Ran ao".
  */
 function aoStep(args: string[]): CommandStep {

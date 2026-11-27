@@ -38,7 +38,7 @@ describe("alreadyLooking", () => {
 });
 
 describe("shouldPlaySound", () => {
-	// The regression: working in Orchestrator on one session while another
+	// The regression: working in Blue Ash AI on one session while another
 	// blocks on input left the waiting agent with no sound at all, because any
 	// window focus counted as "already looking".
 	it("plays for an unwatched actionable notification", () => {

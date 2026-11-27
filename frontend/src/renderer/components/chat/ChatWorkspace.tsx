@@ -2818,7 +2818,7 @@ function readableItems(snapshot: ConversationSnapshot): ConversationItem[] {
 		if (item.activityKind === "reasoning" && !isSubagentLaunch(item)) return false;
 		// The page an html_render call shows is its own row right after it.
 		if (isShownAORender(item)) return false;
-		// Reading Orchestrator's own guides or `ao --help` is how the agent learns the
+		// Reading Blue Ash AI's own guides or `ao --help` is how the agent learns the
 		// tool, not work on the user's task.
 		if (isOrchestratorPlumbing(item)) return false;
 		// Claude emits both a tool call and an elicitation for the same question.

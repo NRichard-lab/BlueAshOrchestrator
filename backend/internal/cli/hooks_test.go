@@ -2914,7 +2914,7 @@ func TestClaudeHookArtifactNudgeFailsOpen(t *testing.T) {
 }
 
 // Claude Code's built-in computer use tells the user to grant "the Claude
-// desktop app"; inside AO macOS checks Orchestrator. The hook answers that
+// desktop app"; inside AO macOS checks Blue Ash AI. The hook answers that
 // refusal with a notice for the user and corrected guidance for the model,
 // and stays silent for every other tool result.
 func TestClaudeHookAnswersComputerUsePermissionRefusal(t *testing.T) {

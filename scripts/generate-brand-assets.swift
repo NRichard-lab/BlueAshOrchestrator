@@ -1,4 +1,4 @@
-// Regenerates every Orchestrator icon, logo and mascot file from two sources
+// Regenerates every Blue Ash AI icon, logo and mascot file from two sources
 // (see assets/brand/README.md):
 //   the Ruto section below      the mark's geometry and shading; written out
 //                               as assets/brand/ruto.svg

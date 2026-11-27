@@ -25,7 +25,7 @@ export function AppLink({ href, onClick, onAuxClick, onBrowserOpen, inAppLink, s
 	inAppLink?: (url: string) => boolean;
 	/**
 	 * Open every activation (click, modifier click, Enter, middle click, and the
-	 * hover card's links) in the OS browser and never in the Orchestrator
+	 * hover card's links) in the OS browser and never in the Blue Ash AI
 	 * Browser. Schemes other than http(s) and mailto open nothing.
 	 */
 	systemBrowser?: boolean;

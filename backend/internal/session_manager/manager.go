@@ -215,10 +215,10 @@ const (
 	// session. AO_DATA_DIR is durable storage, not daemon discovery; custom and
 	// isolated daemons therefore need this coordinate explicitly.
 	EnvRunFile = "AO_RUN_FILE"
-	// EnvDesktopApp is "1" when the Orchestrator desktop app started the
-	// daemon, so macOS charges the session's privacy checks to Orchestrator.
+	// EnvDesktopApp is "1" when the Blue Ash AI desktop app started the
+	// daemon, so macOS charges the session's privacy checks to Blue Ash AI.
 	// A daemon started from a terminal (`ao start`) leaves it unset: macOS
-	// then checks that terminal, and AO must not send the user to Orchestrator.
+	// then checks that terminal, and AO must not send the user to Blue Ash AI.
 	EnvDesktopApp = "AO_DESKTOP_APP"
 	// EnvBrowserCapability proves ownership of the session's browser target.
 	EnvBrowserCapability = "AO_BROWSER_CAPABILITY"

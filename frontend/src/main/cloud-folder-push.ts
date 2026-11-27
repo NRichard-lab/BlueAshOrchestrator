@@ -130,7 +130,7 @@ export interface PushFolderDeps {
 	env?: () => NodeJS.ProcessEnv;
 	homeDir?: string;
 	/**
-	 * Folders holding Orchestrator's own state: the data directory the app
+	 * Folders holding Blue Ash AI's own state: the data directory the app
 	 * resolves (AO_DATA_DIR) and its Electron profile. A folder inside one, or
 	 * holding one, is never uploaded. Defaults to ~/.ao.
 	 */
