@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ const supervisedExitReportTimeout = 5 * time.Second
 func newAgentProcessCommand(ctx *commandContext) *cobra.Command {
 	root := &cobra.Command{
 		Use:    "agent-process",
-		Short:  "Run an Orchestrator-managed agent process (internal)",
+		Short:  brand.Text("Run an Orchestrator-managed agent process (internal)"),
 		Hidden: true,
 	}
 	root.AddCommand(newAgentProcessSuperviseCommand(ctx))
@@ -71,10 +72,10 @@ func newAgentProcessSuperviseCommand(ctx *commandContext) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&sessionID, "session", "", "Orchestrator-managed session id")
-	cmd.Flags().StringVar(&reviewID, "review", "", "Orchestrator review id")
-	cmd.Flags().StringVar(&activityReviewID, "activity-review", "", "Orchestrator review id to receive process activity")
-	cmd.Flags().StringVar(&launchID, "launch", "", "Orchestrator process launch id")
+	cmd.Flags().StringVar(&sessionID, "session", "", brand.Text("Orchestrator-managed session id"))
+	cmd.Flags().StringVar(&reviewID, "review", "", brand.Text("Orchestrator review id"))
+	cmd.Flags().StringVar(&activityReviewID, "activity-review", "", brand.Text("Orchestrator review id to receive process activity"))
+	cmd.Flags().StringVar(&launchID, "launch", "", brand.Text("Orchestrator process launch id"))
 	return cmd
 }
 

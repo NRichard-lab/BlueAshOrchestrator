@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -93,7 +94,7 @@ func (m *codexAccountManager) logout(ctx context.Context, accountID string) erro
 	}
 
 	if _, err := m.catalog.markSignedOut(accountID); err != nil {
-		return apierr.Conflict("CODEX_ACCOUNT_LOGOUT_UNCONFIRMED", "Codex logged out, but Orchestrator could not update the account. Try again.", nil)
+		return apierr.Conflict("CODEX_ACCOUNT_LOGOUT_UNCONFIRMED", brand.Text("Codex logged out, but Orchestrator could not update the account. Try again."), nil)
 	}
 	if active {
 		m.mu.Lock()

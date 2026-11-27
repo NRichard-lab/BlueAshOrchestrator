@@ -14,6 +14,11 @@ import "strconv"
 var (
 	// StateDirName is the per-user state directory under the home folder (~/.ao for Orchestrator).
 	StateDirName = ".ao"
+	// VisibleName is the product name as written in text a person reads: CLI output and help,
+	// API error messages, diagnostics. Text() rewrites it into upstream's wording (see text.go).
+	// It is deliberately separate from WindowsInstallDirName and the packaging names, which are
+	// on-disk identities rather than prose.
+	VisibleName = "Orchestrator"
 	// Port is the default API port as a decimal string; empty means the built-in default.
 	Port = ""
 	// WindowsAssetName is the unversioned Windows installer `ao start` downloads from the update server.

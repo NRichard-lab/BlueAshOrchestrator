@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	workerauggie "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/auggie"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 // HostTrustWarning documents that Auggie permissions remain user-controlled.
-const HostTrustWarning = "experimental user-approved reviewer: Auggie uses the user's granular CLI permission configuration rather than an Orchestrator-enforced sandbox"
+var HostTrustWarning = brand.Text("experimental user-approved reviewer: Auggie uses the user's granular CLI permission configuration rather than an Orchestrator-enforced sandbox")
 
 // Reviewer builds Auggie's reviewer command.
 type Reviewer struct {

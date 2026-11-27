@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 )
 
@@ -83,9 +84,9 @@ func newRemoteHostCommand(ctx *commandContext) *cobra.Command {
 					return err
 				}
 				if status.AccountLinked {
-					message := "Linked to an Orchestrator account: its signed-in devices list this machine."
+					message := brand.Text("Linked to an Orchestrator account: its signed-in devices list this machine.")
 					if status.AccountLinkRefused {
-						message = "Orchestrator Cloud refuses this machine's account link, so your devices may not list it. Run `ao remote-host link` again."
+						message = brand.Text("Orchestrator Cloud refuses this machine's account link, so your devices may not list it. Run `ao remote-host link` again.")
 					}
 					if _, err := fmt.Fprintln(cmd.OutOrStdout(), message); err != nil {
 						return err
@@ -109,7 +110,7 @@ func newRemoteHostCommand(ctx *commandContext) *cobra.Command {
 					if !status.Tunnel.Fixed {
 						message = "Quick tunnel: the address changes on restart and has no uptime guarantee."
 						if !status.AccountLinked || status.AccountLinkRefused {
-							message += " Run `ao remote-host link` to add this machine to your Orchestrator account, which gives it a fixed address when the account has one free."
+							message += brand.Text(" Run `ao remote-host link` to add this machine to your Orchestrator account, which gives it a fixed address when the account has one free.")
 						}
 					}
 					if _, err := fmt.Fprintln(cmd.OutOrStdout(), message); err != nil {
@@ -178,8 +179,8 @@ func newRemoteHostCommand(ctx *commandContext) *cobra.Command {
 			},
 		}
 		if action.name == "enable" {
-			cmd.Flags().BoolVar(&tunnel, "tunnel", false, "Start Orchestrator's managed Cloudflare tunnel for access beyond the LAN")
-			cmd.Flags().BoolVar(&tunnelOnly, "tunnel-only", false, "Bind only to loopback and start Orchestrator's managed Cloudflare tunnel")
+			cmd.Flags().BoolVar(&tunnel, "tunnel", false, brand.Text("Start Orchestrator's managed Cloudflare tunnel for access beyond the LAN"))
+			cmd.Flags().BoolVar(&tunnelOnly, "tunnel-only", false, brand.Text("Bind only to loopback and start Orchestrator's managed Cloudflare tunnel"))
 			cmd.MarkFlagsMutuallyExclusive("tunnel", "tunnel-only")
 		}
 		if action.name == "status" {
@@ -196,7 +197,7 @@ func newRemoteHostCommand(ctx *commandContext) *cobra.Command {
 
 func remoteHostDaemonError(err error) error {
 	if errors.Is(err, errDaemonNotRunning) {
-		return daemonUnavailableError{message: "Orchestrator daemon is not running — run `ao daemon` on this machine", cause: errDaemonNotRunning}
+		return daemonUnavailableError{message: brand.Text("Orchestrator daemon is not running — run `ao daemon` on this machine"), cause: errDaemonNotRunning}
 	}
 	return err
 }

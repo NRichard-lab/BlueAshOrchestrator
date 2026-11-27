@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	reportsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/report"
@@ -3236,7 +3237,7 @@ func copilotConfigOptionAllowed(configID string, value ports.ChatConfigOptionVal
 		return fmt.Errorf("%w: Copilot's allow_all follows the session's approval mode", ports.ErrChatConfigOptionInvalid)
 	}
 	if configID == "mode" && isCopilotAutopilot(value.Select) {
-		return fmt.Errorf("%w: Copilot Autopilot bypasses Orchestrator approvals; choose bypass permissions instead", ports.ErrChatConfigOptionInvalid)
+		return fmt.Errorf(brand.Text("%w: Copilot Autopilot bypasses Orchestrator approvals; choose bypass permissions instead"), ports.ErrChatConfigOptionInvalid)
 	}
 	return nil
 }

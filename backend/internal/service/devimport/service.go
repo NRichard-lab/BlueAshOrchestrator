@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	engine "github.com/aoagents/agent-orchestrator/backend/internal/devimport"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 )
@@ -78,7 +79,7 @@ func (m *Manager) RunProjects(ctx context.Context, in RunInput) (engine.Report, 
 	}
 	if same {
 		return engine.Report{}, apierr.Invalid("DEV_IMPORT_SOURCE_TARGET_SAME",
-			"sourceDataDir must be different from the target Orchestrator data dir", map[string]any{"path": sourceDataDir})
+			brand.Text("sourceDataDir must be different from the target Orchestrator data dir"), map[string]any{"path": sourceDataDir})
 	}
 	if m.openSource == nil {
 		return engine.Report{}, fmt.Errorf("open source store: dependency is nil")

@@ -79,7 +79,6 @@ export const DE_ROLE_KEYS: ReadonlySet<string> = new Set([
  */
 export const DE_PRODUCT_OCCURRENCES: Readonly<Record<string, readonly number[]>> = {
 	"restoreUnavailable.orchestratorBody": [2],
-	"settings.migration.description": [1],
 	"terminal.preparingOrchestrator": [1],
 };
 
@@ -97,6 +96,9 @@ export const KEPT_KEYS: ReadonlySet<string> = new Set([
 	"cloudWorkspace.pushError.workflowsRefused",
 	"settings.project.coAuthorCommitsDescription",
 	"settings.project.coAuthorCommitsToggle",
+	// The earlier upstream install that projects and chats are imported from.
+	"migration.title",
+	"settings.migration.description",
 	// The Orchestrator.inc account that share links sign in to.
 	"share.confirm.writeProject",
 	"share.confirm.writeSession",

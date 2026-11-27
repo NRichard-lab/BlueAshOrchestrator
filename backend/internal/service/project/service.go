@@ -417,10 +417,10 @@ func (m *Service) Add(ctx context.Context, in AddInput) (Project, error) {
 	}()
 	probes.Wait()
 	if !isRepo {
-		return Project{}, apierr.Invalid("NOT_A_GIT_REPO", "Orchestrator needs a Git repository with an initial commit before it can create agent workspaces.", nil)
+		return Project{}, apierr.Invalid("NOT_A_GIT_REPO", brand.Text("Orchestrator needs a Git repository with an initial commit before it can create agent workspaces."), nil)
 	}
 	if !hasCommit {
-		return Project{}, apierr.Invalid("PROJECT_UNBORN", "Orchestrator needs a Git repository with an initial commit before it can create agent workspaces.", map[string]any{
+		return Project{}, apierr.Invalid("PROJECT_UNBORN", brand.Text("Orchestrator needs a Git repository with an initial commit before it can create agent workspaces."), map[string]any{
 			"path":         path,
 			"suggestedFix": "Run `git commit --allow-empty -m \"initial commit\"` in this folder, then try again.",
 		})
@@ -531,7 +531,7 @@ func classifyRepositorySetupTarget(ctx context.Context, path string) (repository
 	if isBareGitRepository(ctx, path) {
 		return repositorySetupPlainFolder, apierr.Invalid("PROJECT_BARE_REPOSITORY", "Selected folder must be a non-bare Git repository or a plain folder.", map[string]any{
 			"path":         path,
-			"suggestedFix": "Use a normal checkout, or select a plain folder for Orchestrator to initialize.",
+			"suggestedFix": brand.Text("Use a normal checkout, or select a plain folder for Orchestrator to initialize."),
 		})
 	}
 
@@ -543,7 +543,7 @@ func classifyRepositorySetupTarget(ctx context.Context, path string) (repository
 	}
 
 	if hasGitMetadata(path) {
-		return repositorySetupPlainFolder, apierr.Invalid("UNSUPPORTED_GIT_REPO", "Selected folder contains Git metadata that Orchestrator could not inspect.", map[string]any{
+		return repositorySetupPlainFolder, apierr.Invalid("UNSUPPORTED_GIT_REPO", brand.Text("Selected folder contains Git metadata that Orchestrator could not inspect."), map[string]any{
 			"path":         path,
 			"suggestedFix": "Repair the Git repository or select a plain folder.",
 		})
@@ -575,7 +575,7 @@ func validateRepositorySetupPathSafety(path string) error {
 
 	aoState := comparablePath(filepath.Join(home, brand.StateDirName))
 	if samePath(clean, aoState) || isDescendantPath(clean, aoState) {
-		return unsafeRepositorySetupPathError(path, "Orchestrator state directory")
+		return unsafeRepositorySetupPathError(path, brand.Text("Orchestrator state directory"))
 	}
 	return nil
 }
@@ -1089,7 +1089,7 @@ func createdByRequest(ctx context.Context, path, id string) bool {
 // folder; adding an existing folder is POST /projects.
 func createProjectFolder(path string) error {
 	failed := func(err error) error {
-		return apierr.Invalid("PROJECT_FOLDER_CREATE_FAILED", "Orchestrator could not create the project folder.", map[string]any{"path": path, "error": err.Error()})
+		return apierr.Invalid("PROJECT_FOLDER_CREATE_FAILED", brand.Text("Orchestrator could not create the project folder."), map[string]any{"path": path, "error": err.Error()})
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return failed(err)

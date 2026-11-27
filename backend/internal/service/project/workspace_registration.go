@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/gitdefault"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
@@ -173,7 +174,7 @@ func detectWorkspaceChildren(ctx context.Context, parent string, projectID domai
 				"Child repository name is reserved for internal use",
 				map[string]any{
 					"path":         child,
-					"suggestedFix": fmt.Sprintf("Rename the directory %q — the name %q is reserved by Orchestrator for the workspace root.", child, domain.RootWorkspaceRepoName),
+					"suggestedFix": fmt.Sprintf(brand.Text("Rename the directory %q — the name %q is reserved by Orchestrator for the workspace root."), child, domain.RootWorkspaceRepoName),
 				})
 		}
 		if !isGitRepo(child) {

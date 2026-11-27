@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/caller"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
@@ -140,7 +141,7 @@ func actionSummary(action string) string {
 	case actionPullRequestCreated:
 		return "Created a pull request"
 	default:
-		return "Orchestrator action"
+		return brand.Text("Orchestrator action")
 	}
 }
 

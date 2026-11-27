@@ -19,6 +19,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/claudecode"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/opencodev2"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/terminalui"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -215,7 +216,7 @@ func (s *Service) StartLoginWithOptions(ctx context.Context, agentID, method, se
 		return LoginSnapshot{}, apierr.Invalid("AGENT_AUTH_SECRET_INVALID", "A setup token starts with sk-ant-oat and contains no spaces.", nil)
 	}
 	if setupToken && strings.TrimSpace(s.dataDir) == "" {
-		return LoginSnapshot{}, apierr.Unavailable("AGENT_AUTH_UNAVAILABLE", "Orchestrator cannot save a setup token without a data directory.")
+		return LoginSnapshot{}, apierr.Unavailable("AGENT_AUTH_UNAVAILABLE", brand.Text("Orchestrator cannot save a setup token without a data directory."))
 	}
 	release, err := s.reserveLogin(ctx, agentID)
 	if err != nil {

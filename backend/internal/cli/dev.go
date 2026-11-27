@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/devimport"
 )
@@ -43,8 +44,8 @@ func newDevImportProjectsCommand(ctx *commandContext) *cobra.Command {
 	var opts devImportProjectsOptions
 	cmd := &cobra.Command{
 		Use:   "import-projects",
-		Short: "Copy project registry data into the current Orchestrator data dir",
-		Long: "Copy active project registry rows from the normal Orchestrator data dir into " +
+		Short: brand.Text("Copy project registry data into the current Orchestrator data dir"),
+		Long: brand.Text("Copy active project registry rows from the normal Orchestrator data dir into ") +
 			"the current AO_DATA_DIR. This copies only project metadata, project config, " +
 			"and workspace child repo registry; sessions and runtime state are never copied.\n\n" +
 			"The target daemon must be running because the import is executed through " +
@@ -54,7 +55,7 @@ func newDevImportProjectsCommand(ctx *commandContext) *cobra.Command {
 			return ctx.runDevImportProjects(cmd, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.fromDataDir, "from-data-dir", "", "Orchestrator data dir to read (default ~/.ao/data)")
+	cmd.Flags().StringVar(&opts.fromDataDir, "from-data-dir", "", brand.Text("Orchestrator data dir to read (default ~/.ao/data)"))
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "Report planned changes without writing")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Output the import report as JSON")
 	return cmd

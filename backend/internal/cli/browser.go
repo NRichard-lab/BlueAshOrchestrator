@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 )
 
@@ -60,9 +61,9 @@ func newBrowserCommand(ctx *commandContext) *cobra.Command {
 	var jsonOutput bool
 	cmd := &cobra.Command{
 		Use:   "browser",
-		Short: "Inspect and control this Orchestrator-managed session's shared desktop browser",
+		Short: brand.Text("Inspect and control this Orchestrator-managed session's shared desktop browser"),
 		Long: "Inspect and control the target-isolated browser owned by the current\n" +
-			"Orchestrator-managed session.\n\n" +
+			brand.Text("Orchestrator-managed session.\n\n") +
 			"The desktop app must be open. Commands operate the same live page the user sees,\n" +
 			"including while the Browser panel is hidden.",
 		Args: noArgs,
@@ -661,7 +662,7 @@ func rangeArgs(minimum, maximum int) cobra.PositionalArgs {
 func currentBrowserIdentity() (string, string, error) {
 	sessionID := strings.TrimSpace(os.Getenv("AO_SESSION_ID"))
 	if sessionID == "" {
-		return "", "", usageError{errors.New("ao browser must run inside an Orchestrator-managed session (AO_SESSION_ID is not set)")}
+		return "", "", usageError{errors.New(brand.Text("ao browser must run inside an Orchestrator-managed session (AO_SESSION_ID is not set)"))}
 	}
 	capability := strings.TrimSpace(os.Getenv("AO_BROWSER_CAPABILITY"))
 	if capability == "" {

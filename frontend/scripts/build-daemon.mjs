@@ -64,6 +64,8 @@ if (process.env.AO_BRAND === "blueashai") {
 	const brands = JSON.parse(readFileSync(new URL("../src/shared/brands.json", import.meta.url), "utf8"));
 	const b = brands.blueashai;
 	const brandPackage = "github.com/aoagents/agent-orchestrator/backend/internal/brand";
+	// Quoted: the visible name contains spaces, and cmd/go splits -ldflags on quoted fields.
+	ldflags.push(`-X "${brandPackage}.VisibleName=${b.visibleName}"`);
 	ldflags.push(`-X ${brandPackage}.StateDirName=${b.stateDirName}`);
 	ldflags.push(`-X ${brandPackage}.Port=${b.defaultPort}`);
 	ldflags.push(`-X ${brandPackage}.WindowsAssetName=${b.windowsAssetName}`);

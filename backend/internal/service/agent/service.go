@@ -14,6 +14,7 @@ import (
 	"time"
 
 	agentregistry "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/registry"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -1031,7 +1032,7 @@ func applyCustomModelEntryPolicy(catalog, policy ports.AgentModelCatalog) ports.
 }
 
 func appendCacheWarning(current string) string {
-	const next = "Models loaded, but Orchestrator could not update the model cache."
+	next := brand.Text("Models loaded, but Orchestrator could not update the model cache.")
 	if current == "" {
 		return next
 	}

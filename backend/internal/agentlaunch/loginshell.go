@@ -3,6 +3,7 @@ package agentlaunch
 import (
 	"bytes"
 	"fmt"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -45,11 +46,11 @@ func LoginShellEnv(path string, getenv func(string) string, configured map[strin
 		return nil, fmt.Errorf("pinned PATH must start with an absolute directory, got %q", pin)
 	}
 	if !filepath.IsAbs(dataDir) {
-		return nil, fmt.Errorf("the Orchestrator login-shell data directory must be absolute, got %q", dataDir)
+		return nil, fmt.Errorf(brand.Text("the Orchestrator login-shell data directory must be absolute, got %q"), dataDir)
 	}
 	dir := filepath.Join(dataDir, "runtime", "login-shell")
 	if err := writeLoginShellFiles(dir); err != nil {
-		return nil, fmt.Errorf("write Orchestrator login-shell wrappers: %w", err)
+		return nil, fmt.Errorf(brand.Text("write Orchestrator login-shell wrappers: %w"), err)
 	}
 	bashEnv := filepath.Join(dir, "bash_env")
 	lookup := func(key string) string {

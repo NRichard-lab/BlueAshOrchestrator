@@ -12,6 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -151,7 +152,7 @@ type reviewListOptions struct {
 func newReviewCommand(ctx *commandContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "review",
-		Short: "Manage Orchestrator code reviews of a worker's PR",
+		Short: brand.Text("Manage Orchestrator code reviews of a worker's PR"),
 	}
 	cmd.AddCommand(newReviewListCommand(ctx))
 	cmd.AddCommand(newReviewSubmitCommand(ctx))
@@ -170,7 +171,7 @@ func newReviewListCommand(ctx *commandContext) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			session := reviewTargetSession(args, "")
 			if session == "" {
-				return usageError{errors.New("usage: worker session id is required outside an Orchestrator-managed session")}
+				return usageError{errors.New(brand.Text("usage: worker session id is required outside an Orchestrator-managed session"))}
 			}
 			var res listReviewsResponse
 			path := "sessions/" + url.PathEscape(session) + "/reviews"
@@ -353,8 +354,8 @@ func newReviewTriggerCommand(ctx *commandContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "trigger [worker-session-id]",
 		Aliases: []string{"execute", "restart"},
-		Short:   "Start an Orchestrator review of a worker's PR (default: this session's PR)",
-		Long: `Start an independent Orchestrator reviewer on the worker session's open PR heads.
+		Short:   brand.Text("Start an Orchestrator review of a worker's PR (default: this session's PR)"),
+		Long: brand.Text(`Start an independent Orchestrator reviewer on the worker session's open PR heads.
 
 With no session argument the calling Orchestrator-managed session is reviewed, so a
 worker can request a review of its own PR. Orchestrator fetches the session's
@@ -372,7 +373,7 @@ again, or to add a different --agent alongside one that is still running.
 The worker session's review auto-inject is turned on so the reviewer's inline
 review comments are delivered to the worker; pass --no-inject to leave that
 setting unchanged. Orchestrator's review is internal: an approval is not a
-GitHub approval and does not authorize merging.`,
+GitHub approval and does not authorize merging.`),
 		Args: atMostOneArg,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ctx.triggerReview(cmd, args, opts)
@@ -385,8 +386,8 @@ GitHub approval and does not authorize merging.`,
 		}
 		return pflag.NormalizedName(name)
 	})
-	f.StringVar(&opts.session, "session", "", "Worker session id (or pass it positionally; default: this Orchestrator-managed session)")
-	f.StringVar(&opts.prURL, "pr", "", "Review only this pull request URL, attaching it to the session if Orchestrator does not track it yet (default: every eligible PR on the session)")
+	f.StringVar(&opts.session, "session", "", brand.Text("Worker session id (or pass it positionally; default: this Orchestrator-managed session)"))
+	f.StringVar(&opts.prURL, "pr", "", brand.Text("Review only this pull request URL, attaching it to the session if Orchestrator does not track it yet (default: every eligible PR on the session)"))
 	f.StringVar(&opts.harness, "harness", "", "Reviewer agent / --agent for this pass only (e.g. claude-code, codex)")
 	f.StringVar(&opts.model, "model", "", "Reviewer model for this pass only")
 	f.StringVar(&opts.effort, "effort", "", "Reviewer reasoning effort for this pass only")
@@ -401,7 +402,7 @@ func (c *commandContext) triggerReview(cmd *cobra.Command, args []string, opts r
 	}
 	session := reviewTargetSession(args, opts.session)
 	if session == "" {
-		return usageError{errors.New("usage: worker session id is required (positional or --session) outside an Orchestrator-managed session")}
+		return usageError{errors.New(brand.Text("usage: worker session id is required (positional or --session) outside an Orchestrator-managed session"))}
 	}
 	req := triggerReviewRequest{
 		Harness:            strings.TrimSpace(opts.harness),
@@ -470,7 +471,7 @@ func shortReviewSHA(sha string) string {
 func (c *commandContext) stopReview(cmd *cobra.Command, args []string, opts reviewSessionOptions) error {
 	session := reviewTargetSession(args, opts.session)
 	if session == "" {
-		return usageError{errors.New("usage: worker session id is required (positional or --session) outside an Orchestrator-managed session")}
+		return usageError{errors.New(brand.Text("usage: worker session id is required (positional or --session) outside an Orchestrator-managed session"))}
 	}
 	path := "sessions/" + url.PathEscape(session) + "/reviews/cancel"
 	if err := c.postJSON(cmd.Context(), path, struct{}{}, nil); err != nil {

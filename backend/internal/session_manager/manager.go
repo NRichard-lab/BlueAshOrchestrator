@@ -24,6 +24,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/modelcatalog"
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
 	"github.com/aoagents/agent-orchestrator/backend/internal/attachmentstore"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/harnessupdate"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -4675,7 +4676,7 @@ func (m *Manager) ReconcileBackground(ctx context.Context) (resultErr error) {
 			continue
 		}
 		if _, err := m.setProvisionState(ctx, id, domain.SessionProvisionFailed,
-			"Orchestrator restarted before this session finished starting"); err != nil {
+			brand.Text("Orchestrator restarted before this session finished starting")); err != nil {
 			m.logger.Warn("reconcile: interrupted session start retry failed", "sessionID", id, "error", err)
 		}
 	}
@@ -6168,7 +6169,7 @@ func cleanupRefusalFor(err error) cleanupRefusal {
 	case errors.Is(err, ErrProjectNotResolvable):
 		return cleanupRefusal{domain.CleanupSkipProjectUnresolvable, "project is archived or unregistered — remove worktree manually"}
 	case errors.Is(err, ports.ErrWorkspaceUnsafePath):
-		return cleanupRefusal{domain.CleanupSkipOutsideManagedRoot, "worktree is outside Orchestrator's managed folder; remove it manually"}
+		return cleanupRefusal{domain.CleanupSkipOutsideManagedRoot, brand.Text("worktree is outside Orchestrator's managed folder; remove it manually")}
 	case errors.Is(err, fs.ErrPermission):
 		return cleanupRefusal{domain.CleanupSkipPermissionDenied, "permission denied removing the worktree; fix its file permissions, then retry cleanup"}
 	}
@@ -7873,7 +7874,7 @@ func (m *Manager) validateRuntimePrerequisites() error {
 		return nil
 	}
 	if resolution, err := tmuxbin.ResolveWith(os.Getenv("AO_TMUX_BINARY"), m.executable, m.lookPath); err != nil || resolution.Path == "" {
-		return fmt.Errorf("%w: tmux required on macOS but Orchestrator's configured, bundled, or system tmux was not found", ports.ErrRuntimePrerequisite)
+		return fmt.Errorf(brand.Text("%w: tmux required on macOS but Orchestrator's configured, bundled, or system tmux was not found"), ports.ErrRuntimePrerequisite)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
 )
@@ -23,7 +24,7 @@ func newStopCommand(ctx *commandContext) *cobra.Command {
 	opts := stopOptions{timeout: defaultStopTimeout}
 	cmd := &cobra.Command{
 		Use:   "stop",
-		Short: "Stop the Orchestrator daemon",
+		Short: brand.Text("Stop the Orchestrator daemon"),
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			st, err := ctx.stopDaemon(cmd.Context(), opts)
@@ -34,7 +35,7 @@ func newStopCommand(ctx *commandContext) *cobra.Command {
 				return writeJSON(cmd.OutOrStdout(), st)
 			}
 			if st.State == stateStopped {
-				_, err = fmt.Fprintln(cmd.OutOrStdout(), "Orchestrator daemon stopped")
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), brand.Text("Orchestrator daemon stopped"))
 				return err
 			}
 			return writeStatus(cmd, st)

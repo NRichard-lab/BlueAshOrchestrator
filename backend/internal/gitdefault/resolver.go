@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -278,7 +279,7 @@ func (r *Resolver) resolveAOInitialized(ctx context.Context, repo string) (Resol
 		branch, ok = r.legacyAOInitializedBranch(ctx, repo)
 		if !ok {
 			return Resolution{}, unresolvedf(
-				"repository %q has no remote or Orchestrator-recorded default", repo,
+				brand.Text("repository %q has no remote or Orchestrator-recorded default"), repo,
 			)
 		}
 		if _, err := r.run(ctx, r.binary, "-C", repo, "config", "--local", ManagedDefaultConfigKey, branch); err != nil {

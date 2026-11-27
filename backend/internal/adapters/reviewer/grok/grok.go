@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	workergrok "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/grok"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 // HostTrustWarning documents that Grok relies on its normal interactive
 // approval flow rather than an AO-enforced read-only sandbox.
-const HostTrustWarning = "experimental user-approved reviewer: Grok uses its normal permission prompts because Orchestrator cannot enforce a read-only sandbox"
+var HostTrustWarning = brand.Text("experimental user-approved reviewer: Grok uses its normal permission prompts because Orchestrator cannot enforce a read-only sandbox")
 
 // Reviewer builds Grok's persistent interactive reviewer command.
 type Reviewer struct {

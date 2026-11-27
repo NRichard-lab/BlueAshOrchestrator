@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	acpsdk "github.com/coder/acp-go-sdk"
 )
 
@@ -49,12 +50,12 @@ func validateInitialize(init acpsdk.InitializeResponse) error {
 	}
 	installed, ok := parseVersion(init.AgentInfo.Version)
 	if !ok {
-		return fmt.Errorf("unrecognized %s version %q (Orchestrator requires %s or newer)",
+		return fmt.Errorf(brand.Text("unrecognized %s version %q (Orchestrator requires %s or newer)"),
 			serverAgentName, init.AgentInfo.Version, minimumServerVersion)
 	}
 	minimum, _ := parseVersion(minimumServerVersion)
 	if installed.less(minimum) {
-		return fmt.Errorf("%s %s is older than Orchestrator's tested minimum %s",
+		return fmt.Errorf(brand.Text("%s %s is older than Orchestrator's tested minimum %s"),
 			serverAgentName, init.AgentInfo.Version, minimumServerVersion)
 	}
 	return nil

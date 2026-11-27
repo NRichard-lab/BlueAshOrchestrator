@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apispec"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/envelope"
@@ -271,7 +272,7 @@ func (c *AgentAccountsController) switchSession(w http.ResponseWriter, r *http.R
 
 // agentAccountUnsharedMessage is shown when an account folder cannot link to
 // this computer's history; Windows allows the links only in Developer Mode.
-const agentAccountUnsharedMessage = "Orchestrator cannot link this account's folder to this computer's history. On Windows, turn on Developer Mode."
+var agentAccountUnsharedMessage = brand.Text("Orchestrator cannot link this account's folder to this computer's history. On Windows, turn on Developer Mode.")
 
 func writeAgentAccountError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
@@ -284,11 +285,11 @@ func writeAgentAccountError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, ports.ErrAgentAccountUnshared):
 		envelope.WriteAPIError(w, r, http.StatusConflict, "conflict", "AGENT_ACCOUNT_UNSHARED", agentAccountUnsharedMessage, nil)
 	case errors.Is(err, ports.ErrAgentAccountInUse):
-		envelope.WriteAPIError(w, r, http.StatusConflict, "conflict", "AGENT_ACCOUNT_IN_USE", "Orchestrator could not stop an agent that uses this account, so it kept the account. Stop that agent, then remove the account again.", nil)
+		envelope.WriteAPIError(w, r, http.StatusConflict, "conflict", "AGENT_ACCOUNT_IN_USE", brand.Text("Orchestrator could not stop an agent that uses this account, so it kept the account. Stop that agent, then remove the account again."), nil)
 	case errors.Is(err, ports.ErrSessionNotFound):
 		envelope.WriteAPIError(w, r, http.StatusNotFound, "not_found", "SESSION_NOT_FOUND", "session not found", nil)
 	case errors.Is(err, ports.ErrAgentAccountDeviceFixed):
-		envelope.WriteAPIError(w, r, http.StatusConflict, "conflict", "AGENT_ACCOUNT_DEVICE_FIXED", "This computer's own login is managed by its CLI, not Orchestrator", nil)
+		envelope.WriteAPIError(w, r, http.StatusConflict, "conflict", "AGENT_ACCOUNT_DEVICE_FIXED", brand.Text("This computer's own login is managed by its CLI, not Orchestrator"), nil)
 	default:
 		envelope.WriteError(w, r, err)
 	}

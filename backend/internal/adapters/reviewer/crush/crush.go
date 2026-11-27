@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	workercrush "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/crush"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 // HostTrustWarning documents that Crush relies on its normal interactive
 // approval flow rather than its broad --yolo mode.
-const HostTrustWarning = "experimental user-approved reviewer: Crush uses normal permission prompts; Orchestrator deliberately does not enable --yolo"
+var HostTrustWarning = brand.Text("experimental user-approved reviewer: Crush uses normal permission prompts; Orchestrator deliberately does not enable --yolo")
 
 // Reviewer builds Crush's persistent interactive reviewer command.
 type Reviewer struct {

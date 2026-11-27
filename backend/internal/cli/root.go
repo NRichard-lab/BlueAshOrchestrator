@@ -16,6 +16,7 @@ import (
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/claudecode"
 	"github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/codex"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/daemon"
 	"github.com/aoagents/agent-orchestrator/backend/internal/datadirlock"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -207,8 +208,8 @@ func NewRootCommand(deps Deps) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:           "ao",
-		Short:         "Agent Orchestrator",
-		Long:          "Agent Orchestrator manages the local daemon that supervises parallel coding-agent sessions.",
+		Short:         brand.Text("Agent Orchestrator"),
+		Long:          brand.Text("Agent Orchestrator manages the local daemon that supervises parallel coding-agent sessions."),
 		Version:       VersionString(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -382,7 +383,7 @@ func atMostOneArg(cmd *cobra.Command, args []string) error {
 func newDaemonCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:    "daemon",
-		Short:  "Run the Orchestrator backend daemon",
+		Short:  brand.Text("Run the Orchestrator backend daemon"),
 		Hidden: true,
 		Args:   noArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

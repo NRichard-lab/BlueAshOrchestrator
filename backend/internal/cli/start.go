@@ -54,8 +54,8 @@ func newStartCommand(ctx *commandContext) *cobra.Command {
 	opts := startOptions{}
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Fetch (if needed) and open the Agent Orchestrator desktop app",
-		Long: "Fetch (if needed) and open the Agent Orchestrator desktop app.\n\n" +
+		Short: brand.Text("Fetch (if needed) and open the Agent Orchestrator desktop app"),
+		Long: brand.Text("Fetch (if needed) and open the Agent Orchestrator desktop app.\n\n") +
 			"The desktop app now owns the daemon, state, and updates. `ao start` no\n" +
 			"longer runs a daemon: it resolves the installed app (or downloads the\n" +
 			"latest release), opens it, and exits.",
@@ -547,9 +547,9 @@ func (c *commandContext) download(ctx context.Context, w io.Writer, url, asset, 
 	// percentage is unknown and we report transferred bytes instead.
 	total := resp.ContentLength
 	if total > 0 {
-		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s, ~%s) from %s...\n", asset, humanBytes(total), req.URL.Host)
+		_, _ = fmt.Fprintf(w, brand.Text("Downloading Agent Orchestrator (%s, ~%s) from %s...\n"), asset, humanBytes(total), req.URL.Host)
 	} else {
-		_, _ = fmt.Fprintf(w, "Downloading Agent Orchestrator (%s) from %s...\n", asset, req.URL.Host)
+		_, _ = fmt.Fprintf(w, brand.Text("Downloading Agent Orchestrator (%s) from %s...\n"), asset, req.URL.Host)
 	}
 
 	f, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
@@ -720,7 +720,7 @@ func (c *commandContext) openApp(ctx context.Context, appPath string) (bool, err
 // printDeprecationNotice explains the new role of the npm `ao` binary. Keep it
 // honest: Track B (live auto-update) is not done, so it does not promise it.
 func (c *commandContext) printDeprecationNotice(w io.Writer) {
-	_, _ = fmt.Fprint(w, "Agent Orchestrator is now a desktop app, and the npm `ao` is just its launcher.\n"+
+	_, _ = fmt.Fprint(w, brand.Text("Agent Orchestrator is now a desktop app, and the npm `ao` is just its launcher.\n")+
 		"The app is distributed from your BlueAsh download page; it owns the daemon and updates itself.\n"+
 		"You can keep running `ao start` to fetch (if needed) and open it.\n")
 }

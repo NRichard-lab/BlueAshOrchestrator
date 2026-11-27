@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
@@ -356,7 +357,7 @@ mv "$tmp" "$dest"
 func droidDownloadCommand(dir, pin, goos, goarch string) ([]string, error) {
 	version := strings.TrimPrefix(pin, "v")
 	if version == "" {
-		return nil, errors.New("no newer Droid release is known, so Orchestrator has no release to install")
+		return nil, errors.New(brand.Text("no newer Droid release is known, so Orchestrator has no release to install"))
 	}
 	var arch string
 	switch goarch {

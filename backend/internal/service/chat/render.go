@@ -19,6 +19,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/renderpage"
@@ -388,7 +389,7 @@ func (c *Controller) upsertRender(ctx context.Context, providerTurnID, activityI
 }
 
 // ErrRenderCheckUnavailable reports that no desktop app is connected to load the page.
-var ErrRenderCheckUnavailable = errors.New("render check needs the Orchestrator desktop app")
+var ErrRenderCheckUnavailable = errors.New(brand.Text("render check needs the Orchestrator desktop app"))
 
 // RenderCheck asks the desktop app to load a render URL in a hidden view. The
 // daemon wires it to the browser-runtime broker.

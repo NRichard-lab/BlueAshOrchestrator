@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -28,12 +29,12 @@ func versionProbe(ctx context.Context, bin string) error {
 func validateVersionOutput(output string) error {
 	installed, ok := parseVersion(output)
 	if !ok {
-		return fmt.Errorf("unrecognized Qwen Code version %q (Orchestrator requires %s or newer)",
+		return fmt.Errorf(brand.Text("unrecognized Qwen Code version %q (Orchestrator requires %s or newer)"),
 			strings.TrimSpace(output), minimumQwenVersion)
 	}
 	minimum, _ := parseVersion(minimumQwenVersion)
 	if installed.less(minimum) {
-		return fmt.Errorf("installed Qwen Code %s is older than Orchestrator's tested minimum %s",
+		return fmt.Errorf(brand.Text("installed Qwen Code %s is older than Orchestrator's tested minimum %s"),
 			installed, minimumQwenVersion)
 	}
 	return nil

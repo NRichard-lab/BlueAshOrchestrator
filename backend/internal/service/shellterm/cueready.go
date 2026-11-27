@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -156,7 +157,7 @@ var cueShellReadyTimeout = 10 * time.Second
 
 func (s *Service) waitForCueShellReady(ctx context.Context, handle ports.RuntimeHandle, file string) error {
 	if file == "" {
-		return apierr.Conflict("CUE_SHELL_NOT_READY", "Orchestrator cannot verify that this shell is ready; the terminal remains open for manual use", nil)
+		return apierr.Conflict("CUE_SHELL_NOT_READY", brand.Text("Orchestrator cannot verify that this shell is ready; the terminal remains open for manual use"), nil)
 	}
 	waitCtx, cancel := context.WithTimeout(ctx, cueShellReadyTimeout)
 	defer cancel()

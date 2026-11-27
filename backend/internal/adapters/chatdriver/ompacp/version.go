@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -28,12 +29,12 @@ func versionProbe(ctx context.Context, bin string) error {
 func validateVersionOutput(output string) error {
 	installed, ok := parseVersion(output)
 	if !ok {
-		return fmt.Errorf("unrecognized OMP version %q (Orchestrator requires %s or newer)",
+		return fmt.Errorf(brand.Text("unrecognized OMP version %q (Orchestrator requires %s or newer)"),
 			strings.TrimSpace(output), minimumOMPVersion)
 	}
 	minimum, _ := parseVersion(minimumOMPVersion)
 	if installed.less(minimum) {
-		return fmt.Errorf("OMP %s is older than Orchestrator's tested minimum %s",
+		return fmt.Errorf(brand.Text("OMP %s is older than Orchestrator's tested minimum %s"),
 			installed, minimumOMPVersion)
 	}
 	return nil

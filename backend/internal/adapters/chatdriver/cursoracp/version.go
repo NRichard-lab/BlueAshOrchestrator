@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
 )
 
@@ -34,7 +35,7 @@ func versionProbe(ctx context.Context, bin string) error {
 	}
 	installed, ok := parseCursorVersion(string(output))
 	if !ok {
-		return fmt.Errorf("unrecognized Cursor Agent version %q (Orchestrator requires %s or newer)",
+		return fmt.Errorf(brand.Text("unrecognized Cursor Agent version %q (Orchestrator requires %s or newer)"),
 			strings.TrimSpace(string(output)), minimumCursorVersion)
 	}
 	return requireMinimumCursorVersion(installed)
@@ -45,7 +46,7 @@ func requireMinimumCursorVersion(installed cursorVersion) error {
 	if !installed.less(minimum) {
 		return nil
 	}
-	return fmt.Errorf("cursor-agent %s is older than Orchestrator's tested minimum %s",
+	return fmt.Errorf(brand.Text("cursor-agent %s is older than Orchestrator's tested minimum %s"),
 		installed, minimumCursorVersion)
 }
 

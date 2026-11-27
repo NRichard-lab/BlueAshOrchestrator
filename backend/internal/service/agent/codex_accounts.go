@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
@@ -229,7 +230,7 @@ func (m *codexAccountManager) detectCapabilities(ctx context.Context) domain.Cod
 	} else {
 		capabilities.GlobalSwitch = domain.CodexCapabilityObservation{
 			State: domain.CodexCapabilitySupported, ReasonCode: domain.CodexCapabilityReasonSupported,
-			Reason: "Orchestrator can switch file-backed Codex credentials on this device.",
+			Reason: brand.Text("Orchestrator can switch file-backed Codex credentials on this device."),
 		}
 	}
 	m.mu.Lock()

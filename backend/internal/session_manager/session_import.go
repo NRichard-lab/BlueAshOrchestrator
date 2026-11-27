@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/agentlaunch"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 	"github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -162,7 +163,7 @@ func (m *Manager) relocateImportedSession(ctx context.Context, rec domain.Sessio
 		Env:               maps.Clone(env),
 	})
 	if err != nil {
-		return rec, fmt.Errorf("%w: %w", importNotice("Orchestrator could not prepare this conversation for its workspace. See the Orchestrator daemon log for details."), agentlaunch.RedactError(err, env))
+		return rec, fmt.Errorf("%w: %w", importNotice(brand.Text("Orchestrator could not prepare this conversation for its workspace. See the Orchestrator daemon log for details.")), agentlaunch.RedactError(err, env))
 	}
 	if source.ResumeCwd == launchPath {
 		return rec, nil

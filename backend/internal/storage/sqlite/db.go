@@ -23,6 +23,7 @@ import (
 	// modernc.org/sqlite is the pure-Go (CGO-free) SQLite driver — chosen so the
 	// daemon cross-compiles and ships as a static binary with no libsqlite/CGO
 	// toolchain dependency, at the cost of some raw throughput vs a C-backed driver.
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	_ "modernc.org/sqlite"
 )
 
@@ -111,7 +112,7 @@ func checkLegacyDatabasePath(dataDir string) error {
 		return fmt.Errorf("inspect legacy database: %w", readErr)
 	}
 	if n == len(header) && string(header[:]) == "SQLite format 3\x00" {
-		return fmt.Errorf("legacy SQLite path parsing stored data at %q; refusing to create an empty database at %q: stop Orchestrator and recover the legacy database explicitly before retrying", legacy, intended)
+		return fmt.Errorf(brand.Text("legacy SQLite path parsing stored data at %q; refusing to create an empty database at %q: stop Orchestrator and recover the legacy database explicitly before retrying"), legacy, intended)
 	}
 	return nil
 }
@@ -2149,7 +2150,7 @@ func reconcileSchema(db *sql.DB) error {
 		return fmt.Errorf("schema verification: inspect session revision fence: %w", err)
 	}
 	if revisionColumn > 0 && revisionTrigger != 1 {
-		return errors.New("schema verification: sessions_revision_update trigger is missing; restore the session revision trigger before starting Orchestrator")
+		return errors.New(brand.Text("schema verification: sessions_revision_update trigger is missing; restore the session revision trigger before starting Orchestrator"))
 	}
 	return nil
 }

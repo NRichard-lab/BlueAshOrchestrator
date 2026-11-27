@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/spf13/cobra"
 )
 
@@ -243,7 +245,7 @@ func accountSessionID(args []string) (string, error) {
 	if id := strings.TrimSpace(os.Getenv("AO_SESSION_ID")); id != "" {
 		return id, nil
 	}
-	return "", usageError{fmt.Errorf("pass a session id, or run inside an Orchestrator session")}
+	return "", usageError{errors.New(brand.Text("pass a session id, or run inside an Orchestrator session"))}
 }
 
 func newAccountSwitchCommand(ctx *commandContext) *cobra.Command {

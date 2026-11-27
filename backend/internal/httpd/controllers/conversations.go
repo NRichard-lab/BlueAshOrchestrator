@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/attachmentstore"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apispec"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/envelope"
@@ -1136,7 +1137,7 @@ func conversationContent(req SendConversationMessageRequest) ([]ports.ChatConten
 			return nil, &attachmentError{"INVALID_RESOURCE", "resource uri and name are required"}
 		}
 		if resource.URI == ports.ChatInternalReplayResourceURI {
-			return nil, &attachmentError{"INVALID_RESOURCE", "resource uri is reserved for Orchestrator internal context"}
+			return nil, &attachmentError{"INVALID_RESOURCE", brand.Text("resource uri is reserved for Orchestrator internal context")}
 		}
 		kind, text := "resource_link", ""
 		if resource.Text != nil {

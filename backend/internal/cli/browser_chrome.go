@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/browserchrome"
 )
 
@@ -40,12 +41,12 @@ type browserChromeStatusDTO struct {
 func newBrowserTargetCommand(ctx *commandContext, jsonOutput *bool) *cobra.Command {
 	return &cobra.Command{
 		Use:   "target [panel|chrome]",
-		Short: "Show or choose which browser this session drives: Orchestrator's Browser panel or your Chrome",
+		Short: brand.Text("Show or choose which browser this session drives: Orchestrator's Browser panel or your Chrome"),
 		Long: "Without an argument, print this session's browser target.\n\n" +
-			"panel   Orchestrator's Browser panel (the default).\n" +
-			"chrome  Your own Google Chrome through the Orchestrator Browser Bridge extension.\n" +
+			brand.Text("panel   Orchestrator's Browser panel (the default).\n") +
+			brand.Text("chrome  Your own Google Chrome through the Orchestrator Browser Bridge extension.\n") +
 			"        The first command asks you in Chrome to allow this session; the session\n" +
-			"        then works only in its own Orchestrator tab group.",
+			brand.Text("        then works only in its own Orchestrator tab group."),
 		Args: atMostOneArg,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			actionArgs := map[string]any{}
@@ -65,9 +66,9 @@ func newBrowserTargetCommand(ctx *commandContext, jsonOutput *bool) *cobra.Comma
 			if connected {
 				state = "connected"
 			}
-			label := "Orchestrator Browser panel"
+			label := brand.Text("Orchestrator Browser panel")
 			if target == "chrome" {
-				label = "your Chrome (Orchestrator Browser Bridge)"
+				label = brand.Text("your Chrome (Orchestrator Browser Bridge)")
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Browser target: %s, %s\n", label, state)
 			if err == nil && target == "chrome" && !connected {
@@ -105,9 +106,9 @@ func newBrowserChromeCommand(ctx *commandContext, jsonOutput *bool) *cobra.Comma
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "setup",
-		Short: "Install the Orchestrator Browser Bridge extension files and register Orchestrator with Chrome",
-		Long: "Installs the unpacked Orchestrator Browser Bridge extension under the\n" +
-			"Orchestrator data directory and registers Orchestrator's native messaging host\n" +
+		Short: brand.Text("Install the Orchestrator Browser Bridge extension files and register Orchestrator with Chrome"),
+		Long: brand.Text("Installs the unpacked Orchestrator Browser Bridge extension under the\n") +
+			brand.Text("Orchestrator data directory and registers Orchestrator's native messaging host\n") +
 			"with each Chrome channel in use. This writes one small manifest file in Chrome's\n" +
 			"NativeMessagingHosts directory (on Windows, a registry value). Then load the\n" +
 			"extension in chrome://extensions.",
@@ -116,7 +117,7 @@ func newBrowserChromeCommand(ctx *commandContext, jsonOutput *bool) *cobra.Comma
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "remove",
-		Short: "Unregister Orchestrator from Chrome and delete the installed extension files",
+		Short: brand.Text("Unregister Orchestrator from Chrome and delete the installed extension files"),
 		Args:  noArgs,
 		RunE:  run(http.MethodDelete),
 	})
@@ -127,7 +128,7 @@ func writeBrowserChromeStatus(out io.Writer, status browserChromeStatusDTO, meth
 	var b strings.Builder
 	switch {
 	case method == http.MethodDelete:
-		b.WriteString("Chrome mode removed. Also remove \"Orchestrator Browser Bridge\" in chrome://extensions.\n")
+		b.WriteString(brand.Text("Chrome mode removed. Also remove \"Orchestrator Browser Bridge\" in chrome://extensions.\n"))
 	case status.Enabled:
 		b.WriteString("Chrome mode: set up\n")
 	default:
@@ -150,7 +151,7 @@ func writeBrowserChromeStatus(out io.Writer, status browserChromeStatusDTO, meth
 	}
 	if method != http.MethodDelete && status.Enabled {
 		if !status.ExtensionBundled {
-			b.WriteString("The extension bundle is missing from this Orchestrator build.\n")
+			b.WriteString(brand.Text("The extension bundle is missing from this Orchestrator build.\n"))
 		} else if !status.Connected {
 			fmt.Fprintf(&b, "\nTo finish in Chrome:\n"+
 				"  1. Open chrome://extensions and turn on Developer mode.\n"+
@@ -169,7 +170,7 @@ func newBrowserHostCommand() *cobra.Command {
 	var endpoint string
 	cmd := &cobra.Command{
 		Use:    "browser-host",
-		Short:  "Chrome native messaging host for the Orchestrator Browser Bridge (internal)",
+		Short:  brand.Text("Chrome native messaging host for the Orchestrator Browser Bridge (internal)"),
 		Hidden: true,
 		// Chrome appends the caller origin (and --parent-window on Windows).
 		Args:               cobra.ArbitraryArgs,

@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/config"
 	"github.com/aoagents/agent-orchestrator/backend/internal/lifecyclelog"
 	aoprocess "github.com/aoagents/agent-orchestrator/backend/internal/process"
@@ -31,7 +32,7 @@ func (c *commandContext) triageSnapshot(ctx context.Context, state, data, run st
 	go func() { githubCh <- c.triagePreflight(ctx) }()
 	var b, evidence, logs strings.Builder
 	fmt.Fprintf(&evidence, "- App: %s", Version)
-	fmt.Fprintf(&b, "# Orchestrator diagnostics\n\nApp: %s\n", Version)
+	fmt.Fprintf(&b, brand.Text("# Orchestrator diagnostics\n\nApp: %s\n"), Version)
 	if Commit != "" {
 		fmt.Fprintf(&evidence, ", commit %s", Commit)
 		fmt.Fprintf(&b, "Commit: %s\n", Commit)

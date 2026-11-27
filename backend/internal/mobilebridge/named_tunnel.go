@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"io"
 	"net/http"
 	"net/url"
@@ -58,15 +59,15 @@ type cachedNamedTunnel struct {
 
 var (
 	// errNotLinked means no signed-in device has linked this machine yet.
-	errNotLinked = errors.New("this machine is not linked to an Orchestrator account")
+	errNotLinked = errors.New(brand.Text("this machine is not linked to an Orchestrator account"))
 	// errHostRefused means AO Cloud does not list this machine under the
 	// digest any more: its account removed it. Only AO Cloud's own answer
 	// says so, never a proxy's.
-	errHostRefused = errors.New("this machine is no longer listed in Orchestrator Cloud")
+	errHostRefused = errors.New(brand.Text("this machine is no longer listed in Orchestrator Cloud"))
 	// errNoFixedAddresses means this AO Cloud hands this machine no fixed
 	// address: it has no tunnel settings or predates them, or the account
 	// already uses all of its fixed addresses.
-	errNoFixedAddresses = errors.New("no fixed addresses are available from Orchestrator Cloud")
+	errNoFixedAddresses = errors.New(brand.Text("no fixed addresses are available from Orchestrator Cloud"))
 )
 
 // unlinked reports an answer that leaves the machine on a quick tunnel: no
@@ -187,14 +188,14 @@ func (s *FixedTunnelSource) request(ctx context.Context, hostID, digest string, 
 			resp.StatusCode == http.StatusConflict && code == "fixed_address_limit_reached":
 			return NamedTunnel{}, errNoFixedAddresses
 		}
-		return NamedTunnel{}, fmt.Errorf("the fixed address request to Orchestrator Cloud returned %d", resp.StatusCode)
+		return NamedTunnel{}, fmt.Errorf(brand.Text("the fixed address request to Orchestrator Cloud returned %d"), resp.StatusCode)
 	}
 	var t NamedTunnel
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&t); err != nil {
 		return NamedTunnel{}, fmt.Errorf("decode fixed address: %w", err)
 	}
 	if t.Hostname == "" || t.RunToken == "" {
-		return NamedTunnel{}, errors.New("the fixed address from Orchestrator Cloud has no hostname or run token")
+		return NamedTunnel{}, errors.New(brand.Text("the fixed address from Orchestrator Cloud has no hostname or run token"))
 	}
 	// since is on AO Cloud's clock; moved onto this machine's, so a clock
 	// running fast cannot skip the settle delay of a record made just now.

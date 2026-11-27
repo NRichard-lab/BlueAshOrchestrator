@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	workerautohand "github.com/aoagents/agent-orchestrator/backend/internal/adapters/agent/autohand"
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
 
 // HostTrustWarning documents that Autohand retains its normal approval flow.
-const HostTrustWarning = "experimental user-approved reviewer: Autohand uses normal permission prompts; Orchestrator does not enable --yes or --unrestricted"
+var HostTrustWarning = brand.Text("experimental user-approved reviewer: Autohand uses normal permission prompts; Orchestrator does not enable --yes or --unrestricted")
 
 // Reviewer builds Autohand's reviewer command.
 type Reviewer struct {

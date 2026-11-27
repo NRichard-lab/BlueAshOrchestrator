@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/browserruntime"
 )
 
@@ -76,20 +77,20 @@ func RunHost(ctx context.Context, in io.Reader, out io.Writer, opts HostOptions)
 	}
 	if hello.Type != "hello" || hello.Protocol != HostProtocol {
 		_ = writer.write(hostFrame{Type: "error", Code: "PROTOCOL_MISMATCH", Protocol: HostProtocol,
-			Message: "The Orchestrator extension and Orchestrator app versions do not match; update both"})
+			Message: brand.Text("The Orchestrator extension and Orchestrator app versions do not match; update both")})
 		return fmt.Errorf("extension protocol %d, host protocol %d", hello.Protocol, HostProtocol)
 	}
 
 	endpoint, err := ReadEndpoint(opts.EndpointPath)
 	if err != nil {
-		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: "Orchestrator is not running"})
+		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: brand.Text("Orchestrator is not running")})
 		return err
 	}
 	dialCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	conn, err := opts.Dial(dialCtx, endpoint.Address)
 	cancel()
 	if err != nil {
-		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: "Orchestrator is not running"})
+		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: brand.Text("Orchestrator is not running")})
 		return fmt.Errorf("connect to AO: %w", err)
 	}
 	defer func() { _ = conn.Close() }()
@@ -104,7 +105,7 @@ func RunHost(ctx context.Context, in io.Reader, out io.Writer, opts HostOptions)
 		return err
 	}
 	if _, err := conn.Write(append(daemonHello, '\n')); err != nil {
-		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: "Orchestrator closed the connection"})
+		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: brand.Text("Orchestrator closed the connection")})
 		return err
 	}
 	scanner := bufio.NewScanner(conn)
@@ -113,7 +114,7 @@ func RunHost(ctx context.Context, in io.Reader, out io.Writer, opts HostOptions)
 	// (bad token, protocol mismatch, another Chrome profile already connected).
 	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	if !scanner.Scan() {
-		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: "Orchestrator closed the connection"})
+		_ = writer.write(hostFrame{Type: "error", Code: "DAEMON_UNAVAILABLE", Message: brand.Text("Orchestrator closed the connection")})
 		return fmt.Errorf("no hello reply from AO: %w", scanner.Err())
 	}
 	_ = conn.SetReadDeadline(time.Time{})
@@ -122,12 +123,12 @@ func RunHost(ctx context.Context, in io.Reader, out io.Writer, opts HostOptions)
 		Error *browserruntime.CommandError `json:"error"`
 	}
 	if json.Unmarshal(scanner.Bytes(), &reply) != nil || reply.Type != "hello-ok" {
-		code, message := "DAEMON_REJECTED", "Orchestrator refused the connection"
+		code, message := "DAEMON_REJECTED", brand.Text("Orchestrator refused the connection")
 		if reply.Error != nil {
 			code, message = reply.Error.Code, reply.Error.Message
 		}
 		if code == "BROWSER_RUNTIME_BUSY" {
-			message = "Another Chrome profile is already connected to Orchestrator"
+			message = brand.Text("Another Chrome profile is already connected to Orchestrator")
 		}
 		_ = writer.write(hostFrame{Type: "error", Code: code, Message: message})
 		return fmt.Errorf("AO rejected the host: %s", code)
@@ -153,7 +154,7 @@ func RunHost(ctx context.Context, in io.Reader, out io.Writer, opts HostOptions)
 				continue
 			}
 			if probe.Type == "rejected" {
-				code, message := "BROWSER_RUNTIME_BUSY", "Another Chrome profile is already connected to Orchestrator"
+				code, message := "BROWSER_RUNTIME_BUSY", brand.Text("Another Chrome profile is already connected to Orchestrator")
 				if probe.Error != nil {
 					code = probe.Error.Code
 				}

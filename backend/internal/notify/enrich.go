@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
@@ -80,9 +81,9 @@ func bodyForIntent(intent Intent) string {
 		}
 		return "Closed without merging. Reopen it if this wasn't intended."
 	case domain.NotificationReviewCompleted:
-		return "Orchestrator finished reviewing this pull request and approved it."
+		return brand.Text("Orchestrator finished reviewing this pull request and approved it.")
 	case domain.NotificationReviewChangesRequested:
-		return "Orchestrator finished reviewing this pull request and found changes to address."
+		return brand.Text("Orchestrator finished reviewing this pull request and found changes to address.")
 	default:
 		return ""
 	}

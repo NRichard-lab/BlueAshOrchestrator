@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
@@ -202,7 +203,7 @@ func (s *Service) Start(ctx context.Context, req domain.StartAwakeRequest) error
 		req.SessionID = ""
 	}
 	if req.Scope != "ao" && req.Scope != "session" {
-		return invalid("choose Orchestrator or this session")
+		return invalid(brand.Text("choose Orchestrator or this session"))
 	}
 	if req.Scope == "session" && req.SessionID == "" {
 		return invalid("session is required")
@@ -249,7 +250,7 @@ func (s *Service) Start(ctx context.Context, req domain.StartAwakeRequest) error
 		source.BoundIdentity = identity
 	case "download":
 		if !s.downloadActive(req.BoundID, now) {
-			return invalid("choose an active Orchestrator browser download")
+			return invalid(brand.Text("choose an active Orchestrator browser download"))
 		}
 	default:
 		return invalid("unknown awake session mode")

@@ -16,6 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
@@ -354,7 +355,7 @@ func newSessionExitAgentCommand(ctx *commandContext) *cobra.Command {
 	var opts sessionOptions
 	cmd := &cobra.Command{
 		Use:   "exit-agent <id>",
-		Short: "Exit an agent without terminating its Orchestrator-managed session",
+		Short: brand.Text("Exit an agent without terminating its Orchestrator-managed session"),
 		Args:  oneSessionIDArg,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := normalizeSessionID(args[0])
@@ -373,7 +374,7 @@ func newSessionResumeAgentCommand(ctx *commandContext) *cobra.Command {
 	var opts sessionOptions
 	cmd := &cobra.Command{
 		Use:   "resume-agent <id>",
-		Short: "Resume an exited agent in its existing Orchestrator-managed session",
+		Short: brand.Text("Resume an exited agent in its existing Orchestrator-managed session"),
 		Args:  oneSessionIDArg,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := normalizeSessionID(args[0])
@@ -428,7 +429,7 @@ func newSessionDeleteCommand(ctx *commandContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Permanently delete a terminated session",
-		Long: "Permanently delete a terminated session's record and its Orchestrator history (conversation, PR facts, attachments and artifacts). " +
+		Long: brand.Text("Permanently delete a terminated session's record and its Orchestrator history (conversation, PR facts, attachments and artifacts). ") +
 			"The session must be terminated and its worktree cleaned up first (ao session cleanup, or --cleanup). Git branches, pull requests and agent account usage totals are kept.",
 		Args: oneSessionIDArg,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -453,7 +454,7 @@ func newSessionClaimPRCommand(ctx *commandContext) *cobra.Command {
 		Short: "Attach an existing PR to a session",
 		Long: "Attach an existing PR to a session. When session-id is omitted, the current session is read from AO_SESSION_ID.\n\n" +
 			"Claiming updates PR ownership metadata only; it does not check out the PR branch. Verify the workspace branch and HEAD before editing.\n\n" +
-			"With --review, the session claims someone else's PR to review it, not to work on it. It implies --no-takeover, so it never takes the PR from a session working on it. Before the claim, Orchestrator turns off the session's " +
+			brand.Text("With --review, the session claims someone else's PR to review it, not to work on it. It implies --no-takeover, so it never takes the PR from a session working on it. Before the claim, Orchestrator turns off the session's ") +
 			"automatic fixing of CI failures, merge conflicts and review comments, and its native auto-review, so none of the PR's feedback reaches the agent. " +
 			"These are the session's \"Automatically fix\" switches, so they cover every PR it owns; use one session per review. " +
 			"To take the PR over later, claim it again with --review=false, which turns CI and review-comment fixing back on. " +

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/httpd/apierr"
 	"github.com/aoagents/agent-orchestrator/backend/internal/sessionartifacts"
@@ -39,7 +40,7 @@ func (s *Service) WorkspaceLocation(ctx context.Context, id domain.SessionID) (s
 	}
 	// These won't clear on their own, so a 500 would only make the caller retry forever.
 	if errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.ENOTDIR) || errors.Is(err, syscall.ELOOP) {
-		return "", apierr.Conflict("SESSION_WORKSPACE_UNREADABLE", "Orchestrator can't read this session's folder. Check its permissions.", nil)
+		return "", apierr.Conflict("SESSION_WORKSPACE_UNREADABLE", brand.Text("Orchestrator can't read this session's folder. Check its permissions."), nil)
 	}
 	if err != nil {
 		return "", fmt.Errorf("stat session %s workspace: %w", id, err)

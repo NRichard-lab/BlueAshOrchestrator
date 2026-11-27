@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aoagents/agent-orchestrator/backend/internal/brand"
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 	"github.com/aoagents/agent-orchestrator/backend/internal/ports"
 )
@@ -627,7 +628,7 @@ func (m *Manager) failInterruptedProvisioningRecords(ctx context.Context, recs [
 			continue
 		}
 		if _, err := m.setProvisionState(ctx, rec.ID, domain.SessionProvisionFailed,
-			"Orchestrator restarted before this session finished starting"); err != nil {
+			brand.Text("Orchestrator restarted before this session finished starting")); err != nil {
 			failures = append(failures, fmt.Errorf("session %s: %w", rec.ID, err))
 			retries = append(retries, rec)
 		}
